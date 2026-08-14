@@ -1,0 +1,234 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "Peec AI",
+    "competitors": [
+      "Profound"
+    ],
+    "expected_total": 6,
+    "quotas": {
+      "question_type": {
+        "generic": 3,
+        "branded": 3
+      },
+      "funnel_intent": {
+        "recommendation": 2,
+        "comparison": 2,
+        "decision": 2
+      },
+      "cross": {
+        "generic": {
+          "recommendation": 2,
+          "comparison": 1
+        },
+        "branded": {
+          "comparison": 1,
+          "decision": 2
+        }
+      }
+    },
+    "min_distinct_counts": {
+      "audience_roles": 3,
+      "scenarios": 3,
+      "constraints": 2
+    },
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [],
+      "no_required_terms_reason": "This fixture tests unrelated invalid-bank failures."
+    },
+    "required_term_coverage": {},
+    "excluded_categories": [
+      "social listening",
+      "media monitoring",
+      "SERP rank tracking"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search visibility",
+        "AI visibility",
+        "generative engine optimization",
+        "answer engine optimization"
+      ],
+      "product_terms": [
+        "GEO platform",
+        "GEO tool",
+        "AEO platform",
+        "AI answer monitoring"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "topics": [
+      {
+        "topic_id": "topic-1",
+        "topic": "AI search visibility platform selection"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "bad-title",
+      "audience_role": "general",
+      "scenario": "tool_discovery",
+      "constraint": "none",
+      "evidence_need": "reviews",
+      "user_question": "Best AI Search Visibility Tools for 2026",
+      "zh_translation": "2026 年最佳 AI 搜索可见性工具",
+      "standalone_rewrite": "Which AI search visibility tools are worth evaluating in 2026?",
+      "retrieval_rewrite": "Best AI Search Visibility Tools for 2026",
+      "evidence_query": "AI visibility tools reviews 2026",
+      "title_seed": "Best AI Search Visibility Tools for 2026",
+      "monitoring_prompt": "Best AI Search Visibility Tools for 2026",
+      "quality_checks": {
+        "natural": false,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "shortlist",
+      "cluster": "brand-leak",
+      "audience_role": "marketing_team",
+      "scenario": "vendor_comparison",
+      "constraint": "none",
+      "evidence_need": "feature_comparison",
+      "user_question": "Which Peec AI features are better than Profound?",
+      "zh_translation": "Peec AI 的哪些功能比 Profound 更好？",
+      "standalone_rewrite": "How do Peec AI and Profound features compare?",
+      "retrieval_rewrite": "Peec AI vs Profound features",
+      "evidence_query": "Peec AI Profound feature documentation",
+      "title_seed": "Peec AI vs Profound Feature Comparison",
+      "monitoring_prompt": "Which Peec AI features are better than Profound?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": false,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q3",
+      "question_type": "branded",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "missing-brand",
+      "audience_role": "general",
+      "scenario": "vendor_comparison",
+      "constraint": "none",
+      "evidence_need": "reviews",
+      "user_question": "Which brand tracking tool is best?",
+      "zh_translation": "哪款品牌跟踪工具最好？",
+      "standalone_rewrite": "Which AI search visibility tool is best for marketing teams?",
+      "retrieval_rewrite": "best brand tracking tool",
+      "evidence_query": "brand tracking tool reviews",
+      "title_seed": "Best Brand Tracking Tools",
+      "monitoring_prompt": "Which brand tracking tool is best?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": false,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": false,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q3",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q4",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "action-command",
+      "audience_role": "buyer",
+      "scenario": "purchase",
+      "constraint": "subscription",
+      "evidence_need": "pricing",
+      "user_question": "Buy AI brand tracking tool subscription",
+      "zh_translation": "购买 AI 品牌跟踪工具订阅",
+      "standalone_rewrite": "Which AI search visibility tool should a small team subscribe to?",
+      "retrieval_rewrite": "AI brand tracking tool subscription",
+      "evidence_query": "AI visibility tool subscription pricing",
+      "title_seed": "AI Brand Tracking Tool Subscriptions",
+      "monitoring_prompt": "Buy AI brand tracking tool subscription now",
+      "quality_checks": {
+        "natural": false,
+        "standalone": false,
+        "answerable": false,
+        "single_intent": true,
+        "category_aligned": false,
+        "neutral_premise": true,
+        "monitoring_field_valid": false,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q4",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q5",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "overlong",
+      "audience_role": "marketing_team",
+      "scenario": "purchase_decision",
+      "constraint": "small_team",
+      "evidence_need": "pricing_and_features",
+      "user_question": "Which Peec AI plan should a small international marketing team choose if it needs daily monitoring across ChatGPT, Perplexity, Gemini, Copilot, Google AI Overviews, several countries, multiple brands, and unlimited collaborators?",
+      "zh_translation": "需要在多平台、多国家、多品牌每日监测且协作者不限的小型国际营销团队应选择哪个 Peec AI 套餐？",
+      "standalone_rewrite": "Which Peec AI plan fits a small international marketing team that needs multi-platform and multi-country monitoring?",
+      "retrieval_rewrite": "Peec AI plan international marketing team",
+      "evidence_query": "Peec AI pricing multi-country platform coverage users",
+      "title_seed": "Choosing a Peec AI Plan for International Marketing Teams",
+      "monitoring_prompt": "Which Peec AI plan should a small international marketing team choose if it needs daily monitoring across ChatGPT, Perplexity, Gemini, Copilot, Google AI Overviews, several countries, multiple brands, and unlimited collaborators?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": false,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q5",
+      "topic_id": "topic-1"
+    }
+  ]
+}

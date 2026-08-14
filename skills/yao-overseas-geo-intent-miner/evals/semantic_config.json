@@ -1,0 +1,133 @@
+{
+  "optimizer_hints": {
+    "capability": "Generate, repair, audit, and validate natural English AI-search monitoring questions for overseas GEO presales",
+    "inputs": [
+      "brand and product",
+      "overseas market and locale",
+      "category definition",
+      "audiences and scenarios",
+      "professional terminology from topic and audiences",
+      "completed professional term assessment",
+      "category expressions and placeholder blacklist",
+      "competitors",
+      "existing English question bank",
+      "total and Generic/Branded quotas"
+    ],
+    "trigger_actions": [
+      "generate overseas GEO English questions",
+      "build a presales monitoring prompt bank",
+      "repair keyword-like or title-like questions",
+      "audit question naturalness and category drift",
+      "reject educational questions without brand recommendations",
+      "validate question totals and Generic/Branded quotas",
+      "generate one fixed Branded brand sentiment prompt per Topic",
+      "preserve GEO and AEO terminology coverage",
+      "生成海外 GEO 英文问题库",
+      "修复售前监测 Prompt",
+      "检查生词自然度和配额"
+      ,"检查 GEO AEO 专业术语覆盖"
+    ],
+    "exclusions": [
+      "crawl or collect AI answers",
+      "calculate mention ranking sentiment or citation metrics",
+      "write finished articles",
+      "generate domestic Chinese platform prompts"
+    ],
+    "artifacts": [
+      "monitoring-ready question bank",
+      "intent matrix",
+      "category expression set",
+      "competitor policy summary",
+      "professional term assessment",
+      "five-field rewrites",
+      "Chinese translations",
+      "quota summary",
+      "repair log",
+      "quality report"
+    ]
+  },
+  "fallback_positive_concepts": [
+    "overseas_geo_question_generation"
+  ],
+  "positive_concepts": {
+    "overseas_geo_question_generation": {
+      "weight": 1.0,
+      "phrases": [
+        "overseas geo",
+        "海外 geo",
+        "english question bank",
+        "英文问题库",
+        "售前监测 prompt",
+        "presales monitoring prompt",
+        "ai visibility questions",
+        "ai visibility prompts",
+        "ai search questions",
+        "问题自然度",
+        "生词质量",
+        "问题配额",
+        "品牌情绪 prompt",
+        "推荐 比较 决策三类都有",
+        "category drift",
+        "品类漂移",
+        "chatgpt and perplexity prompts",
+        "chatgpt 和 perplexity",
+        "英文 geo 问题"
+        ,"geo aeo 术语覆盖"
+        ,"geo aeo 专业术语"
+        ,"专业术语都改没了"
+        ,"补覆盖但不要堆关键词"
+        ,"professional terminology coverage"
+      ]
+    }
+  },
+  "negative_concepts": {
+    "answer_collection": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": [
+        "crawl answers",
+        "collect ai answers",
+        "run these prompts on chatgpt",
+        "抓取回答",
+        "实际跑一遍",
+        "采集回答"
+      ]
+    },
+    "metrics": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": [
+        "calculate mention rate",
+        "average ranking",
+        "sentiment metrics",
+        "citation share",
+        "问题跑出来的回答",
+        "分析这批",
+        "计算提及率",
+        "平均排名",
+        "情绪和引用占比"
+      ]
+    },
+    "content_writing": {
+      "weight": 0.9,
+      "exclusive": true,
+      "phrases": [
+        "write an article",
+        "finished article",
+        "直接写一篇",
+        "生成完整文章"
+      ]
+    },
+    "domestic_intent": {
+      "weight": 0.9,
+      "exclusive": true,
+      "phrases": [
+        "豆包",
+        "kimi",
+        "deepseek 中文",
+        "国内 ai 平台",
+        "中文 geo 监测问题"
+      ]
+    }
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "Peec AI",
+    "product_name": "Peec AI Visibility Platform",
+    "brand_object_type": "company",
+    "category_label": "AI search visibility",
+    "aliases": [
+      "PeecAI"
+    ],
+    "competitors": [
+      "Profound"
+    ],
+    "competitor_selection": {
+      "status": "frozen",
+      "selection_count": 3,
+      "formal_competitors": [
+        {
+          "name": "Profound",
+          "aliases": [
+            "Profound AI"
+          ],
+          "comparability_tier": "direct",
+          "comparison_policy": {
+            "mode": "standard_evidence_based",
+            "allowed_dimensions": [
+              "AI answer monitoring",
+              "reporting"
+            ]
+          }
+        },
+        {
+          "name": "Otterly AI",
+          "aliases": [
+            "Otterly"
+          ],
+          "comparability_tier": "adjacent",
+          "comparison_policy": {
+            "mode": "neutral_shared_dimensions_only",
+            "allowed_dimensions": [
+              "AI answer monitoring"
+            ]
+          }
+        },
+        {
+          "name": "Fallback Example",
+          "aliases": [],
+          "comparability_tier": "fallback",
+          "comparison_policy": {
+            "mode": "neutral_shared_dimensions_only",
+            "allowed_dimensions": []
+          }
+        }
+      ]
+    },
+    "expected_total": 4,
+    "quotas": {
+      "question_type": {
+        "generic": 2,
+        "branded": 2
+      }
+    },
+    "min_distinct_counts": {
+      "audience_roles": 4,
+      "scenarios": 4,
+      "constraints": 4
+    },
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [
+        {
+          "concept": "geo",
+          "source": "input_explicit",
+          "decision": "required",
+          "reason": "The target audience explicitly includes GEO practitioners."
+        },
+        {
+          "concept": "aeo",
+          "source": "category_core",
+          "decision": "required",
+          "reason": "AEO is a core professional term for this AI answer visibility category."
+        }
+      ]
+    },
+    "required_term_coverage": {
+      "geo": {
+        "label": "generative engine optimization (GEO)",
+        "terms": [
+          "generative engine optimization",
+          "GEO"
+        ],
+        "expanded_form": "generative engine optimization",
+        "acronym": "GEO",
+        "context_terms": [
+          "AI search",
+          "AI-generated answers",
+          "generative search"
+        ],
+        "min_total": 1,
+        "min_generic": 1,
+        "min_branded": 0,
+        "min_expanded": 1,
+        "min_acronym": 1
+      },
+      "aeo": {
+        "label": "answer engine optimization (AEO)",
+        "terms": [
+          "answer engine optimization",
+          "AEO"
+        ],
+        "expanded_form": "answer engine optimization",
+        "acronym": "AEO",
+        "context_terms": [
+          "AI search",
+          "AI-generated answers",
+          "answer visibility"
+        ],
+        "min_total": 1,
+        "min_generic": 0,
+        "min_branded": 1,
+        "min_expanded": 1,
+        "min_acronym": 1
+      }
+    },
+    "excluded_categories": [
+      "social listening",
+      "media monitoring",
+      "SERP rank tracking"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search visibility",
+        "AI visibility",
+        "generative engine optimization",
+        "answer engine optimization"
+      ],
+      "product_terms": [
+        "GEO platform",
+        "GEO tool",
+        "AEO platform",
+        "AI answer monitoring"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "topics": [
+      {
+        "topic_id": "topic-1",
+        "topic": "AI search visibility platform selection"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "measurement",
+      "audience_role": "marketing_analyst",
+      "scenario": "visibility_measurement",
+      "constraint": "multi_platform_coverage",
+      "evidence_need": "methodology",
+      "user_question": "Which AI search visibility platforms support brand mention tracking across AI-generated answers?",
+      "zh_translation": "AI 搜索可见性平台如何跟踪 AI 生成答案中的品牌提及？",
+      "standalone_rewrite": "Which AI search visibility platforms support brand mention tracking across AI-generated answers for small agencies?",
+      "retrieval_rewrite": "AI search visibility brand mention tracking",
+      "evidence_query": "AI visibility platform methodology brand mentions",
+      "title_seed": "How AI Search Visibility Platforms Track Brand Mentions",
+      "monitoring_prompt": "Which AI search visibility platforms support brand mention tracking across AI-generated answers?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q2",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "shortlist",
+      "cluster": "agency-fit",
+      "audience_role": "seo_agency",
+      "scenario": "vendor_shortlisting",
+      "constraint": "small_team",
+      "evidence_need": "features_and_reviews",
+      "user_question": "Which generative engine optimization (GEO) platforms suit small SEO agencies?",
+      "zh_translation": "哪些生成式引擎优化（GEO）平台适合小型 SEO 代理商？",
+      "standalone_rewrite": "Which generative engine optimization (GEO) platforms are best suited to small SEO agencies?",
+      "retrieval_rewrite": "GEO platforms for small SEO agencies",
+      "evidence_query": "generative engine optimization platform agency pricing features reviews",
+      "title_seed": "Best GEO Platforms for Small SEO Agencies",
+      "monitoring_prompt": "Which generative engine optimization (GEO) platforms suit small SEO agencies?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q2",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q3",
+      "question_type": "branded",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "limitations",
+      "audience_role": "enterprise_marketing_team",
+      "scenario": "enterprise_evaluation",
+      "constraint": "enterprise_scale",
+      "evidence_need": "limitations_and_documentation",
+      "user_question": "Which AI visibility platforms are alternatives to Peec AI for enterprise answer engine optimization (AEO)?",
+      "zh_translation": "企业团队评估 Peec AI 用于答案引擎优化（AEO）时应考虑哪些局限？",
+      "standalone_rewrite": "Which AI visibility platforms are alternatives to Peec AI for enterprise answer engine optimization (AEO) reporting?",
+      "retrieval_rewrite": "Peec AI AEO enterprise limitations",
+      "evidence_query": "Peec AI answer engine optimization limitations documentation",
+      "title_seed": "Peec AI Limitations for Enterprise AEO Teams",
+      "monitoring_prompt": "Which AI visibility platforms are alternatives to Peec AI for enterprise answer engine optimization (AEO)?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q3",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q4",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "value",
+      "audience_role": "small_marketing_team",
+      "scenario": "purchase_decision",
+      "constraint": "budget",
+      "evidence_need": "pricing_and_value",
+      "user_question": "Evaluate the AI search visibility company Peec AI on AI search visibility platform selection",
+      "zh_translation": "评价 AI 搜索可见性公司 Peec AI 在 AI 搜索可见性平台选型主题上的表现。",
+      "standalone_rewrite": "Evaluate the AI search visibility company Peec AI on AI search visibility platform selection for a small marketing team.",
+      "retrieval_rewrite": "Peec AI value for small marketing teams",
+      "evidence_query": "Peec AI pricing features small team reviews",
+      "title_seed": "Is Peec AI Worth It for Small Marketing Teams?",
+      "monitoring_prompt": "Evaluate the AI search visibility company Peec AI on AI search visibility platform selection",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q4",
+      "topic_id": "topic-1"
+    }
+  ]
+}

@@ -1,0 +1,2396 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "generation_mode": "presales_diagnostic",
+  "test_provenance": {
+    "test_set": "海外售前报告输入评测集 Case 4–6",
+    "generated_by": "yao-overseas-geo-intent-miner v0.6.0",
+    "source_policy": "从 Case 原始输入重新生成；未复用线上历史题目或旧意图标签。"
+  },
+  "config": {
+    "brand_name": "Peec AI",
+    "product_name": "Peec AI",
+    "brand_object_type": "product",
+    "category_label": "AI search visibility platform",
+    "aliases": [],
+    "competitors": [
+      "Profound",
+      "Scrunch",
+      "OtterlyAI"
+    ],
+    "competitor_selection": {
+      "schema_version": "overseas-geo-competitor-selection/v2",
+      "status": "frozen",
+      "selection_count": 3,
+      "selection_strategy": {
+        "user_provided_retained": true,
+        "comparability_tier_order": [
+          "direct",
+          "adjacent",
+          "fallback"
+        ],
+        "automatic_fill_policy": "verified_leaders_first_within_each_comparability_tier"
+      },
+      "portfolio_quality": "direct",
+      "formal_competitors": [
+        {
+          "name": "Profound",
+          "official_domain": "tryprofound.com",
+          "aliases": [],
+          "source": "user_provided",
+          "portfolio_role": "销售指定竞品",
+          "market_position": "unknown",
+          "leader_representativeness_verified": false,
+          "comparability_tier": "direct",
+          "evidence_ids": [
+            "CASE4-INPUT"
+          ],
+          "limitations": [],
+          "comparison_policy": {
+            "mode": "standard_evidence_based",
+            "allowed_dimensions": [
+              "sub_track",
+              "product_form",
+              "target_users",
+              "core_job",
+              "buying_motion"
+            ],
+            "prohibited_claims": [
+              "无证据的绝对或领先结论"
+            ]
+          }
+        },
+        {
+          "name": "Scrunch",
+          "official_domain": "scrunch.com",
+          "aliases": [],
+          "source": "user_provided",
+          "portfolio_role": "销售指定竞品",
+          "market_position": "unknown",
+          "leader_representativeness_verified": false,
+          "comparability_tier": "direct",
+          "evidence_ids": [
+            "CASE4-INPUT"
+          ],
+          "limitations": [],
+          "comparison_policy": {
+            "mode": "standard_evidence_based",
+            "allowed_dimensions": [
+              "sub_track",
+              "product_form",
+              "target_users",
+              "core_job"
+            ],
+            "prohibited_claims": [
+              "无证据的绝对或领先结论"
+            ]
+          }
+        },
+        {
+          "name": "OtterlyAI",
+          "official_domain": "otterly.ai",
+          "aliases": [],
+          "source": "user_provided",
+          "portfolio_role": "销售指定竞品",
+          "market_position": "unknown",
+          "leader_representativeness_verified": false,
+          "comparability_tier": "direct",
+          "evidence_ids": [
+            "CASE4-INPUT"
+          ],
+          "limitations": [],
+          "comparison_policy": {
+            "mode": "standard_evidence_based",
+            "allowed_dimensions": [
+              "sub_track",
+              "product_form",
+              "target_users",
+              "core_job",
+              "buying_motion"
+            ],
+            "prohibited_claims": [
+              "无证据的绝对或领先结论"
+            ]
+          }
+        }
+      ],
+      "evidence_source_note": "三个竞品均来自 Case 4 销售输入，按上游机制原样保留并冻结。"
+    },
+    "expected_total": 50,
+    "quotas": {
+      "question_type": {
+        "generic": 40,
+        "branded": 10
+      }
+    },
+    "min_distinct_counts": {
+      "audience_roles": 3,
+      "scenarios": 3,
+      "constraints": 2
+    },
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [
+        {
+          "concept": "GEO",
+          "decision": "required",
+          "source": "input_explicit",
+          "reason": "监测背景明确出现 GEO。"
+        },
+        {
+          "concept": "AEO",
+          "decision": "required",
+          "source": "input_explicit",
+          "reason": "监测背景明确出现 AEO。"
+        },
+        {
+          "concept": "LLM visibility",
+          "decision": "required",
+          "source": "input_explicit",
+          "reason": "监测背景明确出现 LLM visibility monitoring。"
+        }
+      ]
+    },
+    "required_term_coverage": {
+      "GEO": {
+        "terms": [
+          "generative engine optimization",
+          "GEO"
+        ],
+        "expanded_form": "generative engine optimization",
+        "acronym": "GEO",
+        "context_terms": [
+          "AI search",
+          "visibility"
+        ],
+        "min_total": 3,
+        "min_generic": 1,
+        "min_branded": 1,
+        "min_expanded": 1,
+        "min_acronym": 1
+      },
+      "AEO": {
+        "terms": [
+          "answer engine optimization",
+          "AEO"
+        ],
+        "expanded_form": "answer engine optimization",
+        "acronym": "AEO",
+        "context_terms": [
+          "AI search",
+          "visibility"
+        ],
+        "min_total": 3,
+        "min_generic": 1,
+        "min_branded": 1,
+        "min_expanded": 1,
+        "min_acronym": 1
+      },
+      "LLM visibility": {
+        "terms": [
+          "LLM visibility"
+        ],
+        "expanded_form": "",
+        "acronym": "",
+        "context_terms": [],
+        "min_total": 3,
+        "min_generic": 1,
+        "min_branded": 1,
+        "min_expanded": 0,
+        "min_acronym": 0
+      }
+    },
+    "excluded_categories": [
+      "social listening",
+      "media monitoring",
+      "SERP rank tracking",
+      "end-to-end content optimization platform"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search analytics and visibility tracking platform",
+        "AI search analytics and visibility tracking platforms",
+        "AI search visibility platform",
+        "AI search visibility platforms",
+        "AI visibility platform",
+        "AI visibility platforms",
+        "generative engine optimization",
+        "generative engine optimization platform",
+        "generative engine optimization platforms",
+        "answer engine optimization",
+        "answer engine optimization platform",
+        "answer engine optimization platforms",
+        "LLM visibility platform",
+        "LLM visibility platforms"
+      ],
+      "product_terms": [
+        "AI search analytics tool",
+        "AI search analytics tools",
+        "AI citation tracking",
+        "AI citation tracking tool",
+        "AI citation tracking tools"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "solution vendors",
+        "analytics providers"
+      ]
+    },
+    "target_audiences": [
+      "seo_ai_visibility_manager",
+      "content_marketing_team",
+      "in_house_brand_team",
+      "geo_aeo_seo_agency",
+      "marketing_analytics_team"
+    ],
+    "topics": [
+      {
+        "topic_id": "ai-search-analytics-marketing",
+        "topic": "Best AI search analytics and visibility tracking platforms for marketing teams and agencies"
+      }
+    ],
+    "locale": "en-US",
+    "market": "United States",
+    "platforms": [
+      "ChatGPT"
+    ]
+  },
+  "competitor_research_evidence": [
+    {
+      "evidence_id": "CASE4-INPUT",
+      "source_type": "user_input",
+      "source": "01-海外GEO售前/评测数据/海外售前报告输入评测集.md#4-peec-ai",
+      "claim": "Profound、Scrunch、OtterlyAI 为销售填写并冻结的三个竞品。"
+    }
+  ],
+  "condition_coverage": {
+    "target_user": true,
+    "evaluation_criterion": true,
+    "constraint": true,
+    "comparison_object": true,
+    "note": "四类条件按具体购买判断自然组合，不与三种商业意图机械绑定。"
+  },
+  "coverage_summary": {
+    "question_type": {
+      "generic": 40,
+      "branded": 10
+    },
+    "funnel_intent": {
+      "recommendation": 19,
+      "comparison": 15,
+      "decision": 16
+    },
+    "brand_sentiment_by_topic": {
+      "ai-search-analytics-marketing": 1
+    },
+    "formal_competitor_solo_comparisons": {
+      "Profound": 1,
+      "Scrunch": 1,
+      "OtterlyAI": 1
+    },
+    "professional_terms": [
+      "GEO",
+      "AEO",
+      "LLM visibility"
+    ]
+  },
+  "rewrite_field_contract": {
+    "monitoring_field": "user_question",
+    "root_prompt_rule": "monitoring_prompt equals user_question",
+    "non_monitoring_fields": [
+      "retrieval_rewrite",
+      "evidence_query",
+      "title_seed"
+    ]
+  },
+  "rejected_or_rewritten_candidates": [
+    {
+      "candidate": "What is a AI search visibility platform?",
+      "action": "rejected",
+      "reason": "概念科普不会把回答带到品牌候选、差异取舍或最终适配结论。"
+    },
+    {
+      "candidate": "What should buyers look for in a AI search visibility platform?",
+      "action": "rejected",
+      "reason": "只会得到评估标准清单，缺少品牌推荐或明确取舍。"
+    },
+    {
+      "candidate": "Best AI search visibility platform",
+      "action": "rewritten",
+      "reason": "标题式短语改为带用户、场景或约束的自然商业提问。"
+    }
+  ],
+  "quality_report": {
+    "hard_gates": "passed",
+    "semantic_second_pass": "completed",
+    "fact_status": "能力、价格、效果均以待验证问题表达；竞品边界见 competitor_research_evidence。",
+    "locale": "en-US",
+    "platforms": [
+      "ChatGPT"
+    ],
+    "validator": ".agents/skills/yao-overseas-geo-intent-miner/scripts/validate_question_bank.py",
+    "errors": [],
+    "warnings": []
+  },
+  "questions": [
+    {
+      "question_id": "PEEC-01",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "platform_coverage",
+      "user_question": "Which AI search visibility platforms are strongest for marketing teams tracking brand mentions across major AI assistants?",
+      "zh_translation": "哪些 AI 搜索可见性平台最适合营销团队追踪品牌在主流 AI 助手中的提及？",
+      "standalone_rewrite": "Which AI search visibility platforms are strongest for marketing teams tracking brand mentions across major AI assistants?",
+      "retrieval_rewrite": "AI search visibility platform cross platform mentions brand visibility monitoring",
+      "evidence_query": "AI search visibility platform cross platform mentions platform coverage evidence",
+      "title_seed": "AI search visibility platform: Cross Platform Mentions",
+      "monitoring_prompt": "Which AI search visibility platforms are strongest for marketing teams tracking brand mentions across major AI assistants?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|cross_platform_mentions|brand_visibility_monitoring|major_ai_assistants|01",
+      "intent_detail": {
+        "cluster": "cross_platform_mentions",
+        "scenario": "brand_visibility_monitoring",
+        "constraint": "major_ai_assistants"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-02",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "workflow_evidence",
+      "user_question": "Recommend AI search analytics tools for agencies that need separate client workspaces and reusable reporting.",
+      "zh_translation": "请推荐适合需要独立客户工作区和可复用报告的代理商使用的 AI 搜索分析工具。",
+      "standalone_rewrite": "Recommend AI search analytics tools for agencies that need separate client workspaces and reusable reporting.",
+      "retrieval_rewrite": "AI search visibility platform agency workspaces multi client reporting",
+      "evidence_query": "AI search visibility platform agency workspaces workflow evidence evidence",
+      "title_seed": "AI search visibility platform: Agency Workspaces",
+      "monitoring_prompt": "Recommend AI search analytics tools for agencies that need separate client workspaces and reusable reporting.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|agency_workspaces|multi_client_reporting|separate_workspaces|02",
+      "intent_detail": {
+        "cluster": "agency_workspaces",
+        "scenario": "multi_client_reporting",
+        "constraint": "separate_workspaces"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-03",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "feature_evidence",
+      "user_question": "What AI visibility platforms give content teams useful prompt-level insights instead of only a visibility score?",
+      "zh_translation": "哪些 AI 可见性平台能为内容团队提供有用的 Prompt 级洞察，而不只是一个可见度分数？",
+      "standalone_rewrite": "What AI visibility platforms give content teams useful prompt-level insights instead of only a visibility score?",
+      "retrieval_rewrite": "AI search visibility platform prompt insights content planning",
+      "evidence_query": "AI search visibility platform prompt insights feature evidence evidence",
+      "title_seed": "AI search visibility platform: Prompt Insights",
+      "monitoring_prompt": "What AI visibility platforms give content teams useful prompt-level insights instead of only a visibility score?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|prompt_insights|content_planning|prompt_level_analysis|03",
+      "intent_detail": {
+        "cluster": "prompt_insights",
+        "scenario": "content_planning",
+        "constraint": "prompt_level_analysis"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-04",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "feature_evidence",
+      "user_question": "Which AI citation tracking tools help SEO managers trace the sources that influence AI-generated answers?",
+      "zh_translation": "哪些 AI 引用追踪工具能帮助 SEO 负责人追溯影响 AI 生成答案的来源？",
+      "standalone_rewrite": "Which AI citation tracking tools help SEO managers trace the sources that influence AI-generated answers?",
+      "retrieval_rewrite": "AI search visibility platform citation sources citation analysis",
+      "evidence_query": "AI search visibility platform citation sources feature evidence evidence",
+      "title_seed": "AI search visibility platform: Citation Sources",
+      "monitoring_prompt": "Which AI citation tracking tools help SEO managers trace the sources that influence AI-generated answers?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|citation_sources|citation_analysis|source_traceability|04",
+      "intent_detail": {
+        "cluster": "citation_sources",
+        "scenario": "citation_analysis",
+        "constraint": "source_traceability"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-05",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "feature_evidence",
+      "user_question": "Please recommend AI search visibility platforms with competitive intelligence for an in-house brand team.",
+      "zh_translation": "请推荐具备竞品情报能力、适合企业内部品牌团队的 AI 搜索可见性平台。",
+      "standalone_rewrite": "Please recommend AI search visibility platforms with competitive intelligence for an in-house brand team.",
+      "retrieval_rewrite": "AI search visibility platform competitive intelligence competitor monitoring",
+      "evidence_query": "AI search visibility platform competitive intelligence feature evidence evidence",
+      "title_seed": "AI search visibility platform: Competitive Intelligence",
+      "monitoring_prompt": "Please recommend AI search visibility platforms with competitive intelligence for an in-house brand team.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|competitive_intelligence|competitor_monitoring|brand_comparison|05",
+      "intent_detail": {
+        "cluster": "competitive_intelligence",
+        "scenario": "competitor_monitoring",
+        "constraint": "brand_comparison"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-06",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "evaluation",
+      "cluster": "generic_recommendation",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "workflow_evidence",
+      "user_question": "Which generative engine optimization (GEO) platforms turn visibility findings into prioritized actions for marketers?",
+      "zh_translation": "哪些生成式引擎优化（GEO）平台能把可见度发现转化为面向营销人员的优先行动？",
+      "standalone_rewrite": "Which generative engine optimization (GEO) platforms turn visibility findings into prioritized actions for marketers?",
+      "retrieval_rewrite": "AI search visibility platform geo actions action planning",
+      "evidence_query": "AI search visibility platform geo actions workflow evidence evidence",
+      "title_seed": "AI search visibility platform: Geo Actions",
+      "monitoring_prompt": "Which generative engine optimization (GEO) platforms turn visibility findings into prioritized actions for marketers?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|geo_actions|action_planning|prioritized_recommendations|06",
+      "intent_detail": {
+        "cluster": "geo_actions",
+        "scenario": "action_planning",
+        "constraint": "prioritized_recommendations"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-07",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "reporting_evidence",
+      "user_question": "What answer engine optimization (AEO) platforms suit agencies reporting results to several clients?",
+      "zh_translation": "哪些答案引擎优化（AEO）平台适合需要向多个客户汇报结果的代理商？",
+      "standalone_rewrite": "What answer engine optimization (AEO) platforms suit agencies reporting results to several clients?",
+      "retrieval_rewrite": "AI search visibility platform aeo agency reporting client reporting",
+      "evidence_query": "AI search visibility platform aeo agency reporting reporting evidence evidence",
+      "title_seed": "AI search visibility platform: Aeo Agency Reporting",
+      "monitoring_prompt": "What answer engine optimization (AEO) platforms suit agencies reporting results to several clients?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|aeo_agency_reporting|client_reporting|multi_client|07",
+      "intent_detail": {
+        "cluster": "aeo_agency_reporting",
+        "scenario": "client_reporting",
+        "constraint": "multi_client"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-08",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "evaluation",
+      "cluster": "generic_recommendation",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "integration_evidence",
+      "user_question": "Which LLM visibility platforms work well for analytics teams that need exports into existing dashboards?",
+      "zh_translation": "哪些 LLM 可见性平台适合需要把数据导入现有仪表盘的营销分析团队？",
+      "standalone_rewrite": "Which LLM visibility platforms work well for analytics teams that need exports into existing dashboards?",
+      "retrieval_rewrite": "AI search visibility platform dashboard exports analytics integration",
+      "evidence_query": "AI search visibility platform dashboard exports integration evidence evidence",
+      "title_seed": "AI search visibility platform: Dashboard Exports",
+      "monitoring_prompt": "Which LLM visibility platforms work well for analytics teams that need exports into existing dashboards?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|dashboard_exports|analytics_integration|existing_dashboards|08",
+      "intent_detail": {
+        "cluster": "dashboard_exports",
+        "scenario": "analytics_integration",
+        "constraint": "existing_dashboards"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-09",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "feature_evidence",
+      "user_question": "Can you suggest AI search analytics tools that compare brand visibility by prompt, topic, and model?",
+      "zh_translation": "你能推荐可按 Prompt、主题和模型比较品牌可见度的 AI 搜索分析工具吗？",
+      "standalone_rewrite": "Can you suggest AI search analytics tools that compare brand visibility by prompt, topic, and model?",
+      "retrieval_rewrite": "AI search visibility platform analysis dimensions visibility analysis",
+      "evidence_query": "AI search visibility platform analysis dimensions feature evidence evidence",
+      "title_seed": "AI search visibility platform: Analysis Dimensions",
+      "monitoring_prompt": "Can you suggest AI search analytics tools that compare brand visibility by prompt, topic, and model?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|analysis_dimensions|visibility_analysis|prompt_topic_model|09",
+      "intent_detail": {
+        "cluster": "analysis_dimensions",
+        "scenario": "visibility_analysis",
+        "constraint": "prompt_topic_model"
+      },
+      "condition_types": [
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-10",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "fit_evidence",
+      "user_question": "I need an AI search visibility platform for a small agency managing multiple brands; which options fit?",
+      "zh_translation": "我需要一款供小型代理商管理多个品牌的 AI 搜索可见性平台，哪些选择合适？",
+      "standalone_rewrite": "I need an AI search visibility platform for a small agency managing multiple brands; which options fit?",
+      "retrieval_rewrite": "AI search visibility platform small agency fit multi brand management",
+      "evidence_query": "AI search visibility platform small agency fit fit evidence evidence",
+      "title_seed": "AI search visibility platform: Small Agency Fit",
+      "monitoring_prompt": "I need an AI search visibility platform for a small agency managing multiple brands; which options fit?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|small_agency_fit|multi_brand_management|small_team|10",
+      "intent_detail": {
+        "cluster": "small_agency_fit",
+        "scenario": "multi_brand_management",
+        "constraint": "small_team"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-11",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Are dedicated AI search visibility platforms or general SEO suites better for measuring mentions in AI answers?",
+      "zh_translation": "衡量 AI 回答中的品牌提及时，专用 AI 搜索可见性平台和通用 SEO 套件哪个更合适？",
+      "standalone_rewrite": "Are dedicated AI search visibility platforms or general SEO suites better for measuring mentions in AI answers?",
+      "retrieval_rewrite": "AI search visibility platform dedicated vs seo suite tool stack choice",
+      "evidence_query": "AI search visibility platform dedicated vs seo suite comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Dedicated Vs Seo Suite",
+      "monitoring_prompt": "Are dedicated AI search visibility platforms or general SEO suites better for measuring mentions in AI answers?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|dedicated_vs_seo_suite|tool_stack_choice|general_seo_suite|11",
+      "intent_detail": {
+        "cluster": "dedicated_vs_seo_suite",
+        "scenario": "tool_stack_choice",
+        "constraint": "general_seo_suite"
+      },
+      "condition_types": [
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-12",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Compare AI search analytics tools with manual prompt sampling for a marketing team that needs repeatable reporting.",
+      "zh_translation": "对于需要可重复报告的营销团队，请比较 AI 搜索分析工具与人工抽样 Prompt 的方式。",
+      "standalone_rewrite": "Compare AI search analytics tools with manual prompt sampling for a marketing team that needs repeatable reporting.",
+      "retrieval_rewrite": "AI search visibility platform platform vs manual measurement process",
+      "evidence_query": "AI search visibility platform platform vs manual comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Platform Vs Manual",
+      "monitoring_prompt": "Compare AI search analytics tools with manual prompt sampling for a marketing team that needs repeatable reporting.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|platform_vs_manual|measurement_process|manual_sampling|12",
+      "intent_detail": {
+        "cluster": "platform_vs_manual",
+        "scenario": "measurement_process",
+        "constraint": "manual_sampling"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-13",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Which is more useful for content planning: an AI visibility platform with citation analysis or one focused on mention counts?",
+      "zh_translation": "用于内容规划时，带引用分析的 AI 可见性平台和只关注提及次数的平台哪个更有用？",
+      "standalone_rewrite": "Which is more useful for content planning: an AI visibility platform with citation analysis or one focused on mention counts?",
+      "retrieval_rewrite": "AI search visibility platform citation vs mentions content planning",
+      "evidence_query": "AI search visibility platform citation vs mentions comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Citation Vs Mentions",
+      "monitoring_prompt": "Which is more useful for content planning: an AI visibility platform with citation analysis or one focused on mention counts?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|citation_vs_mentions|content_planning|citation_analysis_vs_counts|13",
+      "intent_detail": {
+        "cluster": "citation_vs_mentions",
+        "scenario": "content_planning",
+        "constraint": "citation_analysis_vs_counts"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-14",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "How do AI search visibility platforms differ when one tracks prompt trends and another emphasizes model coverage?",
+      "zh_translation": "当一个平台侧重 Prompt 趋势、另一个侧重模型覆盖时，AI 搜索可见性平台应如何取舍？",
+      "standalone_rewrite": "How do AI search visibility platforms differ when one tracks prompt trends and another emphasizes model coverage?",
+      "retrieval_rewrite": "AI search visibility platform prompt trends vs models platform evaluation",
+      "evidence_query": "AI search visibility platform prompt trends vs models comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Prompt Trends Vs Models",
+      "monitoring_prompt": "How do AI search visibility platforms differ when one tracks prompt trends and another emphasizes model coverage?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|prompt_trends_vs_models|platform_evaluation|trend_vs_coverage|14",
+      "intent_detail": {
+        "cluster": "prompt_trends_vs_models",
+        "scenario": "platform_evaluation",
+        "constraint": "trend_vs_coverage"
+      },
+      "condition_types": [
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-15",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Would an AI search analytics tool with recommendations be more useful than a reporting-only platform for a lean SEO team?",
+      "zh_translation": "对精简的 SEO 团队来说，带行动建议的 AI 搜索分析工具是否比只做报告的平台更有用？",
+      "standalone_rewrite": "Would an AI search analytics tool with recommendations be more useful than a reporting-only platform for a lean SEO team?",
+      "retrieval_rewrite": "AI search visibility platform recommendations vs reporting lean team workflow",
+      "evidence_query": "AI search visibility platform recommendations vs reporting comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Recommendations Vs Reporting",
+      "monitoring_prompt": "Would an AI search analytics tool with recommendations be more useful than a reporting-only platform for a lean SEO team?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|recommendations_vs_reporting|lean_team_workflow|lean_team|15",
+      "intent_detail": {
+        "cluster": "recommendations_vs_reporting",
+        "scenario": "lean_team_workflow",
+        "constraint": "lean_team"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-16",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Are multi-brand AI visibility platforms or separate client accounts better for an agency's reporting workflow?",
+      "zh_translation": "对于代理商的报告工作流，多品牌 AI 可见性平台和分开的客户账号哪个更合适？",
+      "standalone_rewrite": "Are multi-brand AI visibility platforms or separate client accounts better for an agency's reporting workflow?",
+      "retrieval_rewrite": "AI search visibility platform multi brand vs accounts agency reporting",
+      "evidence_query": "AI search visibility platform multi brand vs accounts comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Multi Brand Vs Accounts",
+      "monitoring_prompt": "Are multi-brand AI visibility platforms or separate client accounts better for an agency's reporting workflow?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|multi_brand_vs_accounts|agency_reporting|multi_brand_vs_separate|16",
+      "intent_detail": {
+        "cluster": "multi_brand_vs_accounts",
+        "scenario": "agency_reporting",
+        "constraint": "multi_brand_vs_separate"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object"
+      ]
+    },
+    {
+      "question_id": "PEEC-17",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Compare generative engine optimization platforms with traditional rank trackers for deciding where to improve AI visibility.",
+      "zh_translation": "在决定从哪里提升 AI 可见度时，请比较生成式引擎优化平台与传统排名追踪工具。",
+      "standalone_rewrite": "Compare generative engine optimization platforms with traditional rank trackers for deciding where to improve AI visibility.",
+      "retrieval_rewrite": "AI search visibility platform geo vs rank tracking optimization planning",
+      "evidence_query": "AI search visibility platform geo vs rank tracking comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Geo Vs Rank Tracking",
+      "monitoring_prompt": "Compare generative engine optimization platforms with traditional rank trackers for deciding where to improve AI visibility.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|geo_vs_rank_tracking|optimization_planning|traditional_rank_tracker|17",
+      "intent_detail": {
+        "cluster": "geo_vs_rank_tracking",
+        "scenario": "optimization_planning",
+        "constraint": "traditional_rank_tracker"
+      },
+      "condition_types": [
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-18",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Which trade-off matters more in answer engine optimization platforms: broader AI coverage or deeper citation evidence?",
+      "zh_translation": "选择答案引擎优化平台时，更广的 AI 覆盖和更深入的引用证据之间应如何取舍？",
+      "standalone_rewrite": "Which trade-off matters more in answer engine optimization platforms: broader AI coverage or deeper citation evidence?",
+      "retrieval_rewrite": "AI search visibility platform coverage vs citations platform evaluation",
+      "evidence_query": "AI search visibility platform coverage vs citations comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Coverage Vs Citations",
+      "monitoring_prompt": "Which trade-off matters more in answer engine optimization platforms: broader AI coverage or deeper citation evidence?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|coverage_vs_citations|platform_evaluation|coverage_vs_depth|18",
+      "intent_detail": {
+        "cluster": "coverage_vs_citations",
+        "scenario": "platform_evaluation",
+        "constraint": "coverage_vs_depth"
+      },
+      "condition_types": [
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-19",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "How should agencies choose between LLM visibility platforms with simple dashboards and those with deeper exports?",
+      "zh_translation": "代理商应如何在仪表盘简单的 LLM 可见性平台与导出能力更深入的平台之间选择？",
+      "standalone_rewrite": "How should agencies choose between LLM visibility platforms with simple dashboards and those with deeper exports?",
+      "retrieval_rewrite": "AI search visibility platform simplicity vs exports agency tool selection",
+      "evidence_query": "AI search visibility platform simplicity vs exports comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Simplicity Vs Exports",
+      "monitoring_prompt": "How should agencies choose between LLM visibility platforms with simple dashboards and those with deeper exports?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|simplicity_vs_exports|agency_tool_selection|dashboard_vs_exports|19",
+      "intent_detail": {
+        "cluster": "simplicity_vs_exports",
+        "scenario": "agency_tool_selection",
+        "constraint": "dashboard_vs_exports"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object"
+      ]
+    },
+    {
+      "question_id": "PEEC-20",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Is automated AI citation tracking better than periodic manual reviews for finding content opportunities?",
+      "zh_translation": "自动化 AI 引用追踪是否比定期人工复核更适合发现内容机会？",
+      "standalone_rewrite": "Is automated AI citation tracking better than periodic manual reviews for finding content opportunities?",
+      "retrieval_rewrite": "AI search visibility platform automated vs manual citations opportunity discovery",
+      "evidence_query": "AI search visibility platform automated vs manual citations comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Automated Vs Manual Citations",
+      "monitoring_prompt": "Is automated AI citation tracking better than periodic manual reviews for finding content opportunities?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|automated_vs_manual_citations|opportunity_discovery|manual_review|20",
+      "intent_detail": {
+        "cluster": "automated_vs_manual_citations",
+        "scenario": "opportunity_discovery",
+        "constraint": "manual_review"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object"
+      ]
+    },
+    {
+      "question_id": "PEEC-21",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "fit_evidence",
+      "user_question": "Should a five-person content team adopt an AI search visibility platform before expanding its existing SEO stack?",
+      "zh_translation": "五人内容团队是否应在扩展现有 SEO 工具栈之前采用 AI 搜索可见性平台？",
+      "standalone_rewrite": "Should a five-person content team adopt an AI search visibility platform before expanding its existing SEO stack?",
+      "retrieval_rewrite": "AI search visibility platform adoption priority stack planning",
+      "evidence_query": "AI search visibility platform adoption priority fit evidence evidence",
+      "title_seed": "AI search visibility platform: Adoption Priority",
+      "monitoring_prompt": "Should a five-person content team adopt an AI search visibility platform before expanding its existing SEO stack?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|adoption_priority|stack_planning|five_person_team|21",
+      "intent_detail": {
+        "cluster": "adoption_priority",
+        "scenario": "stack_planning",
+        "constraint": "five_person_team"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint",
+        "comparison_object"
+      ]
+    },
+    {
+      "question_id": "PEEC-22",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "roi_evidence",
+      "user_question": "Is an AI search analytics tool worth adding when a brand already samples AI answers manually every month?",
+      "zh_translation": "当品牌每月已经人工抽样 AI 回答时，是否值得再增加 AI 搜索分析工具？",
+      "standalone_rewrite": "Is an AI search analytics tool worth adding when a brand already samples AI answers manually every month?",
+      "retrieval_rewrite": "AI search visibility platform manual process upgrade tool adoption",
+      "evidence_query": "AI search visibility platform manual process upgrade roi evidence evidence",
+      "title_seed": "AI search visibility platform: Manual Process Upgrade",
+      "monitoring_prompt": "Is an AI search analytics tool worth adding when a brand already samples AI answers manually every month?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|manual_process_upgrade|tool_adoption|monthly_manual_sampling|22",
+      "intent_detail": {
+        "cluster": "manual_process_upgrade",
+        "scenario": "tool_adoption",
+        "constraint": "monthly_manual_sampling"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint",
+        "comparison_object"
+      ]
+    },
+    {
+      "question_id": "PEEC-23",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "fit_evidence",
+      "user_question": "Would an AI visibility platform be the right choice for an agency whose main need is client-ready competitive reporting?",
+      "zh_translation": "对于主要需要生成客户可用竞品报告的代理商，AI 可见性平台是否是合适选择？",
+      "standalone_rewrite": "Would an AI visibility platform be the right choice for an agency whose main need is client-ready competitive reporting?",
+      "retrieval_rewrite": "AI search visibility platform agency reporting fit client reporting",
+      "evidence_query": "AI search visibility platform agency reporting fit fit evidence evidence",
+      "title_seed": "AI search visibility platform: Agency Reporting Fit",
+      "monitoring_prompt": "Would an AI visibility platform be the right choice for an agency whose main need is client-ready competitive reporting?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|agency_reporting_fit|client_reporting|client_ready_reports|23",
+      "intent_detail": {
+        "cluster": "agency_reporting_fit",
+        "scenario": "client_reporting",
+        "constraint": "client_ready_reports"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-24",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Can an AI search visibility platform replace a spreadsheet-based prompt tracker for a growing brand team?",
+      "zh_translation": "对于不断扩大的品牌团队，AI 搜索可见性平台能否替代基于电子表格的 Prompt 追踪方式？",
+      "standalone_rewrite": "Can an AI search visibility platform replace a spreadsheet-based prompt tracker for a growing brand team?",
+      "retrieval_rewrite": "AI search visibility platform spreadsheet replacement workflow upgrade",
+      "evidence_query": "AI search visibility platform spreadsheet replacement comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Spreadsheet Replacement",
+      "monitoring_prompt": "Can an AI search visibility platform replace a spreadsheet-based prompt tracker for a growing brand team?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|spreadsheet_replacement|workflow_upgrade|growing_team|24",
+      "intent_detail": {
+        "cluster": "spreadsheet_replacement",
+        "scenario": "workflow_upgrade",
+        "constraint": "growing_team"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-25",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "integration_evidence",
+      "user_question": "Should marketing analytics teams choose an AI search analytics tool if they require data exports for every weekly review?",
+      "zh_translation": "如果每周复盘都需要导出数据，营销分析团队是否应选择 AI 搜索分析工具？",
+      "standalone_rewrite": "Should marketing analytics teams choose an AI search analytics tool if they require data exports for every weekly review?",
+      "retrieval_rewrite": "AI search visibility platform export requirement weekly review",
+      "evidence_query": "AI search visibility platform export requirement integration evidence evidence",
+      "title_seed": "AI search visibility platform: Export Requirement",
+      "monitoring_prompt": "Should marketing analytics teams choose an AI search analytics tool if they require data exports for every weekly review?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|export_requirement|weekly_review|mandatory_exports|25",
+      "intent_detail": {
+        "cluster": "export_requirement",
+        "scenario": "weekly_review",
+        "constraint": "mandatory_exports"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-26",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "fit_evidence",
+      "user_question": "Is an AI citation tracking tool a good fit when source discovery matters more than raw mention volume?",
+      "zh_translation": "当来源发现比原始提及量更重要时，AI 引用追踪工具是否合适？",
+      "standalone_rewrite": "Is an AI citation tracking tool a good fit when source discovery matters more than raw mention volume?",
+      "retrieval_rewrite": "AI search visibility platform source first fit source discovery",
+      "evidence_query": "AI search visibility platform source first fit fit evidence evidence",
+      "title_seed": "AI search visibility platform: Source First Fit",
+      "monitoring_prompt": "Is an AI citation tracking tool a good fit when source discovery matters more than raw mention volume?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|source_first_fit|source_discovery|source_over_volume|26",
+      "intent_detail": {
+        "cluster": "source_first_fit",
+        "scenario": "source_discovery",
+        "constraint": "source_over_volume"
+      },
+      "condition_types": [
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-27",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "fit_evidence",
+      "user_question": "Would a generative engine optimization platform be suitable for a team that only needs visibility monitoring, not content generation?",
+      "zh_translation": "对于只需要可见度监测、不需要内容生成的团队，生成式引擎优化平台是否合适？",
+      "standalone_rewrite": "Would a generative engine optimization platform be suitable for a team that only needs visibility monitoring, not content generation?",
+      "retrieval_rewrite": "AI search visibility platform monitoring only fit scope selection",
+      "evidence_query": "AI search visibility platform monitoring only fit fit evidence evidence",
+      "title_seed": "AI search visibility platform: Monitoring Only Fit",
+      "monitoring_prompt": "Would a generative engine optimization platform be suitable for a team that only needs visibility monitoring, not content generation?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|monitoring_only_fit|scope_selection|monitoring_not_generation|27",
+      "intent_detail": {
+        "cluster": "monitoring_only_fit",
+        "scenario": "scope_selection",
+        "constraint": "monitoring_not_generation"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-28",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "pricing_evidence",
+      "user_question": "Should a small agency pay for an answer engine optimization platform with multi-client reporting?",
+      "zh_translation": "小型代理商是否应该为具备多客户报告能力的答案引擎优化平台付费？",
+      "standalone_rewrite": "Should a small agency pay for an answer engine optimization platform with multi-client reporting?",
+      "retrieval_rewrite": "AI search visibility platform small agency value subscription decision",
+      "evidence_query": "AI search visibility platform small agency value pricing evidence evidence",
+      "title_seed": "AI search visibility platform: Small Agency Value",
+      "monitoring_prompt": "Should a small agency pay for an answer engine optimization platform with multi-client reporting?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|small_agency_value|subscription_decision|small_agency_budget|28",
+      "intent_detail": {
+        "cluster": "small_agency_value",
+        "scenario": "subscription_decision",
+        "constraint": "small_agency_budget"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-29",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "evaluation",
+      "cluster": "generic_decision",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "reliability_evidence",
+      "user_question": "Is an LLM visibility platform appropriate for measuring brand performance when model outputs change frequently?",
+      "zh_translation": "当模型输出频繁变化时，LLM 可见性平台是否适合衡量品牌表现？",
+      "standalone_rewrite": "Is an LLM visibility platform appropriate for measuring brand performance when model outputs change frequently?",
+      "retrieval_rewrite": "AI search visibility platform volatile outputs measurement reliability",
+      "evidence_query": "AI search visibility platform volatile outputs reliability evidence evidence",
+      "title_seed": "AI search visibility platform: Volatile Outputs",
+      "monitoring_prompt": "Is an LLM visibility platform appropriate for measuring brand performance when model outputs change frequently?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|volatile_outputs|measurement_reliability|changing_outputs|29",
+      "intent_detail": {
+        "cluster": "volatile_outputs",
+        "scenario": "measurement_reliability",
+        "constraint": "changing_outputs"
+      },
+      "condition_types": [
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-30",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Would an AI visibility platform with integrations justify replacing disconnected reporting tools for an in-house team?",
+      "zh_translation": "对企业内部团队来说，带集成能力的 AI 可见性平台是否值得替换分散的报告工具？",
+      "standalone_rewrite": "Would an AI visibility platform with integrations justify replacing disconnected reporting tools for an in-house team?",
+      "retrieval_rewrite": "AI search visibility platform integrated stack reporting consolidation",
+      "evidence_query": "AI search visibility platform integrated stack comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Integrated Stack",
+      "monitoring_prompt": "Would an AI visibility platform with integrations justify replacing disconnected reporting tools for an in-house team?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|integrated_stack|reporting_consolidation|disconnected_tools|30",
+      "intent_detail": {
+        "cluster": "integrated_stack",
+        "scenario": "reporting_consolidation",
+        "constraint": "disconnected_tools"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-31",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "evaluation",
+      "cluster": "generic_recommendation",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "reliability_evidence",
+      "user_question": "Which AI search visibility platforms have credible evidence of reliable prompt tracking over time?",
+      "zh_translation": "哪些 AI 搜索可见性平台有可信证据证明能长期稳定追踪 Prompt？",
+      "standalone_rewrite": "Which AI search visibility platforms have credible evidence of reliable prompt tracking over time?",
+      "retrieval_rewrite": "AI search visibility platform tracking reliability longitudinal monitoring",
+      "evidence_query": "AI search visibility platform tracking reliability reliability evidence evidence",
+      "title_seed": "AI search visibility platform: Tracking Reliability",
+      "monitoring_prompt": "Which AI search visibility platforms have credible evidence of reliable prompt tracking over time?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|tracking_reliability|longitudinal_monitoring|over_time|31",
+      "intent_detail": {
+        "cluster": "tracking_reliability",
+        "scenario": "longitudinal_monitoring",
+        "constraint": "over_time"
+      },
+      "condition_types": [
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-32",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "usability_evidence",
+      "user_question": "Recommend AI search analytics tools that make citation changes understandable to nontechnical brand marketers.",
+      "zh_translation": "请推荐能让非技术品牌营销人员看懂引用变化的 AI 搜索分析工具。",
+      "standalone_rewrite": "Recommend AI search analytics tools that make citation changes understandable to nontechnical brand marketers.",
+      "retrieval_rewrite": "AI search visibility platform nontechnical usability citation reporting",
+      "evidence_query": "AI search visibility platform nontechnical usability usability evidence evidence",
+      "title_seed": "AI search visibility platform: Nontechnical Usability",
+      "monitoring_prompt": "Recommend AI search analytics tools that make citation changes understandable to nontechnical brand marketers.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|nontechnical_usability|citation_reporting|nontechnical_users|32",
+      "intent_detail": {
+        "cluster": "nontechnical_usability",
+        "scenario": "citation_reporting",
+        "constraint": "nontechnical_users"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-33",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "evaluation",
+      "cluster": "generic_recommendation",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "workflow_evidence",
+      "user_question": "Which AI visibility platforms support a practical review workflow before teams act on automated recommendations?",
+      "zh_translation": "哪些 AI 可见性平台支持在团队执行自动建议前进行实用的人工审核？",
+      "standalone_rewrite": "Which AI visibility platforms support a practical review workflow before teams act on automated recommendations?",
+      "retrieval_rewrite": "AI search visibility platform human review recommendation review",
+      "evidence_query": "AI search visibility platform human review workflow evidence evidence",
+      "title_seed": "AI search visibility platform: Human Review",
+      "monitoring_prompt": "Which AI visibility platforms support a practical review workflow before teams act on automated recommendations?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|human_review|recommendation_review|human_approval|33",
+      "intent_detail": {
+        "cluster": "human_review",
+        "scenario": "recommendation_review",
+        "constraint": "human_approval"
+      },
+      "condition_types": [
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-34",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "feature_evidence",
+      "user_question": "Can you recommend AI search visibility platforms for teams comparing performance across several product lines?",
+      "zh_translation": "你能推荐适合跨多个产品线比较表现的 AI 搜索可见性平台吗？",
+      "standalone_rewrite": "Can you recommend AI search visibility platforms for teams comparing performance across several product lines?",
+      "retrieval_rewrite": "AI search visibility platform product line comparison portfolio monitoring",
+      "evidence_query": "AI search visibility platform product line comparison feature evidence evidence",
+      "title_seed": "AI search visibility platform: Product Line Comparison",
+      "monitoring_prompt": "Can you recommend AI search visibility platforms for teams comparing performance across several product lines?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|product_line_comparison|portfolio_monitoring|multiple_product_lines|34",
+      "intent_detail": {
+        "cluster": "product_line_comparison",
+        "scenario": "portfolio_monitoring",
+        "constraint": "multiple_product_lines"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-35",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Are AI search analytics tools with native recommendations better than platforms that rely on external agents for actions?",
+      "zh_translation": "带原生行动建议的 AI 搜索分析工具是否比依赖外部 Agent 执行动作的平台更合适？",
+      "standalone_rewrite": "Are AI search analytics tools with native recommendations better than platforms that rely on external agents for actions?",
+      "retrieval_rewrite": "AI search visibility platform native vs external agents action workflow",
+      "evidence_query": "AI search visibility platform native vs external agents comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Native Vs External Agents",
+      "monitoring_prompt": "Are AI search analytics tools with native recommendations better than platforms that rely on external agents for actions?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|native_vs_external_agents|action_workflow|native_vs_external|35",
+      "intent_detail": {
+        "cluster": "native_vs_external_agents",
+        "scenario": "action_workflow",
+        "constraint": "native_vs_external"
+      },
+      "condition_types": [
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-36",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "generic_comparison",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "generic_evaluation",
+      "constraint": "generic_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Compare AI visibility platforms that monitor many models with those optimized for one priority AI assistant.",
+      "zh_translation": "请比较覆盖多种模型的 AI 可见性平台与专注单一重点 AI 助手的平台。",
+      "standalone_rewrite": "Compare AI visibility platforms that monitor many models with those optimized for one priority AI assistant.",
+      "retrieval_rewrite": "AI search visibility platform many models vs one coverage strategy",
+      "evidence_query": "AI search visibility platform many models vs one comparative evidence evidence",
+      "title_seed": "AI search visibility platform: Many Models Vs One",
+      "monitoring_prompt": "Compare AI visibility platforms that monitor many models with those optimized for one priority AI assistant.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|many_models_vs_one|coverage_strategy|breadth_vs_focus|36",
+      "intent_detail": {
+        "cluster": "many_models_vs_one",
+        "scenario": "coverage_strategy",
+        "constraint": "breadth_vs_focus"
+      },
+      "condition_types": [
+        "comparison_object",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-37",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "feature_evidence",
+      "user_question": "Which AI citation tracking tools are recommended for content teams prioritizing evidence-backed topic selection?",
+      "zh_translation": "对于重视以证据选择主题的内容团队，推荐哪些 AI 引用追踪工具？",
+      "standalone_rewrite": "Which AI citation tracking tools are recommended for content teams prioritizing evidence-backed topic selection?",
+      "retrieval_rewrite": "AI search visibility platform evidence backed topics topic selection",
+      "evidence_query": "AI search visibility platform evidence backed topics feature evidence evidence",
+      "title_seed": "AI search visibility platform: Evidence Backed Topics",
+      "monitoring_prompt": "Which AI citation tracking tools are recommended for content teams prioritizing evidence-backed topic selection?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|evidence_backed_topics|topic_selection|evidence_backed|37",
+      "intent_detail": {
+        "cluster": "evidence_backed_topics",
+        "scenario": "topic_selection",
+        "constraint": "evidence_backed"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-38",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "pricing_evidence",
+      "user_question": "Should agencies choose an AI search visibility platform that limits clients but offers deeper reporting?",
+      "zh_translation": "代理商是否应选择客户数量受限但报告更深入的 AI 搜索可见性平台？",
+      "standalone_rewrite": "Should agencies choose an AI search visibility platform that limits clients but offers deeper reporting?",
+      "retrieval_rewrite": "AI search visibility platform client limit tradeoff plan selection",
+      "evidence_query": "AI search visibility platform client limit tradeoff pricing evidence evidence",
+      "title_seed": "AI search visibility platform: Client Limit Tradeoff",
+      "monitoring_prompt": "Should agencies choose an AI search visibility platform that limits clients but offers deeper reporting?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|client_limit_tradeoff|plan_selection|client_limit|38",
+      "intent_detail": {
+        "cluster": "client_limit_tradeoff",
+        "scenario": "plan_selection",
+        "constraint": "client_limit"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-39",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "generic_recommendation",
+      "audience_role": "content_marketing_team",
+      "scenario": "generic_shortlist",
+      "constraint": "generic_recommendation_conditions",
+      "evidence_need": "workflow_evidence",
+      "user_question": "What AI search analytics tools offer the clearest path from prompt findings to content priorities?",
+      "zh_translation": "哪些 AI 搜索分析工具能最清晰地把 Prompt 发现转化为内容优先级？",
+      "standalone_rewrite": "What AI search analytics tools offer the clearest path from prompt findings to content priorities?",
+      "retrieval_rewrite": "AI search visibility platform prompt to content content prioritization",
+      "evidence_query": "AI search visibility platform prompt to content workflow evidence evidence",
+      "title_seed": "AI search visibility platform: Prompt To Content",
+      "monitoring_prompt": "What AI search analytics tools offer the clearest path from prompt findings to content priorities?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|prompt_to_content|content_prioritization|actionable_path|39",
+      "intent_detail": {
+        "cluster": "prompt_to_content",
+        "scenario": "content_prioritization",
+        "constraint": "actionable_path"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-40",
+      "question_type": "generic",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "generic_decision",
+      "audience_role": "in_house_brand_team",
+      "scenario": "generic_purchase",
+      "constraint": "generic_decision_conditions",
+      "evidence_need": "pricing_evidence",
+      "user_question": "Is a lower-cost AI visibility platform sufficient for a team validating the channel before wider rollout?",
+      "zh_translation": "对于正在验证该渠道、尚未全面铺开的团队，较低成本的 AI 可见性平台是否足够？",
+      "standalone_rewrite": "Is a lower-cost AI visibility platform sufficient for a team validating the channel before wider rollout?",
+      "retrieval_rewrite": "AI search visibility platform pilot budget fit pilot program",
+      "evidence_query": "AI search visibility platform pilot budget fit pricing evidence evidence",
+      "title_seed": "AI search visibility platform: Pilot Budget Fit",
+      "monitoring_prompt": "Is a lower-cost AI visibility platform sufficient for a team validating the channel before wider rollout?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|pilot_budget_fit|pilot_program|limited_budget|40",
+      "intent_detail": {
+        "cluster": "pilot_budget_fit",
+        "scenario": "pilot_program",
+        "constraint": "limited_budget"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-41",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "review",
+      "cluster": "branded_decision",
+      "audience_role": "in_house_brand_team",
+      "scenario": "branded_review",
+      "constraint": "branded_decision_conditions",
+      "evidence_need": "brand_evidence",
+      "user_question": "Evaluate the AI search visibility platform product Peec AI on Best AI search analytics and visibility tracking platforms for marketing teams and agencies",
+      "zh_translation": "评价 AI 搜索可见性平台产品 Peec AI 在‘最适合营销团队和代理商的 AI 搜索分析与可见性追踪平台’主题上的表现。",
+      "standalone_rewrite": "Evaluate the AI search visibility platform product Peec AI on Best AI search analytics and visibility tracking platforms for marketing teams and agencies",
+      "retrieval_rewrite": "AI search visibility platform brand sentiment brand evaluation",
+      "evidence_query": "Peec AI brand sentiment brand evidence evidence",
+      "title_seed": "Peec AI: Brand Sentiment",
+      "monitoring_prompt": "Evaluate the AI search visibility platform product Peec AI on Best AI search analytics and visibility tracking platforms for marketing teams and agencies",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|brand_sentiment|brand_evaluation|topic_scope|41",
+      "intent_detail": {
+        "cluster": "brand_sentiment",
+        "scenario": "brand_evaluation",
+        "constraint": "topic_scope"
+      },
+      "condition_types": [
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-42",
+      "question_type": "branded",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "branded_recommendation",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "branded_shortlist",
+      "constraint": "branded_recommendation_conditions",
+      "evidence_need": "brand_fit",
+      "user_question": "Would Peec AI make a credible AI search visibility platform shortlist for a multi-client agency?",
+      "zh_translation": "对于多客户代理商，Peec AI 是否值得进入 AI 搜索可见性平台候选名单？",
+      "standalone_rewrite": "Would Peec AI make a credible AI search visibility platform shortlist for a multi-client agency?",
+      "retrieval_rewrite": "AI search visibility platform agency shortlist multi client selection",
+      "evidence_query": "Peec AI agency shortlist brand fit evidence",
+      "title_seed": "Peec AI: Agency Shortlist",
+      "monitoring_prompt": "Would Peec AI make a credible AI search visibility platform shortlist for a multi-client agency?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|agency_shortlist|multi_client_selection|multi_client|42",
+      "intent_detail": {
+        "cluster": "agency_shortlist",
+        "scenario": "multi_client_selection",
+        "constraint": "multi_client"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-43",
+      "question_type": "branded",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "branded_recommendation",
+      "audience_role": "content_marketing_team",
+      "scenario": "branded_shortlist",
+      "constraint": "branded_recommendation_conditions",
+      "evidence_need": "brand_capability",
+      "user_question": "Should content teams shortlist Peec AI as a generative engine optimization (GEO) platform for prompt and citation analysis?",
+      "zh_translation": "内容团队是否应把 Peec AI 作为用于 Prompt 与引用分析的生成式引擎优化（GEO）平台候选？",
+      "standalone_rewrite": "Should content teams shortlist Peec AI as a generative engine optimization (GEO) platform for prompt and citation analysis?",
+      "retrieval_rewrite": "AI search visibility platform geo shortlist prompt citation selection",
+      "evidence_query": "Peec AI geo shortlist brand capability evidence",
+      "title_seed": "Peec AI: Geo Shortlist",
+      "monitoring_prompt": "Should content teams shortlist Peec AI as a generative engine optimization (GEO) platform for prompt and citation analysis?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|geo_shortlist|prompt_citation_selection|prompt_and_citation|43",
+      "intent_detail": {
+        "cluster": "geo_shortlist",
+        "scenario": "prompt_citation_selection",
+        "constraint": "prompt_and_citation"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-44",
+      "question_type": "branded",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "branded_recommendation",
+      "audience_role": "marketing_analytics_team",
+      "scenario": "branded_shortlist",
+      "constraint": "branded_recommendation_conditions",
+      "evidence_need": "brand_fit",
+      "user_question": "Can marketing analytics teams consider Peec AI among LLM visibility platforms that support reporting workflows?",
+      "zh_translation": "营销分析团队能否把 Peec AI 纳入支持报告工作流的 LLM 可见性平台候选？",
+      "standalone_rewrite": "Can marketing analytics teams consider Peec AI among LLM visibility platforms that support reporting workflows?",
+      "retrieval_rewrite": "AI search visibility platform llm reporting shortlist reporting selection",
+      "evidence_query": "Peec AI llm reporting shortlist brand fit evidence",
+      "title_seed": "Peec AI: Llm Reporting Shortlist",
+      "monitoring_prompt": "Can marketing analytics teams consider Peec AI among LLM visibility platforms that support reporting workflows?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|recommendation|llm_reporting_shortlist|reporting_selection|reporting_workflow|44",
+      "intent_detail": {
+        "cluster": "llm_reporting_shortlist",
+        "scenario": "reporting_selection",
+        "constraint": "reporting_workflow"
+      },
+      "condition_types": [
+        "target_user",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-45",
+      "question_type": "branded",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "branded_comparison",
+      "audience_role": "in_house_brand_team",
+      "scenario": "branded_evaluation",
+      "constraint": "branded_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "How does Peec AI compare with Profound as an AI search visibility platform for enterprise-style reporting?",
+      "zh_translation": "作为面向企业级报告的 AI 搜索可见性平台，Peec AI 与 Profound 相比如何？",
+      "standalone_rewrite": "How does Peec AI compare with Profound as an AI search visibility platform for enterprise-style reporting?",
+      "retrieval_rewrite": "AI search visibility platform profound comparison enterprise reporting",
+      "evidence_query": "Peec AI profound comparison comparative evidence evidence",
+      "title_seed": "Peec AI: Profound Comparison",
+      "monitoring_prompt": "How does Peec AI compare with Profound as an AI search visibility platform for enterprise-style reporting?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|profound_comparison|enterprise_reporting|Profound|45",
+      "intent_detail": {
+        "cluster": "profound_comparison",
+        "scenario": "enterprise_reporting",
+        "constraint": "Profound"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object"
+      ]
+    },
+    {
+      "question_id": "PEEC-46",
+      "question_type": "branded",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "branded_comparison",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "branded_evaluation",
+      "constraint": "branded_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Compare Peec AI with Scrunch as an answer engine optimization (AEO) platform for brand and citation analysis.",
+      "zh_translation": "在品牌与引用分析方面，请比较 Peec AI 与 Scrunch 这两款答案引擎优化（AEO）平台。",
+      "standalone_rewrite": "Compare Peec AI with Scrunch as an answer engine optimization (AEO) platform for brand and citation analysis.",
+      "retrieval_rewrite": "AI search visibility platform scrunch comparison brand citation analysis",
+      "evidence_query": "Peec AI scrunch comparison comparative evidence evidence",
+      "title_seed": "Peec AI: Scrunch Comparison",
+      "monitoring_prompt": "Compare Peec AI with Scrunch as an answer engine optimization (AEO) platform for brand and citation analysis.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|scrunch_comparison|brand_citation_analysis|Scrunch|46",
+      "intent_detail": {
+        "cluster": "scrunch_comparison",
+        "scenario": "brand_citation_analysis",
+        "constraint": "Scrunch"
+      },
+      "condition_types": [
+        "comparison_object",
+        "evaluation_criterion"
+      ]
+    },
+    {
+      "question_id": "PEEC-47",
+      "question_type": "branded",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "branded_comparison",
+      "audience_role": "in_house_brand_team",
+      "scenario": "branded_evaluation",
+      "constraint": "branded_comparison_conditions",
+      "evidence_need": "comparative_evidence",
+      "user_question": "Is Peec AI or OtterlyAI the better AI visibility platform fit for a small marketing team?",
+      "zh_translation": "对小型营销团队来说，Peec AI 和 OtterlyAI 哪个 AI 可见性平台更合适？",
+      "standalone_rewrite": "Is Peec AI or OtterlyAI the better AI visibility platform fit for a small marketing team?",
+      "retrieval_rewrite": "AI search visibility platform otterly comparison small team selection",
+      "evidence_query": "Peec AI otterly comparison comparative evidence evidence",
+      "title_seed": "Peec AI: Otterly Comparison",
+      "monitoring_prompt": "Is Peec AI or OtterlyAI the better AI visibility platform fit for a small marketing team?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|comparison|otterly_comparison|small_team_selection|OtterlyAI|47",
+      "intent_detail": {
+        "cluster": "otterly_comparison",
+        "scenario": "small_team_selection",
+        "constraint": "OtterlyAI"
+      },
+      "condition_types": [
+        "target_user",
+        "comparison_object",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-48",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "branded_decision",
+      "audience_role": "geo_aeo_seo_agency",
+      "scenario": "branded_purchase",
+      "constraint": "branded_decision_conditions",
+      "evidence_need": "brand_fit",
+      "user_question": "Should an agency adopt Peec AI as its main AI search analytics and visibility tracking platform?",
+      "zh_translation": "代理商是否应采用 Peec AI 作为主要的 AI 搜索分析与可见性追踪平台？",
+      "standalone_rewrite": "Should an agency adopt Peec AI as its main AI search analytics and visibility tracking platform?",
+      "retrieval_rewrite": "AI search visibility platform agency adoption platform adoption",
+      "evidence_query": "Peec AI agency adoption brand fit evidence",
+      "title_seed": "Peec AI: Agency Adoption",
+      "monitoring_prompt": "Should an agency adopt Peec AI as its main AI search analytics and visibility tracking platform?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|agency_adoption|platform_adoption|primary_platform|48",
+      "intent_detail": {
+        "cluster": "agency_adoption",
+        "scenario": "platform_adoption",
+        "constraint": "primary_platform"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-49",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "branded_decision",
+      "audience_role": "seo_ai_visibility_manager",
+      "scenario": "branded_purchase",
+      "constraint": "branded_decision_conditions",
+      "evidence_need": "brand_capability",
+      "user_question": "Is Peec AI the right AI search visibility platform when native actions matter more than external-agent workflows?",
+      "zh_translation": "当原生行动能力比外部 Agent 工作流更重要时，Peec AI 是否是合适的 AI 搜索可见性平台？",
+      "standalone_rewrite": "Is Peec AI the right AI search visibility platform when native actions matter more than external-agent workflows?",
+      "retrieval_rewrite": "AI search visibility platform native action fit workflow selection",
+      "evidence_query": "Peec AI native action fit brand capability evidence",
+      "title_seed": "Peec AI: Native Action Fit",
+      "monitoring_prompt": "Is Peec AI the right AI search visibility platform when native actions matter more than external-agent workflows?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|native_action_fit|workflow_selection|native_actions|49",
+      "intent_detail": {
+        "cluster": "native_action_fit",
+        "scenario": "workflow_selection",
+        "constraint": "native_actions"
+      },
+      "condition_types": [
+        "evaluation_criterion",
+        "constraint"
+      ]
+    },
+    {
+      "question_id": "PEEC-50",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "branded_decision",
+      "audience_role": "in_house_brand_team",
+      "scenario": "branded_purchase",
+      "constraint": "branded_decision_conditions",
+      "evidence_need": "pricing_evidence",
+      "user_question": "Would Peec AI be worth paying for as an LLM visibility platform if a team needs multi-brand reporting?",
+      "zh_translation": "如果团队需要多品牌报告，Peec AI 作为 LLM 可见性平台是否值得付费？",
+      "standalone_rewrite": "Would Peec AI be worth paying for as an LLM visibility platform if a team needs multi-brand reporting?",
+      "retrieval_rewrite": "AI search visibility platform multi brand value subscription decision",
+      "evidence_query": "Peec AI multi brand value pricing evidence evidence",
+      "title_seed": "Peec AI: Multi Brand Value",
+      "monitoring_prompt": "Would Peec AI be worth paying for as an LLM visibility platform if a team needs multi-brand reporting?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "topic_id": "ai-search-analytics-marketing",
+      "intent_key": "peec|decision|multi_brand_value|subscription_decision|multi_brand_reporting|50",
+      "intent_detail": {
+        "cluster": "multi_brand_value",
+        "scenario": "subscription_decision",
+        "constraint": "multi_brand_reporting"
+      },
+      "condition_types": [
+        "target_user",
+        "constraint"
+      ]
+    }
+  ]
+}

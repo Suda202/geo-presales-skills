@@ -1,0 +1,67 @@
+{
+  "recommended_threshold": 0.34,
+  "negative_patterns": [
+    "crawl answers",
+    "calculate metrics",
+    "write an article",
+    "domestic Chinese prompts"
+  ],
+  "should_trigger": [
+    {
+      "text": "为美国市场生成 50 条海外 GEO 售前诊断英文问题，并检查自然度和配额。",
+      "family": "overseas_presales_question_bank"
+    },
+    {
+      "text": "这批 AI visibility prompts 太像 SEO 关键词和文章标题，帮我改成自然英文问题。",
+      "family": "repair_keyword_like_prompts"
+    },
+    {
+      "text": "检查我们的英文 GEO 问题是否会漂到 social listening 和 SERP rank tracking。",
+      "family": "audit_category_drift"
+    },
+    {
+      "text": "给 ChatGPT 和 Perplexity 做一套可比较的海外品牌可见性监测问题库。",
+      "family": "cross_platform_monitoring_prompts"
+    },
+    {
+      "text": "这批 Profound 和 Peec AI 问题把 GEO、AEO 专业术语都改没了，帮我补覆盖但不要堆关键词。",
+      "family": "professional_term_coverage"
+    },
+    {
+      "text": "海外售前生词的品牌题里，每个 Topic 加一条固定 Evaluate 品牌情绪 Prompt，并检查模板。",
+      "family": "brand_sentiment_prompt"
+    },
+    {
+      "text": "生词不要再按 12/25/13 分配，只要推荐、比较、决策三类都有，通用题和品牌题保持 40/10。",
+      "family": "commercial_intent_coverage"
+    }
+  ],
+  "should_not_trigger": [
+    {
+      "text": "把这 50 个问题拿去 ChatGPT 实际跑一遍并抓取回答。",
+      "family": "crawl_answers"
+    },
+    {
+      "text": "根据现有回答计算提及率、平均排名、情绪和引用占比。",
+      "family": "calculate_report_metrics"
+    },
+    {
+      "text": "直接写一篇 Best AI Visibility Tools 文章。",
+      "family": "write_article"
+    },
+    {
+      "text": "为豆包、Kimi 和 DeepSeek 生成中文 GEO 监测问题。",
+      "family": "domestic_prompt_bank"
+    }
+  ],
+  "near_neighbor": [
+    {
+      "text": "分析这批海外 GEO 问题跑出来的回答，计算 Peec AI 的提及率。",
+      "family": "questions_vs_metrics"
+    },
+    {
+      "text": "基于英文 AI visibility 关键词直接写内容标题和文章大纲，不需要监测问题。",
+      "family": "questions_vs_content"
+    }
+  ]
+}

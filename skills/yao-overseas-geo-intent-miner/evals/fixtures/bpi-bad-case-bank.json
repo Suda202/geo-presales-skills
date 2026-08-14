@@ -1,0 +1,192 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "BPI",
+    "product_name": "BPI Battery Solutions",
+    "brand_object_type": "company",
+    "category_label": "rechargeable battery",
+    "aliases": [],
+    "competitors": [
+      "EPT Battery",
+      "Lepower",
+      "LiTime"
+    ],
+    "expected_total": 4,
+    "quotas": {
+      "question_type": {
+        "generic": 3,
+        "branded": 1
+      }
+    },
+    "min_distinct_counts": {},
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [],
+      "no_required_terms_reason": "No professional acronym requires a fixed quota in this fixture."
+    },
+    "required_term_coverage": {},
+    "excluded_categories": [
+      "social listening",
+      "media monitoring",
+      "SERP rank tracking"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "rechargeable battery manufacturer",
+        "rechargeable battery manufacturers",
+        "battery supplier",
+        "battery suppliers"
+      ],
+      "product_terms": [
+        "LiPo cells",
+        "LiFePO4 battery packs",
+        "custom battery packs"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "target_audiences": [
+      "oem_procurement",
+      "wearable_startup"
+    ],
+    "topics": [
+      {
+        "topic_id": "rechargeable-battery-oem-odm",
+        "topic": "Rechargeable battery manufacturers for OEM/ODM procurement"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "BPI-BAD-1",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "certification_support",
+      "audience_role": "oem_procurement",
+      "scenario": "supplier_shortlist",
+      "constraint": "certification_support",
+      "evidence_need": "supplier_capability",
+      "user_question": "What certification coverage criteria should buyers evaluate when choosing specialized product suppliers?",
+      "zh_translation": "买方在选择专业产品供应商时，应评估哪些认证覆盖标准？",
+      "standalone_rewrite": "What certification coverage criteria should buyers evaluate when choosing specialized product suppliers for OEM procurement?",
+      "retrieval_rewrite": "specialized supplier certification coverage",
+      "evidence_query": "supplier certification support evidence",
+      "title_seed": "Supplier Certification Coverage Criteria",
+      "monitoring_prompt": "What certification coverage criteria should buyers evaluate when choosing specialized product suppliers?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "bpi-certification-placeholder",
+      "topic_id": "rechargeable-battery-oem-odm"
+    },
+    {
+      "question_id": "BPI-BAD-2",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "certification_support",
+      "audience_role": "oem_procurement",
+      "scenario": "supplier_shortlist",
+      "constraint": "certification_support_framework",
+      "evidence_need": "certification_criteria",
+      "user_question": "What certifications should OEM procurement managers evaluate when choosing a rechargeable battery manufacturer?",
+      "zh_translation": "OEM 采购经理在选择充电电池制造商时，应评估哪些认证？",
+      "standalone_rewrite": "What certifications should OEM procurement managers evaluate when choosing a rechargeable battery manufacturer?",
+      "retrieval_rewrite": "rechargeable battery manufacturer certifications",
+      "evidence_query": "battery supplier certification criteria",
+      "title_seed": "Battery Manufacturer Certification Criteria",
+      "monitoring_prompt": "What certifications should OEM procurement managers evaluate when choosing a rechargeable battery manufacturer?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": false
+      },
+      "intent_key": "bpi-certification-framework",
+      "topic_id": "rechargeable-battery-oem-odm"
+    },
+    {
+      "question_id": "BPI-GOOD-1",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "custom_lipo",
+      "audience_role": "wearable_startup",
+      "scenario": "wearable_prototype",
+      "constraint": "low_moq",
+      "evidence_need": "supplier_capability",
+      "user_question": "Which battery suppliers offer low-MOQ custom LiPo cells for wearable startups?",
+      "zh_translation": "哪些电池供应商能为可穿戴设备初创公司提供低起订量的定制聚合物锂电芯？",
+      "standalone_rewrite": "Which battery suppliers offer low-MOQ custom LiPo cells for wearable device startups?",
+      "retrieval_rewrite": "low MOQ custom LiPo cell suppliers",
+      "evidence_query": "custom LiPo supplier MOQ wearable",
+      "title_seed": "Low-MOQ Custom LiPo Cell Suppliers",
+      "monitoring_prompt": "Which battery suppliers offer low-MOQ custom LiPo cells for wearable startups?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "bpi-low-moq-lipo-wearable",
+      "topic_id": "rechargeable-battery-oem-odm"
+    },
+    {
+      "question_id": "BPI-GOOD-2",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "purchase",
+      "cluster": "medical_device_fit",
+      "audience_role": "medical_device_manufacturer",
+      "scenario": "custom_pack_selection",
+      "constraint": "validation_support",
+      "evidence_need": "brand_fit",
+      "user_question": "Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement",
+      "zh_translation": "评价充电电池制造商 BPI 在面向 OEM/ODM 采购的充电电池制造商主题上的表现。",
+      "standalone_rewrite": "Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement and custom pack validation.",
+      "retrieval_rewrite": "BPI medical device custom battery pack validation",
+      "evidence_query": "BPI medical battery validation capabilities",
+      "title_seed": "Is BPI Suitable for Medical Device Battery Packs?",
+      "monitoring_prompt": "Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "bpi-medical-device-fit",
+      "topic_id": "rechargeable-battery-oem-odm"
+    }
+  ]
+}

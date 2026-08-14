@@ -1,0 +1,4 @@
+interface:
+  display_name: "海外 GEO 售前诊断报告"
+  short_description: "后端统计包的分模块结论与报告编排"
+  default_prompt: "生产售前报告"
