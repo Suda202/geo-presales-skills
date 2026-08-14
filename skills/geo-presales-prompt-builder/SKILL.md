@@ -1,12 +1,12 @@
 ---
-name: yao-overseas-geo-intent-miner
-description: Generate, rewrite, audit, and validate English AI-search question banks for overseas GEO presales diagnostics. Use for 海外 GEO 生词、英文问题库、售前监测 Prompt、AI visibility intent mining、GEO/AEO 术语覆盖、问题自然度、配额、品类或购买对象漂移；do not use for crawling answers, report metrics, or finished content.
+name: geo-presales-prompt-builder
+description: Use when generating, rewriting, auditing, or validating English AI-search monitoring Prompts for GEO presales diagnostics, including Generic/Branded quotas, commercial intent coverage, terminology, naturalness, and category or purchasing-object drift. Do not use for crawling answers, calculating metrics, or writing report conclusions.
 metadata:
   author: Overseas GEO Project
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
-# Overseas GEO Intent Miner
+# GEO Presales Prompt Builder
 
 把品牌、品类、市场、人群和售前主题转换成可直接投放海外 AI 平台的自然英文问题库。核心目标是问题质量与监测可比性，不是关键词扩写数量。
 

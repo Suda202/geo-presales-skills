@@ -1,0 +1,4 @@
+interface:
+  display_name: "GEO 售前报告"
+  short_description: "基于后端统计包生成可上传、可审计的售前分析结论 CSV"
+  default_prompt: "使用 $geo-presales-report 基于当前任务的后端统计包生成可上传的售前分析结论 CSV。"

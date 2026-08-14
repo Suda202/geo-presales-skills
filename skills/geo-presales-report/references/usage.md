@@ -69,10 +69,13 @@ M02–M05 可以分别执行。`action_context` 缺失时，M06 自动记录降�
 ## 正式产物
 
 ```text
-artifacts/report.json                  # 规范化对象输出
-artifacts/dify-compatible-output.json  # 当前七个 summary_* JSON string
-artifacts/audit.json                   # 输入哈希、模块状态、证据引用和降级记录
+artifacts/report-upload.csv             # 正式后台回传文件；UTF-8 BOM、CRLF、固定五列
+artifacts/report.json                   # 内部规范化对象输出
+artifacts/dify-compatible-output.json   # 兼容旧 Dify 的七个 summary_* JSON string
+artifacts/audit.json                    # 输入哈希、模块状态、证据引用和降级记录
 ```
+
+上传 `report-upload.csv`，不要把内部 JSON 当作人工回传文件。CSV 字段与行展开规则见 [上传 CSV 契约](report-upload-csv-contract.md)。当前版本不生成 HTML 或 PDF。
 
 ## 异常恢复
 

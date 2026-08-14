@@ -104,7 +104,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual("recommendation", bank["questions"][0]["funnel_intent"])
 
     def test_intent_miner_fixture_imports_without_translation_dependency(self):
-        fixture = REPOSITORY_ROOT / "skills/yao-overseas-geo-intent-miner/evals/fixtures/valid-bank.json"
+        fixture = REPOSITORY_ROOT / "skills/geo-presales-prompt-builder/evals/fixtures/valid-bank.json"
         raw = read_json(fixture)
         config = normalize_config({
             "run_id": "R-intent-fixture",
@@ -120,7 +120,7 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(bank["questions"][-1]["question_text"].startswith("Evaluate the "))
 
     def test_crawler_fixture_contract(self):
-        fixture = REPOSITORY_ROOT / "skills/overseas-geo-presales-report/fixtures/sample-chatgpt-crawl.json"
+        fixture = REPOSITORY_ROOT / "skills/geo-presales-report/fixtures/sample-chatgpt-crawl.json"
         raw = read_json(fixture)
         question_bank = {
             "run_id": "R-crawler",

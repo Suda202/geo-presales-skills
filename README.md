@@ -1,11 +1,11 @@
-# Overseas GEO Presales Skills
+# GEO Presales Skills
 
-Private, versioned Skill packages for the Overseas GEO presales workflow.
+Private, versioned Skill packages for the GEO presales workflow.
 
 ## Included packages
 
-- `skills/yao-overseas-geo-intent-miner/` generates and validates commercial English AI-search monitoring questions. It supports recommendation, comparison, and decision questions only; every question must preserve the category and purchasing object defined by its Topic.
-- `skills/overseas-geo-presales-report/` consumes the validated question bank when generating an Overseas GEO presales report.
+- `skills/geo-presales-prompt-builder/` generates and validates commercial English AI-search monitoring Prompts. It supports recommendation, comparison, and decision questions only; every Prompt must preserve the category and purchasing object defined by its Topic.
+- `skills/geo-presales-report/` turns company-backend statistics into evidence-constrained Chinese analysis conclusions and an upload-ready CSV. It does not recalculate production metrics or render HTML/PDF.
 - `evals/v3/` contains nine validated, non-production evaluation inputs. The BPI set and the Skill fixtures guard against known category-drift and “procurement knowledge only” failures.
 
 ## Core rules
@@ -18,8 +18,8 @@ Private, versioned Skill packages for the Overseas GEO presales workflow.
 ## Validation
 
 ```bash
-python3 skills/yao-overseas-geo-intent-miner/evals/test_validator.py
-python3 -m unittest discover -s skills/overseas-geo-presales-report/scripts/tests -p 'test_*.py'
+python3 skills/geo-presales-prompt-builder/evals/test_validator.py
+python3 -m unittest discover -s skills/geo-presales-report/scripts/tests -p 'test_*.py'
 ```
 
 The test suite is self-contained and does not call external AI platforms.

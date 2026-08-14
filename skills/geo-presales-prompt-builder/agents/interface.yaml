@@ -1,0 +1,24 @@
+interface:
+  display_name: "GEO Presales Prompt Builder"
+  short_description: "Generate and validate English GEO presales monitoring Prompts"
+  default_prompt: "Use $geo-presales-prompt-builder to build or repair an overseas-geo-question-bank/v3 English monitoring Prompt bank. Keep the configured total and Generic/Branded split exact; require recommendation, comparison, and decision, but do not assign fixed counts or generate geo_intent. Every Prompt must stay on its Topic and the same purchasing set, make the product category visible, use a unique condition-based intent_key, and lead to candidates, a trade-off, or a final fit judgment. Generic Prompts must not name any brand or competitor. In Branded, generate exactly one fixed Evaluate-the-category-company/product-brand-on-topic benchmark per Topic and classify it as decision. Include Chinese translations, completed category and professional-term assessments, frozen competitor guardrails, independent second-pass semantic review, and deterministic validation. Do not crawl answers, calculate report metrics, or write analysis conclusions."
+compatibility:
+  canonical_format: "agent-skills"
+  adapter_targets:
+    - "openai"
+    - "claude"
+    - "generic"
+  activation:
+    mode: "manual"
+    paths: []
+  execution:
+    context: "inline"
+    shell: "bash"
+  trust:
+    source_tier: "local"
+    remote_inline_execution: "forbid"
+    remote_metadata_policy: "allow-metadata-only"
+  degradation:
+    openai: "metadata-adapter"
+    claude: "neutral-source-plus-adapter"
+    generic: "neutral-source"

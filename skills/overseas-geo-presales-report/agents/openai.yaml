@@ -1,4 +1,0 @@
-interface:
-  display_name: "海外 GEO 售前诊断报告"
-  short_description: "把公司后端统计包转换为可审计的中文售前报告"
-  default_prompt: "生产售前报告"

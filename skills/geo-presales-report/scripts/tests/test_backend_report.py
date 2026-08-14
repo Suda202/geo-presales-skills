@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
@@ -296,6 +298,70 @@ class BackendReportTests(unittest.TestCase):
             self.assertNotIn("direction_id", actions[0])
             audit = MODULE.read_json(run_root / "artifacts/audit.json")
             self.assertFalse(audit["local_metric_recalculation"])
+
+    def test_full_flow_outputs_backend_upload_csv_contract(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_root, _ = MODULE.prepare_run(self.write_payload(root, payload()), root / "run")
+            self.submit_all(run_root)
+            _, manifest, _ = MODULE.finalize_run(run_root)
+
+            upload_path = run_root / "artifacts/report-upload.csv"
+            self.assertTrue(upload_path.exists(), "finalize must write the backend-upload CSV artifact")
+            self.assertEqual(manifest["artifacts"]["upload_csv"], "artifacts/report-upload.csv")
+            raw = upload_path.read_bytes()
+            self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
+            decoded = raw.decode("utf-8-sig")
+            self.assertEqual(decoded.count("\n"), decoded.count("\r\n"))
+
+            reader = csv.DictReader(io.StringIO(decoded, newline=""))
+            rows = list(reader)
+            self.assertEqual(reader.fieldnames, ["module", "path", "index", "field", "value"])
+            self.assertEqual(len(rows), 23)
+            self.assertEqual(
+                rows[:4],
+                [
+                    {
+                        "module": "summary_overview",
+                        "path": "",
+                        "index": "",
+                        "field": "title",
+                        "value": "品牌已经进入部分回答，但相对竞品仍有可见性差距",
+                    },
+                    {
+                        "module": "summary_category_actions",
+                        "path": "",
+                        "index": "",
+                        "field": "p0",
+                        "value": "优先改进问题集中在品牌尚未进入回答的企业比较场景。",
+                    },
+                    {
+                        "module": "summary_category_actions",
+                        "path": "",
+                        "index": "",
+                        "field": "p1",
+                        "value": "",
+                    },
+                    {
+                        "module": "summary_category_actions",
+                        "path": "",
+                        "index": "",
+                        "field": "p2",
+                        "value": "",
+                    },
+                ],
+            )
+            self.assertEqual(
+                rows[-1],
+                {
+                    "module": "summary_priority_opportunities",
+                    "path": "actions",
+                    "index": "0",
+                    "field": "expected_impact",
+                    "value": "提高回答采用信息的完整性",
+                },
+            )
+            self.assertNotIn("summary_final", {row["module"] for row in rows})
 
 
 if __name__ == "__main__":
