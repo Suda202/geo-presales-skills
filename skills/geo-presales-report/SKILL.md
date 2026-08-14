@@ -1,9 +1,9 @@
 ---
-name: overseas-geo-presales-report
-description: 生产或生成海外 GEO 售前报告。用户说“生产售前报告”“生成售前报告”“出一份海外 GEO 售前报告”时使用；自动从当前任务、附件、已给出的任务 ID 或工作区中定位公司后端统计包，再生成可审计的中文报告和 Dify 兼容输出。不要要求用户编写命令或提供绝对路径。
+name: geo-presales-report
+description: Use when producing or revising GEO presales analysis conclusions from a company backend statistics package, including generating an upload-ready CSV in the backend's module/path/index/field/value format. Do not use for monitoring Prompt generation, answer collection, metric calculation, or HTML/PDF rendering.
 ---
 
-# 海外 GEO 售前报告
+# GEO 售前报告
 
 ## 用户入口
 
@@ -41,17 +41,17 @@ description: 生产或生成海外 GEO 售前报告。用户说“生产售前�
 
 ```text
 overseas-geo-competitor-research
-→ yao-overseas-geo-intent-miner
+→ geo-presales-prompt-builder
 → 搜索团队采集服务（外部上游）
 → 逐回答分析服务与公司后端聚合
-→ overseas-geo-presales-report
+→ geo-presales-report
 ```
 
 本次新增的两个项目自有 Skill 不带 `yao`。生产采集由搜索团队负责，本 Skill 不调用项目内 crawler。项目内 crawler 只可用于本地测试和 shadow audit。
 
 ## 内部执行
 
-开始前读取 [后端输入契约](references/backend-input-contract.md) 和 [报告任务契约](references/backend-report-task-contract.md)。命令和异常恢复见 [使用说明](references/usage.md)。
+开始前读取 [后端输入契约](references/backend-input-contract.md)、[报告任务契约](references/backend-report-task-contract.md) 和 [上传 CSV 契约](references/report-upload-csv-contract.md)。命令和异常恢复见 [使用说明](references/usage.md)。
 
 以下命令仅供 Skill 内部执行，不作为用户调用方式。
 
@@ -90,7 +90,7 @@ overseas-geo-competitor-research
    - M06 行动在 M02–M05 完成且后端提供 `action_context` 后开放。
    - M10 最终摘要在前述模块全部完成后开放。
 
-5. 查看状态并生成正式产物。
+5. 查看状态并生成正式产物。把 `artifacts/report-upload.csv` 作为后台回传文件；不要上传内部 JSON。
 
    ```bash
    python3 scripts/backend_report.py status --run-dir /绝对路径/runs/<run-id>
@@ -109,6 +109,6 @@ overseas-geo-competitor-research
 
 ## 兼容与影子审计
 
-生产入口是 `scripts/backend_report.py`。它同时接受当前 Dify 的六个 JSON string 字段和直接 JSON 对象，并输出 `artifacts/dify-compatible-output.json`。
+生产入口是 `scripts/backend_report.py`。正式人工回传产物是带 UTF-8 BOM 的 `artifacts/report-upload.csv`，固定为 `module,path,index,field,value` 五列。`report.json`、`dify-compatible-output.json` 和 `audit.json` 继续作为内部结构化消费、兼容和审计产物；本 Skill 不生成 HTML/PDF。
 
 原 `scripts/geo_presales.py` 保留用于本地 crawler、公式回归和后端对账，只是 shadow audit，不得把它生成的本地指标覆盖公司后端正式统计。详细边界见 [影子审计说明](references/shadow-audit.md)。

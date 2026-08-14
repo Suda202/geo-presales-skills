@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -33,6 +34,7 @@ RESOLVED_STATUSES = {"accepted", "degraded"}
 CUSTOMER_BANNED = re.compile(r"P[012]|p[012]|赋能|深度赋能|全面提升|优化升级|建议您|我们应该|严重落后|毫无建树|被动挨打")
 ACTION_BANNED = re.compile(r"建议|应该|应当|需要|需|优先补齐|创建|新建|检查并完善|建设页面|强化内容")
 NUMBER_RE = re.compile(r"(?<![A-Za-z0-9_])-?\d+(?:\.\d+)?%?")
+UPLOAD_CSV_FIELDS = ("module", "path", "index", "field", "value")
 
 
 class ContractError(ValueError):
@@ -56,6 +58,21 @@ def write_json(path, value):
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(value, handle, ensure_ascii=False, indent=2)
             handle.write("\n")
+        os.replace(temp_name, target)
+    finally:
+        if os.path.exists(temp_name):
+            os.unlink(temp_name)
+
+
+def write_upload_csv(path, rows):
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=str(target.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8-sig", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=UPLOAD_CSV_FIELDS, lineterminator="\r\n")
+            writer.writeheader()
+            writer.writerows(rows)
         os.replace(temp_name, target)
     finally:
         if os.path.exists(temp_name):
@@ -644,6 +661,49 @@ def clean_dify_content(module_id, content):
     }
 
 
+def build_upload_rows(modules):
+    rows = []
+
+    def append(module, path, index, field, value):
+        rows.append({
+            "module": module,
+            "path": path,
+            "index": "" if index is None else str(index),
+            "field": field,
+            "value": "" if value is None else str(value),
+        })
+
+    overview = modules["M01"]["content"]
+    append("summary_overview", "", None, "title", overview["title"])
+
+    category_actions = modules["M05"]["content"]
+    for field in ("p0", "p1", "p2"):
+        append("summary_category_actions", "", None, field, category_actions[field])
+
+    for index, value in enumerate(overview["points"]):
+        append("summary_overview", "points", index, "text", value)
+
+    for index, value in enumerate(modules["M02"]["content"]):
+        append("summary_competitor_performance", "items", index, "text", value)
+
+    brand_expression = modules["M04"]["content"]
+    for path in ("positive_evidence", "risk_evidence"):
+        for index, item in enumerate(brand_expression[path]):
+            for field in ("keyword", "explain"):
+                append("summary_brand_expression", path, index, field, item[field])
+    for index, value in enumerate(brand_expression["analysis_items"]):
+        append("summary_brand_expression", "analysis_items", index, "text", value)
+
+    for index, value in enumerate(modules["M03"]["content"]):
+        append("summary_citation_sources", "items", index, "text", value)
+
+    for index, item in enumerate(modules["M06"]["content"]["actions"]):
+        for field in ("source_module", "title", "evidence", "action", "expected_impact"):
+            append("summary_priority_opportunities", "actions", index, field, item[field])
+
+    return rows
+
+
 def finalize_run(run_dir):
     root, manifest = load_run(run_dir)
     required = ("M01", "M02", "M03", "M04", "M05", "M06", "M10")
@@ -687,11 +747,13 @@ def finalize_run(run_dir):
     write_json(root / "artifacts/report.json", normalized)
     write_json(root / "artifacts/dify-compatible-output.json", dify)
     write_json(root / "artifacts/audit.json", audit)
+    write_upload_csv(root / "artifacts/report-upload.csv", build_upload_rows(modules))
     manifest["state"] = "COMPLETE"
     manifest["artifacts"] = {
         "report": "artifacts/report.json",
         "dify_compatible_output": "artifacts/dify-compatible-output.json",
         "audit": "artifacts/audit.json",
+        "upload_csv": "artifacts/report-upload.csv",
     }
     save_manifest(root, manifest)
     return root, manifest, normalized
@@ -759,6 +821,7 @@ def cmd_finalize(args):
     emit({
         "state": manifest["state"],
         "report_hash": report["report_hash"],
+        "upload_csv": str(root / manifest["artifacts"]["upload_csv"]),
         "report": str(root / manifest["artifacts"]["report"]),
         "dify_compatible_output": str(root / manifest["artifacts"]["dify_compatible_output"]),
         "audit": str(root / manifest["artifacts"]["audit"]),

@@ -327,7 +327,7 @@
     "platforms": [
       "ChatGPT"
     ],
-    "validator": ".agents/skills/yao-overseas-geo-intent-miner/scripts/validate_question_bank.py",
+    "validator": ".agents/skills/geo-presales-prompt-builder/scripts/validate_question_bank.py",
     "errors": [],
     "warnings": []
   },
