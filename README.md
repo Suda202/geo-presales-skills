@@ -1,6 +1,6 @@
 # GEO Presales Skills
 
-Private, versioned Skill packages for the GEO presales workflow.
+Versioned Skill packages for the GEO presales workflow.
 
 ## Included packages
 
