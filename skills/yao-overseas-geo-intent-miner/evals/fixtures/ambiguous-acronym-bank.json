@@ -1,0 +1,117 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "Peec AI",
+    "competitors": [],
+    "expected_total": 1,
+    "quotas": {
+      "question_type": {
+        "generic": 1
+      },
+      "funnel_intent": {
+        "comparison": 1
+      },
+      "cross": {
+        "generic": {
+          "comparison": 1
+        }
+      }
+    },
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [
+        {
+          "concept": "geo",
+          "source": "input_explicit",
+          "decision": "required",
+          "reason": "GEO is explicit in the input."
+        }
+      ]
+    },
+    "required_term_coverage": {
+      "geo": {
+        "label": "generative engine optimization (GEO)",
+        "terms": [
+          "generative engine optimization",
+          "GEO"
+        ],
+        "expanded_form": "generative engine optimization",
+        "acronym": "GEO",
+        "context_terms": [
+          "AI search",
+          "AI-generated answers",
+          "generative search"
+        ],
+        "min_total": 1,
+        "min_generic": 1,
+        "min_branded": 0,
+        "min_expanded": 0,
+        "min_acronym": 1
+      }
+    },
+    "excluded_categories": [
+      "social listening",
+      "media monitoring",
+      "SERP rank tracking"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search visibility",
+        "AI visibility",
+        "generative engine optimization",
+        "answer engine optimization"
+      ],
+      "product_terms": [
+        "GEO platform",
+        "GEO tool",
+        "AEO platform",
+        "AI answer monitoring"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "topics": [
+      {
+        "topic_id": "topic-1",
+        "topic": "AI search visibility platform selection"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "shortlist",
+      "cluster": "tool_shortlist",
+      "audience_role": "marketing_agency",
+      "scenario": "vendor_shortlisting",
+      "constraint": "small_team",
+      "evidence_need": "features_and_reviews",
+      "user_question": "Which GEO tools suit marketing agencies?",
+      "zh_translation": "哪些 GEO 工具适合营销代理商？",
+      "standalone_rewrite": "Which GEO tools are best for marketing agencies evaluating AI search visibility platforms?",
+      "retrieval_rewrite": "best GEO tools for agencies",
+      "evidence_query": "GEO platform features agency reviews",
+      "title_seed": "Best GEO Tools for Marketing Agencies",
+      "monitoring_prompt": "Which GEO tools suit marketing agencies?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    }
+  ]
+}

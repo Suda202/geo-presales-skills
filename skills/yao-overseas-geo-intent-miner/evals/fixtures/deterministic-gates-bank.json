@@ -1,0 +1,384 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "Acme",
+    "product_name": "VisionPulse",
+    "aliases": [
+      "VP Monitor"
+    ],
+    "competitors": [
+      "Rival"
+    ],
+    "expected_total": 10,
+    "quotas": {
+      "question_type": {
+        "generic": 10
+      },
+      "funnel_intent": {
+        "comparison": 10
+      },
+      "cross": {
+        "generic": {
+          "comparison": 10
+        }
+      }
+    },
+    "min_distinct_counts": {},
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [],
+      "no_required_terms_reason": "This fixture tests unrelated deterministic gates."
+    },
+    "required_term_coverage": {},
+    "excluded_categories": [
+      "social listening"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search visibility",
+        "AI visibility",
+        "generative engine optimization",
+        "answer engine optimization"
+      ],
+      "product_terms": [
+        "GEO platform",
+        "GEO tool",
+        "AEO platform",
+        "AI answer monitoring"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "topics": [
+      {
+        "topic_id": "topic-1",
+        "topic": "AI search visibility platform selection"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_1",
+      "audience_role": "marketer",
+      "scenario": "evaluation_1",
+      "constraint": "none",
+      "evidence_need": "features",
+      "user_question": "How do AI search visibility platforms compare?",
+      "zh_translation": "",
+      "standalone_rewrite": "How do AI search visibility platforms compare on core features?",
+      "retrieval_rewrite": "AI visibility platform comparison",
+      "evidence_query": "AI visibility platform feature comparison",
+      "title_seed": "Comparing AI Search Visibility Platforms",
+      "monitoring_prompt": "How do AI search visibility platforms compare?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q2",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_2",
+      "audience_role": "marketer",
+      "scenario": "evaluation_2",
+      "constraint": "none",
+      "evidence_need": "features",
+      "user_question": "Which VisionPulse features support AI search visibility?",
+      "zh_translation": "VisionPulse 的哪些功能支持 AI 搜索可见性？",
+      "standalone_rewrite": "Which VisionPulse features support visibility in AI-generated answers?",
+      "retrieval_rewrite": "VisionPulse AI visibility features",
+      "evidence_query": "VisionPulse feature documentation",
+      "title_seed": "VisionPulse AI Visibility Features",
+      "monitoring_prompt": "Which VisionPulse features support AI search visibility?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q2",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q3",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_3",
+      "audience_role": "marketer",
+      "scenario": "evaluation_3",
+      "constraint": "none",
+      "evidence_need": "methodology",
+      "user_question": "What does VP Monitor track in AI-generated answers?",
+      "zh_translation": "VP Monitor 会跟踪 AI 生成答案中的哪些内容？",
+      "standalone_rewrite": "What does VP Monitor measure in AI-generated answers?",
+      "retrieval_rewrite": "VP Monitor AI answer tracking",
+      "evidence_query": "VP Monitor measurement methodology",
+      "title_seed": "What VP Monitor Tracks",
+      "monitoring_prompt": "What does VP Monitor track in AI-generated answers?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q3",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q4",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "purchase",
+      "cluster": "cluster_4",
+      "audience_role": "buyer",
+      "scenario": "purchase_1",
+      "constraint": "none",
+      "evidence_need": "pricing",
+      "user_question": "Order an AI search visibility subscription.",
+      "zh_translation": "下单购买 AI 搜索可见性订阅。",
+      "standalone_rewrite": "Which AI search visibility subscription should a buyer choose?",
+      "retrieval_rewrite": "AI visibility subscription order",
+      "evidence_query": "AI visibility subscription pricing",
+      "title_seed": "AI Visibility Subscription Options",
+      "monitoring_prompt": "Order an AI search visibility subscription.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q4",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q5",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "purchase",
+      "cluster": "cluster_5",
+      "audience_role": "buyer",
+      "scenario": "purchase_2",
+      "constraint": "none",
+      "evidence_need": "pricing",
+      "user_question": "Gift an AI search visibility subscription.",
+      "zh_translation": "赠送一份 AI 搜索可见性订阅。",
+      "standalone_rewrite": "Can an AI search visibility subscription be purchased as a gift?",
+      "retrieval_rewrite": "gift AI visibility subscription",
+      "evidence_query": "AI visibility subscription gifting policy",
+      "title_seed": "Gifting an AI Visibility Subscription",
+      "monitoring_prompt": "Gift an AI search visibility subscription.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q5",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q6",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "purchase",
+      "cluster": "cluster_6",
+      "audience_role": "buyer",
+      "scenario": "purchase_3",
+      "constraint": "none",
+      "evidence_need": "pricing",
+      "user_question": "Give an AI search visibility subscription.",
+      "zh_translation": "送出一份 AI 搜索可见性订阅。",
+      "standalone_rewrite": "How can a buyer give an AI search visibility subscription?",
+      "retrieval_rewrite": "give AI visibility subscription",
+      "evidence_query": "AI visibility subscription transfer policy",
+      "title_seed": "Giving an AI Visibility Subscription",
+      "monitoring_prompt": "Give an AI search visibility subscription.",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q6",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q7",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_7",
+      "audience_role": "marketer",
+      "scenario": "evaluation_7",
+      "constraint": "none",
+      "evidence_need": "features",
+      "user_question": "Which AI search visibility platform has the best dashboards?",
+      "zh_translation": "哪款 AI 搜索可见性平台的仪表盘最好？",
+      "standalone_rewrite": "Which AI search visibility platform offers useful dashboards?",
+      "retrieval_rewrite": "AI visibility dashboard comparison",
+      "evidence_query": "AI visibility dashboard product documentation",
+      "title_seed": "AI Visibility Dashboard Comparison",
+      "monitoring_prompt": "Which AI search visibility platform has the best dashboards?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q7",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q8",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_8",
+      "audience_role": "marketer",
+      "scenario": "evaluation_8",
+      "constraint": "none",
+      "evidence_need": "features",
+      "user_question": "Which AI search visibility platform has the top reporting features?",
+      "zh_translation": "哪款 AI 搜索可见性平台的报告功能最出色？",
+      "standalone_rewrite": "Which AI search visibility platform offers useful reporting features?",
+      "retrieval_rewrite": "AI visibility reporting comparison",
+      "evidence_query": "AI visibility reporting documentation",
+      "title_seed": "AI Visibility Reporting Features",
+      "monitoring_prompt": "Which AI search visibility platform has the top reporting features?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q8",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q9",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_9",
+      "audience_role": "marketer",
+      "scenario": "evaluation_9",
+      "constraint": "none",
+      "evidence_need": "features",
+      "user_question": "Which AI search visibility platform has the most integrations?",
+      "zh_translation": "哪款 AI 搜索可见性平台的集成最多？",
+      "standalone_rewrite": "Which AI search visibility platform supports broad integrations?",
+      "retrieval_rewrite": "AI visibility platform integrations",
+      "evidence_query": "AI visibility integration documentation",
+      "title_seed": "AI Visibility Platform Integrations",
+      "monitoring_prompt": "Which AI search visibility platform has the most integrations?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q9",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q10",
+      "question_type": "generic",
+      "funnel_intent": "comparison",
+      "decision_stage": "evaluation",
+      "cluster": "cluster_10",
+      "audience_role": "marketer",
+      "scenario": "evaluation_10",
+      "constraint": "none",
+      "evidence_need": "reviews",
+      "user_question": "What do customer reviews say about AI search visibility platforms?",
+      "zh_translation": "客户评价如何看待 AI 搜索可见性平台？",
+      "standalone_rewrite": "What do verified customer reviews say about AI search visibility platforms?",
+      "retrieval_rewrite": "AI visibility platform customer feedback",
+      "evidence_query": "AI visibility verified customer feedback",
+      "title_seed": "Customer Feedback on AI Visibility Platforms",
+      "monitoring_prompt": "What do customer reviews say about AI search visibility platforms?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q10",
+      "topic_id": "topic-1"
+    }
+  ]
+}

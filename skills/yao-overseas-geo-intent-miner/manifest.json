@@ -1,0 +1,35 @@
+{
+  "id": "yao-overseas-geo-intent-miner",
+  "name": "yao-overseas-geo-intent-miner",
+  "display_name": "Yao Overseas GEO Intent Miner",
+  "version": "0.7.0",
+  "owner": "Overseas GEO Project",
+  "updated_at": "2026-08-13",
+  "review_cadence": "monthly",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "entrypoint": "SKILL.md",
+  "summary": "Generate and validate commercial English AI-search monitoring questions across recommendation, comparison, and decision, without a separate geo_intent layer; enforce visible categories, stable purchasing objects, one fixed Branded evaluation benchmark per Topic, unique intent conditions, competitor guardrails, and input-driven terminology.",
+  "factory_components": [
+    "agents",
+    "references",
+    "scripts",
+    "evals",
+    "reports"
+  ],
+  "primary_outputs": [
+    "monitoring-ready-question-bank",
+    "quota-summary",
+    "brand-sentiment-topic-coverage",
+    "intent-matrix",
+    "competitor-policy-summary",
+    "competitor-question-coverage-summary",
+    "target-audience-coverage-summary",
+    "professional-term-coverage-summary",
+    "five-field-rewrites",
+    "repair-and-rejection-log",
+    "quality-report"
+  ]
+}

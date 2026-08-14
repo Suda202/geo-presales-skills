@@ -1,0 +1,38 @@
+{
+  "source": "Suda 提供的 BPI Task 89 审计结论",
+  "source_boundary": "未获得线上英文原题；只保存任务编号、用户确认的失败描述和应触发的语义门，不把重构句伪装成原题。",
+  "cases": [
+    {
+      "case_id": "task-89-4768",
+      "task_ids": [4768],
+      "failure_family": "purchasing_object_drift",
+      "observed_failure": "报告评估 OEM/ODM 电池厂，题目却改问热管理厂商。",
+      "expected_failed_checks": ["topic_aligned", "category_aligned"],
+      "reason": "热管理厂商与充电电池制造商不是同一购买集合。"
+    },
+    {
+      "case_id": "task-89-false-recommendation",
+      "task_ids": [4751, 4753, 4754, 4755, 4757, 4758, 4759],
+      "failure_family": "false_commercial_intent",
+      "observed_failure": "通用题只问采购知识，不会稳定给出供应商名单；#4751 虽标推荐类，实际仍是了解类。",
+      "expected_failed_checks": ["commercial_intent"],
+      "reason": "标签不能代替问题本身；合理答案必须给候选供应商、推荐或明确取舍。"
+    },
+    {
+      "case_id": "task-89-4778",
+      "task_ids": [4778],
+      "failure_family": "purchasing_object_drift",
+      "observed_failure": "报告评估 OEM/ODM 电池厂，题目却改问集装箱式储能系统商。",
+      "expected_failed_checks": ["topic_aligned", "category_aligned"],
+      "reason": "集装箱式储能系统商提供的是更上层系统，不是同一类电池制造商候选。"
+    },
+    {
+      "case_id": "task-89-4789",
+      "task_ids": [4789],
+      "failure_family": "purchasing_object_drift",
+      "observed_failure": "报告评估 OEM/ODM 电池厂，题目却改问 500 MWh 储能项目长期合作伙伴。",
+      "expected_failed_checks": ["topic_aligned", "category_aligned"],
+      "reason": "大型项目合作伙伴的交付范围、候选集合和评估标准都比电池制造商更宽。"
+    }
+  ]
+}

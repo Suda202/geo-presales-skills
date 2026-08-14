@@ -1,0 +1,88 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "Acme",
+    "expected_total": 1,
+    "quotas": {
+      "question_type": {
+        "generic": 1
+      },
+      "funnel_intent": {
+        "recommendation": 1
+      },
+      "cross": {
+        "generic": {
+          "recommendation": 1
+        }
+      }
+    },
+    "min_distinct_counts": {},
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [],
+      "no_required_terms_reason": "This fixture tests translation presence only."
+    },
+    "required_term_coverage": {},
+    "excluded_categories": [
+      "social listening"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search visibility",
+        "AI visibility",
+        "generative engine optimization",
+        "answer engine optimization"
+      ],
+      "product_terms": [
+        "GEO platform",
+        "GEO tool",
+        "AEO platform",
+        "AI answer monitoring"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "topics": [
+      {
+        "topic_id": "topic-1",
+        "topic": "AI search visibility platform selection"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "measurement",
+      "audience_role": "marketer",
+      "scenario": "category_learning",
+      "constraint": "none",
+      "evidence_need": "methodology",
+      "user_question": "How do AI search visibility platforms measure brand mentions?",
+      "standalone_rewrite": "How do AI search visibility platforms measure brand mentions in AI-generated answers?",
+      "retrieval_rewrite": "AI search visibility brand mention measurement",
+      "evidence_query": "AI visibility measurement methodology",
+      "title_seed": "Measuring Brand Mentions in AI Search",
+      "monitoring_prompt": "How do AI search visibility platforms measure brand mentions?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    }
+  ]
+}

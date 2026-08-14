@@ -1,0 +1,156 @@
+{
+  "schema_version": "overseas-geo-question-bank/v3",
+  "config": {
+    "brand_name": "Peec AI",
+    "competitors": [
+      "Profound"
+    ],
+    "expected_total": 2,
+    "quotas": {
+      "question_type": {
+        "generic": 1,
+        "branded": 1
+      },
+      "funnel_intent": {
+        "recommendation": 1,
+        "decision": 1
+      },
+      "cross": {
+        "generic": {
+          "recommendation": 1
+        },
+        "branded": {
+          "decision": 1
+        }
+      }
+    },
+    "professional_term_assessment": {
+      "status": "completed",
+      "decisions": [
+        {
+          "concept": "geo",
+          "source": "input_explicit",
+          "decision": "required",
+          "reason": "GEO is explicit in the input."
+        }
+      ]
+    },
+    "required_term_coverage": {
+      "geo": {
+        "label": "generative engine optimization (GEO)",
+        "terms": [
+          "generative engine optimization",
+          "GEO"
+        ],
+        "expanded_form": "generative engine optimization",
+        "acronym": "GEO",
+        "context_terms": [
+          "AI search",
+          "AI-generated answers",
+          "generative search"
+        ],
+        "min_total": 2,
+        "min_generic": 1,
+        "min_branded": 1,
+        "min_expanded": 1,
+        "min_acronym": 1
+      }
+    },
+    "excluded_categories": [
+      "social listening",
+      "media monitoring",
+      "SERP rank tracking"
+    ],
+    "category_expression_set": {
+      "core_terms": [
+        "AI search visibility",
+        "AI visibility",
+        "generative engine optimization",
+        "answer engine optimization"
+      ],
+      "product_terms": [
+        "GEO platform",
+        "GEO tool",
+        "AEO platform",
+        "AI answer monitoring"
+      ],
+      "placeholder_blacklist": [
+        "specialized product suppliers",
+        "product providers",
+        "solution vendors"
+      ]
+    },
+    "topics": [
+      {
+        "topic_id": "topic-1",
+        "topic": "AI search visibility platform selection"
+      }
+    ]
+  },
+  "questions": [
+    {
+      "question_id": "Q1",
+      "question_type": "generic",
+      "funnel_intent": "recommendation",
+      "decision_stage": "shortlist",
+      "cluster": "category",
+      "audience_role": "seo_manager",
+      "scenario": "category_learning",
+      "constraint": "small_team",
+      "evidence_need": "category_definition",
+      "user_question": "What does an AI search visibility platform measure?",
+      "zh_translation": "AI 搜索可见性平台会衡量哪些内容？",
+      "standalone_rewrite": "What does an AI search visibility platform measure across AI-generated answers?",
+      "retrieval_rewrite": "AI search visibility platform metrics",
+      "evidence_query": "AI search visibility measurement methodology",
+      "title_seed": "How AI Search Visibility Is Measured",
+      "monitoring_prompt": "What does an AI search visibility platform measure?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q1",
+      "topic_id": "topic-1"
+    },
+    {
+      "question_id": "Q2",
+      "question_type": "branded",
+      "funnel_intent": "decision",
+      "decision_stage": "evaluation",
+      "cluster": "brand_fit",
+      "audience_role": "agency_buyer",
+      "scenario": "vendor_evaluation",
+      "constraint": "multi_client",
+      "evidence_need": "product_documentation",
+      "user_question": "Is Peec AI suitable for an SEO agency managing multiple clients?",
+      "zh_translation": "Peec AI 适合管理多个客户的 SEO 代理商吗？",
+      "standalone_rewrite": "Is Peec AI suitable for an SEO agency managing AI search visibility for multiple clients?",
+      "retrieval_rewrite": "Peec AI agency fit",
+      "evidence_query": "Peec AI agency workflow documentation",
+      "title_seed": "Evaluating Peec AI for SEO Agencies",
+      "monitoring_prompt": "Is Peec AI suitable for an SEO agency managing multiple clients?",
+      "quality_checks": {
+        "natural": true,
+        "standalone": true,
+        "answerable": true,
+        "single_intent": true,
+        "category_aligned": true,
+        "neutral_premise": true,
+        "monitoring_field_valid": true,
+        "topic_aligned": true,
+        "category_visible": true,
+        "commercial_intent": true
+      },
+      "intent_key": "intent-q2",
+      "topic_id": "topic-1"
+    }
+  ]
+}

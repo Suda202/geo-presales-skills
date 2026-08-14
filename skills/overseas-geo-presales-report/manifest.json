@@ -1,0 +1,20 @@
+{
+  "name": "overseas-geo-presales-report",
+  "version": "0.2.5",
+  "owner": "海外GEO项目",
+  "updated_at": "2026-08-13",
+  "status": "active",
+  "maturity_tier": "beta",
+  "lifecycle_stage": "active",
+  "target_platforms": [
+    "openai",
+    "claude",
+    "generic",
+    "agent-skills-compatible"
+  ],
+  "factory_components": [
+    "scripts",
+    "references",
+    "agents"
+  ]
+}

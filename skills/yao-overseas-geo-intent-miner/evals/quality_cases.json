@@ -1,0 +1,172 @@
+[
+  {
+    "name": "short_natural_question_survives",
+    "input": "Which CRM is best?",
+    "expected": "Keep unchanged: it is short, category-visible, and asks for a recommendation; there is no minimum word count."
+  },
+  {
+    "name": "first_person_request_survives",
+    "input": "I'm looking for an AI search visibility tool for a small SEO agency.",
+    "expected": "Accept as a natural conversational request even without a question mark."
+  },
+  {
+    "name": "keyword_phrase_repaired",
+    "input": "AI search tracking tool demo request",
+    "expected": "Rewrite as a standalone natural question and retain the phrase only as retrieval/evidence input."
+  },
+  {
+    "name": "category_ambiguity_repaired",
+    "input": "Which brand tracking tools are best?",
+    "expected": "Add an AI-search or AI-generated-answer qualifier before monitoring."
+  },
+  {
+    "name": "title_field_not_sampled",
+    "input": "Best AI Search Visibility Tools for 2026",
+    "expected": "Store as title_seed, generate a separate user_question, and never sample the title directly."
+  },
+  {
+    "name": "quota_failure_blocks_batch",
+    "input": "A configured 50-question batch contains 49 rows.",
+    "expected": "Fail the batch and fill the missing intent-matrix cell before collection."
+  },
+  {
+    "name": "explicit_professional_term_survives",
+    "input": "The topic names answer engine optimization and the audience includes AEO leaders.",
+    "expected": "Add AEO to required_term_coverage and preserve it in natural Generic and Branded questions instead of rewriting every occurrence as AI search visibility."
+  },
+  {
+    "name": "ambiguous_acronym_gets_context",
+    "input": "Which GEO tools are best for agencies?",
+    "expected": "Expand GEO at least once in the bank and add AI-search context to acronym-only standalone questions."
+  },
+  {
+    "name": "professional_term_not_stuffed",
+    "input": "A bank already has three distinct GEO questions and the remaining questions use natural AI search visibility language.",
+    "expected": "Keep the natural-language questions; do not replace synonyms or append GEO merely to increase keyword count."
+  },
+  {
+    "name": "translation_required",
+    "input": "A monitoring row has a natural English user_question but an empty zh_translation.",
+    "expected": "Fail the row until a non-empty Chinese translation accurately represents the English question."
+  },
+  {
+    "name": "generic_product_alias_boundary",
+    "input": "A Generic question avoids brand_name but contains the configured product_name or alias.",
+    "expected": "Fail the row because Generic brand boundaries include brand_name, product_name, aliases, and competitors."
+  },
+  {
+    "name": "promotional_driver_cap",
+    "input": "A large share of the bank uses best, top, most, or review/reviews wording.",
+    "expected": "Do not fail on wording alone; warn and review whether the questions represent distinct condition values and answer boundaries."
+  },
+  {
+    "name": "pseudo_diversity_warning",
+    "input": "A 50-question bank has 49 one-off cluster values and 44 questions start with How, What, or Which.",
+    "expected": "Keep deterministic hard gates separate, but warn for cluster pseudo-diversity and concentrated sentence openings so semantic review can inspect templates."
+  },
+  {
+    "name": "adjacent_competitor_dimension_boundary",
+    "input": "A frozen adjacent competitor allows only AI answer monitoring as a shared comparison dimension.",
+    "expected": "Generate a neutral AI-answer-monitoring comparison only; reject overall superiority, ranking, or full-substitution questions."
+  },
+  {
+    "name": "fallback_without_shared_dimensions",
+    "input": "A frozen fallback competitor has an empty comparison_policy.allowed_dimensions array.",
+    "expected": "Keep it in the formal three, but generate only category-relationship or use-scenario clarification questions and never ask which product is better."
+  },
+  {
+    "name": "term_assessment_cannot_be_omitted",
+    "input": "A newly generated v2 bank omits both professional_term_assessment and required_term_coverage.",
+    "expected": "Fail the bank; new output must record a completed assessment even when no professional term is required."
+  },
+  {
+    "name": "most_and_review_false_positives",
+    "input": "The bank contains 'Which metrics matter most?' and 'Who should review AI-generated claims?'.",
+    "expected": "Do not treat these as commercial-ranking signals; inspect context only if the batch appears repetitive."
+  },
+  {
+    "name": "metadata_pseudo_diversity_warning",
+    "input": "More than 80% of scenario and constraint labels occur only once.",
+    "expected": "Keep the bank structurally valid but warn that metadata granularity may be fabricating diversity."
+  },
+  {
+    "name": "six_cells_have_distinct_answer_endpoints",
+    "input": "Recommendation, Comparison, and Decision questions reuse the same condition values and differ mainly by wording.",
+    "expected": "Recommendation asks for candidates, Comparison asks for differences and a trade-off, and Decision asks for a final fit judgment; identical condition values cannot be reused as separate intents by changing wording."
+  },
+  {
+    "name": "branded_comparison_three_plus_two",
+    "input": "Five Branded Comparison questions cover only two of the three frozen competitors or repeat five one-to-one templates.",
+    "expected": "Require one solo question for each formal competitor plus two key-factor or multi-brand questions, while preserving each competitor's comparison policy."
+  },
+  {
+    "name": "target_audience_coverage",
+    "input": "Some configured audiences appear less often than others in the Generic bank.",
+    "expected": "Report the distribution for semantic review without enforcing per-audience minimums or a 40% cap; every retained question must still have commercial value."
+  },
+  {
+    "name": "pricing_is_dynamic_not_fixed",
+    "input": "The topic has no useful public pricing or cost decision, but the generator adds two generic pricing questions to satisfy a fixed quota.",
+    "expected": "Remove the fixed quota. Ask pricing, plan fit, quote drivers, or total cost only when it materially affects selection, and never invent an amount."
+  },
+  {
+    "name": "bpi_placeholder_hides_category",
+    "input": "What certification coverage criteria should buyers evaluate when choosing specialized product suppliers?",
+    "expected": "Fail category visibility and the placeholder blacklist because a standalone reader cannot identify rechargeable batteries."
+  },
+  {
+    "name": "category_visible_but_not_commercial",
+    "input": "What certifications should OEM procurement managers evaluate when choosing a rechargeable battery manufacturer?",
+    "expected": "Fail commercial_intent during second-pass review: the answer is a certification checklist rather than battery supplier candidates or a trade-off."
+  },
+  {
+    "name": "category_product_term_is_enough",
+    "input": "Which battery suppliers offer low-MOQ custom LiPo cells for wearable startups?",
+    "expected": "Pass category visibility without mechanically repeating the Topic phrase because battery suppliers and LiPo cells identify the category."
+  },
+  {
+    "name": "yes_no_decision_is_allowed",
+    "input": "Is BPI the right rechargeable battery manufacturer for a medical device team needing custom pack validation?",
+    "expected": "Allow the Yes/No form because a useful answer must explain fit, conditions, and risks; Branded questions are not natural-mention scoring prompts."
+  },
+  {
+    "name": "awareness_is_retired",
+    "input": "A new v3 bank contains funnel_intent=awareness.",
+    "expected": "Fail the bank. New commercial question banks only use recommendation, comparison, and decision."
+  },
+  {
+    "name": "intent_counts_are_not_fixed",
+    "input": "A 50-question bank keeps Generic/Branded at 40/10, contains all three commercial intents, but does not use 12/25/13.",
+    "expected": "Pass intent coverage. Do not enforce exact recommendation, comparison, decision, or six-cell counts."
+  },
+  {
+    "name": "commercial_condition_types_are_not_intent_types",
+    "input": "Target audience, evaluation criterion, constraint, and comparison object conditions appear across different question forms.",
+    "expected": "Assign recommendation when the answer should give candidates, comparison when it should give differences and a trade-off, and decision when it should give a final fit judgment; do not bind a condition type to one funnel intent."
+  },
+  {
+    "name": "one_brand_sentiment_prompt_per_topic",
+    "input": "A company Topic has no fixed Evaluate prompt, has two of them, or labels one as recommendation.",
+    "expected": "Fail the bank. Require exactly one Branded prompt per Topic using Evaluate the {category} company {brand} on {topic}, classified as decision without a separate sentiment-intent field."
+  },
+  {
+    "name": "bpi_task_89_4768_thermal_management_drift",
+    "input": "Task 89 #4768 evaluates OEM/ODM rechargeable battery manufacturers, but the question asks the AI to select thermal management vendors.",
+    "expected": "Fail topic_aligned and category_aligned. Thermal management vendors are a different purchasing set from rechargeable battery manufacturers."
+  },
+  {
+    "name": "bpi_task_89_4751_4753_4755_4757_4759_false_recommendation",
+    "input": "Task 89 #4751/#4753–#4755/#4757–#4759 are labeled recommendation but ask only for procurement knowledge, certification criteria, or evaluation frameworks.",
+    "expected": "Fail commercial_intent. A recommendation label is not enough; a reasonable answer must provide battery manufacturer candidates, a recommendation, or a clear trade-off."
+  },
+  {
+    "name": "bpi_task_89_4778_containerized_ess_drift",
+    "input": "Task 89 #4778 evaluates OEM/ODM rechargeable battery manufacturers, but the question asks the AI to select containerized energy storage system providers.",
+    "expected": "Fail topic_aligned and category_aligned. A containerized energy storage system provider is not the same purchasing object as a rechargeable battery manufacturer."
+  },
+  {
+    "name": "bpi_task_89_4789_project_partner_drift",
+    "input": "Task 89 #4789 evaluates OEM/ODM rechargeable battery manufacturers, but the question asks for a long-term partner for a 500 MWh energy storage project.",
+    "expected": "Fail topic_aligned and category_aligned. A project delivery partner is a broader commercial object with a different candidate set and evaluation criteria."
+  }
+]
