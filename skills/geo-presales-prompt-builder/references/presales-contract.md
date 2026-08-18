@@ -6,7 +6,7 @@
 
 ### 商业意图不设数量配额
 
-`funnel_intent` 只允许 `recommendation / comparison / decision`，整批三类都必须出现，但不限制各自数量，也不要求 Generic × 三意图、Branded × 三意图的六格数量。意图按答案终点分：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要最终选择具体候选。Generic 不出现配置品牌实体，但答案必须命名具体品牌/供应商/产品候选。
+`funnel_intent` 只允许 `recommendation / comparison / decision`，整批三类都必须出现，但不限制各自数量，也不要求 Generic × 三意图、Branded × 三意图的六格数量。意图按答案终点分：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要最终选择具体候选。Generic 不出现具体品牌实体，但题目本身必须要求具体品牌/供应商/平台/产品候选，不能依赖回答偶然举出品牌。
 
 总数为 49、Generic/Branded 数量不符、任一商业意图完全缺失、用重复题补齐或生成失败后静默少题，整批均不得进入采集。
 
@@ -27,11 +27,13 @@
 
 `generic`：
 
-- 不出现客户品牌、产品名、已配置 aliases 或竞品名
+- 不出现客户品牌、产品名、已配置 aliases、竞品名或其他任何具体品牌实体
 - 可以使用 `brands / manufacturers / suppliers / platforms / products` 等通用候选词；禁止的是具体品牌实体，不是“品牌”这个类别词
-- 测试 AI 是否自然提及具体品牌及竞品；合理答案必须命名品牌/供应商/产品候选
+- 测试 AI 在无品牌预埋时会推荐谁；题目措辞必须明确要求品牌/供应商/平台/产品候选、候选比较或最终候选选择
+- 答案允许出现监控品牌、已配置竞品或未配置的其他同类品牌，不以输入名单限制候选集合
 - 必须出现可识别的目标品类或品类下产品词，可以包含角色、场景和约束
-- 只会回答材料差异、是否值得采用、评估标准或购买流程的题不合格，即使标成 Comparison 或 Decision
+- 只会回答材料差异、是否值得采用、评估标准或购买流程的题不合格；AI 可能顺带举品牌也不构成通过
+- 二遍 review 尝试写一个不含任何具体候选名称的完整答案；如果写得出来，该 Generic 题失败
 
 `branded`：
 

@@ -12,6 +12,16 @@
       "diamond and colored gemstones forced into every prompt"
     ]
   },
+  "generic_answer_scope": {
+    "question_requirement": "The prompt wording itself must require brand candidates, a comparison between brand candidates, or a final brand choice.",
+    "incidental_mentions_do_not_pass": "A material, standards, safety, or category question fails even if an AI answer might sometimes mention brands as examples.",
+    "prompt_boundary": "Do not seed any specific brand entity in a Generic prompt.",
+    "allowed_answer_entities": [
+      "monitored brand if surfaced organically",
+      "configured competitors",
+      "unconfigured peer brands"
+    ]
+  },
   "length_policy": {
     "hard_max_words": false,
     "review_rule": "Use the shortest wording that preserves the real purchase condition and brand answer endpoint; do not reject an otherwise valid prompt by word count alone."
@@ -32,6 +42,12 @@
       "prompt": "What should I look for in shipping, returns, resizing, warranties, and after-sales service when buying fine jewelry online?",
       "why_it_fails": "The answer is an evaluation checklist rather than a brand shortlist or brand comparison.",
       "expected_repair": "Ask which online jewelry brands offer the relevant shipping, returns, warranty, or after-sales conditions."
+    },
+    {
+      "failure_family": "incidental_brand_mentions_only",
+      "prompt": "Is it safe to buy lab-grown colored gemstone jewelry online?",
+      "why_it_fails": "An AI might mention brands as examples, but the question can be fully answered with general safety advice and does not require any brand candidate.",
+      "expected_repair": "Ask which online lab-grown colored gemstone jewelry brands provide the evidence and buyer protections needed for a safe purchase."
     },
     {
       "failure_family": "invented_low_frequency_condition",

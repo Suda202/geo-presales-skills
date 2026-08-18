@@ -91,10 +91,11 @@
 | 反例 | 失败原因 | 修复方向 |
 |-|-|-|
 | `How do lab-grown diamonds compare with natural diamonds in price and quality?` | Generic 答案可以只讲材料差异，不出现珠宝品牌。 | 改问消费者应比较哪些珠宝品牌，以及候选品牌在相关维度上的取舍。 |
+| `Is it safe to buy lab-grown colored gemstone jewelry online?` | AI 可能顺带举品牌，但通用安全建议已经能完整回答；题目本身没有要求品牌候选。 | 改问哪些线上培育彩色宝石珠宝品牌能提供可核验品质和买家保障。 |
 | `What lab-grown diamond jewelry brands should shoppers consider when diamond sparkle matters most?` | “闪耀最重要”是为了制造差异而编出的低频条件，不来自输入。 | 使用设计、工艺、价值、证书、礼赠或线上信任等有依据的购买条件。 |
 | `Should buyers choose one brand offering both lab-grown diamonds and colored gemstones instead of separate specialist brands?` | 把整批品类广度错误变成单题的罕见组合策略。 | 单题可只问钻石、祖母绿、蓝宝石、红宝石或混合设计；整批检查覆盖。 |
 
-Generic 可以写 `Which jewelry brands...`，但不能写 Lit by Larry、Chatham 等具体品牌实体。问题不需要复刻用户逐字说法，也不设词数硬门；它必须清楚表达真实购买意图，并让合理答案自然命名具体候选品牌。
+Generic 可以写 `Which jewelry brands...`，但不能写 Lit by Larry、Chatham 等具体品牌实体。答案可以出现 Lit by Larry、已配置竞品或任何未配置的同类品牌。问题不需要复刻用户逐字说法，也不设词数硬门；它必须主动索取候选品牌、候选比较或最终品牌选择，不能依赖 AI 偶然举例。
 
 ## 固定品牌总体评价基准题
 

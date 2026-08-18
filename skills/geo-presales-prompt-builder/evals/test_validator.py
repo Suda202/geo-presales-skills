@@ -443,8 +443,21 @@ class ValidatorRegressionTest(unittest.TestCase):
         self.assertEqual("Lit by Larry", regressions["brand"])
         self.assertFalse(regressions["length_policy"]["hard_max_words"])
         self.assertEqual(
+            "The prompt wording itself must require brand candidates, a comparison between brand candidates, or a final brand choice.",
+            regressions["generic_answer_scope"]["question_requirement"],
+        )
+        self.assertEqual(
+            {
+                "monitored brand if surfaced organically",
+                "configured competitors",
+                "unconfigured peer brands",
+            },
+            set(regressions["generic_answer_scope"]["allowed_answer_entities"]),
+        )
+        self.assertEqual(
             {
                 "generic_without_brand_answer_endpoint",
+                "incidental_brand_mentions_only",
                 "invented_low_frequency_condition",
                 "per_question_full_scope_forcing",
             },

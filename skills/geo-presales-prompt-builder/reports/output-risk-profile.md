@@ -5,7 +5,8 @@
 | 标题/关键词进入监测 | `Best AI...`, `pricing comparison` | 五字段隔离、自然度门、程序高风险模式检查 |
 | 品类不可见或漂移 | 使用 `specialized product suppliers`，或回答转向排除品类 | `category_expression_set`、占位词黑名单、排除品类与逐题 `category_visible` |
 | 题量或样本结构静默缺失 | 目标 50，实际 49；Generic/Branded 不是 40/10 | 生成前冻结总量与问题类型，整批精确校验；三类意图只查都有，不设精确数 |
-| 问题没有商业价值 | 只问概念、标准清单或购买流程 | 只生成 Recommendation/Comparison/Decision；逐题 `commercial_intent` 要求候选、推荐或取舍 |
+| 问题没有商业价值 | 只问概念、标准清单或购买流程 | 只生成 Recommendation/Comparison/Decision；Generic 题面必须要求具体候选、候选比较或最终选择 |
+| 依赖回答偶然举品牌 | 问材料、安全或标准，AI 有时会顺带举例品牌 | Generic 题面必须主动索取候选品牌、候选比较或最终品牌选择；答案候选不限于已配置名单 |
 | 三类商业意图只有措辞差异 | 条件取值相同，只换英文表达 | 用稳定 `intent_key` 拦截同条件伪意图，二遍 review 检查答案终点 |
 | 品牌比较漏竞品或五题同构 | 三个竞品只覆盖两个，或五条均为近义一对一 | Branded Comparison 确定性 3+2：三竞品逐一覆盖，加两条关键因素/多品牌题 |
 | 受众分布失衡 | 整批只服务少量受众 | 汇总 `target_audiences` 分布供 review，不为平均分配牺牲商业意图 |
