@@ -424,6 +424,34 @@ class ValidatorRegressionTest(unittest.TestCase):
         self.assertIn("retired v3 intent fields ['geo_intent']", joined)
         self.assertIn("retired v3 intent fields ['intent_angle']", joined)
 
+    def test_natural_questions_are_not_rejected_by_a_fixed_word_limit(self) -> None:
+        data = json.loads((FIXTURES / "valid-bank.json").read_text(encoding="utf-8"))
+        long_question = (
+            "Which AI search visibility platforms should a small SEO agency consider when it needs "
+            "multi-client reporting, prompt tracking, citation analysis, weekly exports, role-based access, "
+            "and reliable support across several customer accounts?"
+        )
+        data["questions"][0]["user_question"] = long_question
+        data["questions"][0]["monitoring_prompt"] = long_question
+        errors, _, _ = validate(data)
+        self.assertEqual([], errors)
+
+    def test_lit_by_larry_regressions_define_brand_answer_endpoints(self) -> None:
+        regressions = json.loads(
+            (Path(__file__).resolve().parent / "lit_by_larry_regressions.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual("Lit by Larry", regressions["brand"])
+        self.assertFalse(regressions["length_policy"]["hard_max_words"])
+        self.assertEqual(
+            {
+                "generic_without_brand_answer_endpoint",
+                "invented_low_frequency_condition",
+                "per_question_full_scope_forcing",
+            },
+            {case["failure_family"] for case in regressions["bad_cases"]},
+        )
+        self.assertTrue(all(case["expected_repair"] for case in regressions["bad_cases"]))
+
 
 if __name__ == "__main__":
     unittest.main()

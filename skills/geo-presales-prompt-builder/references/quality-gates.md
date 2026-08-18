@@ -4,21 +4,20 @@
 
 每条 `user_question` 必须同时满足：
 
-1. `Natural`：像目标市场用户会直接输入 AI 对话框的表达，不是 SEO 标题、标签或关键词堆叠；每 Topic 固定品牌总体评价基准题是明确例外，按规定的 `Evaluate...` 请求式模板生成。
+1. `Natural`：是清楚、可成立的购买请求，不是 SEO 标题、标签或关键词堆叠。无需猜测用户逐字说法，但不得为了制造题目差异编造低频条件；每 Topic 固定品牌总体评价基准题是明确例外，按规定的 `Evaluate...` 请求式模板生成。
 2. `Standalone`：脱离前文仍能确定对象、任务和必要约束。
 3. `Answerable`：AI 可以直接开始回答，不必先索要公司名、预算、地区或 “GT 是什么”。
 4. `Single intent`：只有一个主要购买任务；目标用户、评估标准、约束和比较对象可以单独使用，也可以复合使用，但所有条件必须共同限定同一个候选集合、比较或适配判断，不能把两道题拼在一起。
 5. `Topic aligned`：体现所属 Topic 的具体意图，并保持同一购买集合。题目要求 AI 选择的对象必须仍是 Topic 中那一类候选；例如 OEM/ODM 电池制造商不能偷换成热管理厂商、集装箱式储能系统商或大型储能项目合作伙伴。
 6. `Category visible`：独立看问题时，能从品类原词、自然变体或品类下产品词认出品类；`specialized product suppliers` 等占位词不合格。
-7. `Commercial intent`：提问者在选购，不是在学习；合理答案会给品牌/供应商候选、推荐或明确取舍。只给概念、区别、标准清单或购买流程的题不合格。
+7. `Commercial intent`：提问者在选购，不是在学习。Generic 的合理答案必须命名具体品牌/供应商/产品候选；Comparison 要比较这些候选并取舍，Decision 要从候选中作最终选择。只比较材料/品类、只问是否值得采用，或只给概念、标准清单、购买流程的题不合格。Branded 则必须形成监控品牌的候选适配、比较或选择判断。
 8. `Category aligned`：明确属于目标品类，没有漂到排除品类、上下游供应商或更大的项目交付对象。只出现 battery、energy storage 等相关词不代表对象对齐。
 9. `Neutral premise`：不预设品牌领先、最受欢迎、便宜、可靠或存在缺陷。
 10. `Field valid`：监测 Prompt 来自 `user_question`；追问回放来自 `standalone_rewrite`。
-11. `Length`：英文不设下限，绝对上限 30 个单词。超限重写，不截断。
-12. `Brand boundary`：Generic 不含客户品牌、产品 aliases 或任何竞品；Branded 必含客户品牌。
-10. `Term clarity`：专业缩写单独出现时必须有品类语境；不得用含义不明的 `GEO tools`、`AEO platform` 作为独立问题。
-11. `Chinese translation`：必须提供非空字符串 `zh_translation`，且至少含一个汉字；准确等义、数字/币种保真与合理本地化由语义 review 确认。
-12. `Competitor policy`：竞品题必须使用冻结集合中的等级与比较边界。`direct` 可做标准中性比较；`adjacent/fallback` 只能使用 `allowed_dimensions`；维度为空时只澄清品类或场景，禁止谁更好、全面优劣、绝对排名或全面替代性问法。
+11. `Brand boundary`：Generic 不含客户品牌、产品 aliases 或任何竞品实体，但可以使用 `brands / manufacturers / suppliers / platforms / products` 等通用候选词；Branded 必含客户品牌。
+12. `Term clarity`：专业缩写单独出现时必须有品类语境；不得用含义不明的 `GEO tools`、`AEO platform` 作为独立问题。
+13. `Chinese translation`：必须提供非空字符串 `zh_translation`，且至少含一个汉字；准确等义、数字/币种保真与合理本地化由语义 review 确认。
+14. `Competitor policy`：竞品题必须使用冻结集合中的等级与比较边界。`direct` 可做标准中性比较；`adjacent/fallback` 只能使用 `allowed_dimensions`；维度为空时只澄清品类或场景，禁止谁更好、全面优劣、绝对排名或全面替代性问法。
 
 ## 硬门：整批
 
@@ -32,6 +31,7 @@
 - 当实际 Branded Comparison 数不少于 3 时，三个正式竞品各至少有一条只命中该竞品的一对一题；实际达到 5 条时，另外至少 2 条必须是关键因素题或多品牌综合比较，不能继续重复一对一模板。
 - `question_id` 唯一；规范化后的 `user_question` 无完全重复。
 - 一题一意图：按规范化条件集合去重。条件集合完全相同、只换英文措辞或条件顺序的题不得重复占配额；条件取值变化，或增删一个真正改变答案边界的条件，可以是不同意图。
+- 多子品类或多产品广度 Topic 的覆盖按整批检查；单题只需命中一个合法子品类、具体产品或组合场景，不得因追求逐题全覆盖而生成罕见购买任务。
 - `best / top / most / reviews` 等问法可用；集中出现只发软警告，复核是否掩盖了意图重复。
 - 满足风险、角色、场景与约束覆盖。价格不设固定最低配额，只在本次选型确实需要时生成。
 - `required_term_coverage` 中每个术语满足总量、Generic、Branded、全称与缩写最低覆盖；未配置的术语不强制出现。
@@ -67,11 +67,11 @@
 - 缺上下文：`Which one is better?`
 - 预设断言：`Why is Peec AI the most reliable option?`
 
-长度合格不能覆盖其他硬门。七项布尔 `quality_checks` 必须在初稿之后的独立二遍语义 review 生成，不得与问题初稿同步默认填 `true`。程序脚本只能捕获确定性错误和高风险模式；自然度、单意图、中性前提、术语是否机械塞入、译文等义和跨品牌语义模板重复必须由 review 确认。
+问题不因词数本身通过或失败；过长、堆条件或重复表达分别由 Natural 与 Single intent 判断。七项布尔 `quality_checks` 必须在初稿之后的独立二遍语义 review 生成，不得与问题初稿同步默认填 `true`。程序脚本只能捕获确定性错误和高风险模式；自然度、单意图、Generic 是否会产出具体品牌候选、中性前提、术语是否机械塞入、译文等义和跨品牌语义模板重复必须由 review 确认。
 
 专业术语覆盖也不能覆盖自然度门：术语必须在问题意图中有作用，不得把已完成的问题批量替换同义词或追加 `(GEO/AEO)` 凑数量。整批既要覆盖普通用户常用的 `AI search visibility`，也要覆盖专业买家会使用的规范术语。
 
-二遍语义 review 必须逐条填写 `topic_aligned / category_visible / commercial_intent`，并先回答两问：问题要求 AI 选择的对象，是否仍是 Topic 的同一购买集合；合理答案是否必须给候选品牌/供应商或明确取舍。然后检查 Recommendation、Comparison、Decision 的答案终点：给候选、给差异与取舍、给最终适配判断。脚本只拦截确定性词面错误和明显科普/购买流程模式，不能凭正则判断 AI 的完整回答。
+二遍语义 review 必须逐条填写 `topic_aligned / category_visible / commercial_intent`，并先回答三问：问题要求 AI 选择的对象，是否仍是 Topic 的同一购买集合；Generic 的合理答案是否必须命名具体品牌/供应商/产品候选；使用的条件是否来自输入或有业务依据。然后检查 Recommendation、Comparison、Decision 的答案终点：给候选、比较候选并取舍、从候选中给最终选择。脚本只拦截确定性词面错误和明显科普/购买流程模式，不能凭正则判断 AI 的完整回答。
 
 ## 品类防漂移
 

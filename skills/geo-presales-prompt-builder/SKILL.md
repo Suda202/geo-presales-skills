@@ -3,7 +3,7 @@ name: geo-presales-prompt-builder
 description: Use when generating, rewriting, auditing, or validating English AI-search monitoring Prompts for GEO presales diagnostics, including Generic/Branded quotas, commercial intent coverage, terminology, naturalness, and category or purchasing-object drift. Do not use for crawling answers, calculating metrics, or writing report conclusions.
 metadata:
   author: Overseas GEO Project
-  version: "0.8.0"
+  version: "0.9.0"
 ---
 
 # GEO Presales Prompt Builder
@@ -19,11 +19,11 @@ metadata:
 
 1. 归一化 Topic、品牌/产品/aliases、品类、排除品类、受众、locale、平台、事实来源和题量；建立 `category_expression_set`（品类原词/自然变体、品类产品词、占位词黑名单）。正式售前原样消费冻结的 3 个 `formal_competitors`，不重选。另做 `professional_term_assessment` 和 `required_term_coverage`；事实不足就标假设，不编价格、能力或市场表现。
 2. 选择 `presales_diagnostic` 或 `intent_research`。售前默认冻结 50 题、Generic 40 / Branded 10；商业意图只用 `recommendation / comparison / decision`，三类都必须有，但不设数量或交叉格子配额；不生成了解、科普或纯评估框架题。
-3. 按目标用户、评估标准、约束和比较对象建立意图矩阵；条件可单用或复合，但不得拼接任务。按答案终点分类：要候选是 Recommendation，要取舍是 Comparison，要最终判断是 Decision。v3 不使用 `geo_intent`；价格、风险、替代和试用只是改变选择的条件。每题独立体现 Topic、品类与同一购买集合。
+3. 按目标用户、评估标准、约束和比较对象建立意图矩阵；条件可单用或复合，但不得拼接任务。Generic 不写任何具体品牌实体，但合理答案必须自然带出具体品牌/供应商/产品候选：要候选是 Recommendation，要候选间差异与取舍是 Comparison，要最终选择具体候选是 Decision。只比较材料、方案或标准而不需要命名候选的题淘汰。v3 不使用 `geo_intent`；价格、风险、替代和试用只是改变选择的条件。
 4. 一题一意图：条件取值不同，或增删会改变答案的条件，才算不同意图；条件相同、只换措辞或顺序不算。句式相同与 Yes/No 不直接判错。
 5. Generic 不得出现客户品牌、产品 aliases 或竞品。每 Topic 在 Branded 中固定生成 1 条 `Evaluate the {品类} company/product {品牌} on {主题}` 品牌总体评价基准题，硬归 `branded + decision`，由模板本身识别，不新增情绪意图标签。这不是唯一情绪样本：其余 Branded 题继续探测具体人群、能力、竞品和选择下的品牌评价。Branded Comparison 达到 5 条时采用三竞品各一条，加两条关键因素或多品牌题；不越过低可比竞品的 `allowed_dimensions`。
-6. 分开生成 `user_question / standalone_rewrite / retrieval_rewrite / evidence_query / title_seed`。只有 `user_question` 可作根监测 Prompt。使用目标语言的自然表达，绝对上限 30 个英文词；locale 由采集环境控制时，不把目标市场机械塞进每题。
-7. 二遍逐题确认购买对象仍属于 Topic，并且答案必须给候选、推荐或明确取舍；再查单意图、品牌边界、中性前提、译文和字段隔离。整批检查配额、重复、术语、受众与竞品覆盖。
+6. 分开生成 `user_question / standalone_rewrite / retrieval_rewrite / evidence_query / title_seed`。只有 `user_question` 可作根监测 Prompt。自然度是可理解、可回答的门，不要求猜中用户逐字说法；不得为制造差异编造低频条件。英文不设词数硬上限，以完整表达真实购买条件和品牌答案终点为准。locale 由采集环境控制时，不把目标市场机械塞进每题。
+7. 二遍逐题确认购买对象仍属于 Topic；Generic 的合理答案必须命名具体候选，Branded 必须形成品牌适配或有边界比较。再查单意图、品牌边界、中性前提、译文和字段隔离。多子品类 Topic 按整批检查覆盖，单题可只落到一个产品词或子品类，不机械并列完整范围。
 8. 保存为 `overseas-geo-question-bank/v3`，运行 `python3 scripts/validate_question_bank.py <question-bank.json>`。独立二遍 review 后才填写 `quality_checks`；程序通过不代替语义判断。
 
 ## 输出契约

@@ -16,7 +16,7 @@
       "failure_family": "false_commercial_intent",
       "observed_failure": "通用题只问采购知识，不会稳定给出供应商名单；#4751 虽标推荐类，实际仍是了解类。",
       "expected_failed_checks": ["commercial_intent"],
-      "reason": "标签不能代替问题本身；合理答案必须给候选供应商、推荐或明确取舍。"
+      "reason": "标签不能代替问题本身；Generic 的合理答案必须命名具体候选供应商。"
     },
     {
       "case_id": "task-89-4778",

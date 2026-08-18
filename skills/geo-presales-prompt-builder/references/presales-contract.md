@@ -6,15 +6,15 @@
 
 ### 商业意图不设数量配额
 
-`funnel_intent` 只允许 `recommendation / comparison / decision`，整批三类都必须出现，但不限制各自数量，也不要求 Generic × 三意图、Branded × 三意图的六格数量。意图按答案终点分：Recommendation 要候选，Comparison 要差异与取舍，Decision 要最终适配判断。
+`funnel_intent` 只允许 `recommendation / comparison / decision`，整批三类都必须出现，但不限制各自数量，也不要求 Generic × 三意图、Branded × 三意图的六格数量。意图按答案终点分：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要最终选择具体候选。Generic 不出现配置品牌实体，但答案必须命名具体品牌/供应商/产品候选。
 
 总数为 49、Generic/Branded 数量不符、任一商业意图完全缺失、用重复题补齐或生成失败后静默少题，整批均不得进入采集。
 
 ### 六种组合的答案目标
 
-- Generic Recommendation：给品牌/供应商候选名单或推荐，不能只给定义、标准或采购知识。
-- Generic Comparison：给候选差异和明确取舍；比较对象可以是品类或方案。
-- Generic Decision：给明确推荐、适配判断或最终结论。
+- Generic Recommendation：给具体品牌/供应商/产品候选名单或推荐，不能只给定义、标准或采购知识。
+- Generic Comparison：先命名具体候选，再给候选间差异和明确取舍；只比较材料、品类或方案不合格。
+- Generic Decision：从具体候选中给明确品牌/供应商/产品选择或最终适配结论。
 - Branded Recommendation：判断品牌在具体场景是否值得纳入候选，并说明理由、条件或风险。
 - Branded Comparison：与正式竞品做中性、有边界的比较。
 - Branded Decision：询问是否应该选择、购买或采用本品牌。
@@ -28,9 +28,10 @@
 `generic`：
 
 - 不出现客户品牌、产品名、已配置 aliases 或竞品名
-- 测试 AI 是否自然提及品牌及竞品
+- 可以使用 `brands / manufacturers / suppliers / platforms / products` 等通用候选词；禁止的是具体品牌实体，不是“品牌”这个类别词
+- 测试 AI 是否自然提及具体品牌及竞品；合理答案必须命名品牌/供应商/产品候选
 - 必须出现可识别的目标品类或品类下产品词，可以包含角色、场景和约束
-- 合理答案必须出现品牌/供应商候选、推荐或明确取舍
+- 只会回答材料差异、是否值得采用、评估标准或购买流程的题不合格，即使标成 Comparison 或 Decision
 
 `branded`：
 
@@ -58,6 +59,9 @@
 ## 默认覆盖要求
 
 - v3 不生成额外的角度意图字段。价格、预算、总成本、限制、风险和替代对象只有在改变购买选择时才作为条件进入 Recommendation、Comparison 或 Decision；不设任何角度配额。
+- 多子品类或多产品广度 Topic 按整批建立覆盖矩阵；单题可只命中一个子品类、具体产品或组合场景，不要求逐题复述 Topic 的全部范围。
+- 自然度不要求复刻用户逐字问法，只要求形成真实、可回答的购买请求。不得为制造题目差异编造低频条件。
+- `user_question` 不设固定词数上下限；长度只接受自然度、单意图和必要条件约束。
 - 至少 3 个用户角色、3 个使用场景、2 类约束条件。
 - `best / top / recommended / which / how to choose` 都是允许的商业问法，不设硬比例；整批过度集中时只提醒复核是否重复测量同一意图。
 - 每个问题簇原则上不超过 3 条；超过时必须证明答案边界不同。

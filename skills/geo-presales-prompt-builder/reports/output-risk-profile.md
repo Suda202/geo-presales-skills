@@ -18,7 +18,7 @@
 | Generic 泄漏客户实体 | 不含主品牌名，但出现产品名、别名或空格/驼峰变体 | 全部品牌、产品、aliases 与冻结竞品进入 Generic 硬门；自动兼容机械写法变体 |
 | 低可比竞品被当作全面替代品 | 对 adjacent/fallback 问“谁更好”或综合排名 | 冻结 3 竞品及 `comparison_policy`；低可比只用 `allowed_dimensions`，空维度只澄清品类/场景 |
 | 中译缺失 | 销售无法快速确认英文题意 | `zh_translation` 存在、非空且含汉字为硬门；语义准确性由 review 确认 |
-| 过长复杂题 | 多任务拼接、回答漂移 | 30 词绝对上限、单一主要意图 |
+| 过长复杂题 | 多任务拼接、回答漂移 | 不设词数硬门；用自然度、必要条件与单一主要意图复核 |
 | 短问题被无意义扩写 | `Is X worth it?` 被灌水 | 不设下限，完整自然短问原样保留 |
 | 专业术语被同义改写掉 | 输入含 GEO/AEO，整批只剩 AI search visibility | 输入驱动 `required_term_coverage`、Generic/Branded 最低覆盖与缩写消歧 |
 | 省略术语配置绕过检查 | 输入明写 GEO/AEO，但题库不输出 `required_term_coverage` | v3 必填 `professional_term_assessment`；required 决策与配额 key 一致；旧库显式 legacy warning |
