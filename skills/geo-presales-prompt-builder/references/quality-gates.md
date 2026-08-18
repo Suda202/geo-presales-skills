@@ -10,11 +10,13 @@
 4. `Single intent`：只有一个主要购买任务；目标用户、评估标准、约束和比较对象可以单独使用，也可以复合使用，但所有条件必须共同限定同一个候选集合、比较或适配判断，不能把两道题拼在一起。
 5. `Topic aligned`：体现所属 Topic 的具体意图，并保持同一购买集合。题目要求 AI 选择的对象必须仍是 Topic 中那一类候选；例如 OEM/ODM 电池制造商不能偷换成热管理厂商、集装箱式储能系统商或大型储能项目合作伙伴。
 6. `Category visible`：独立看问题时，能从品类原词、自然变体或品类下产品词认出品类；`specialized product suppliers` 等占位词不合格。
-7. `Commercial intent`：提问者在选购，不是在学习。Generic 的合理答案必须命名具体品牌/供应商/产品候选；Comparison 要比较这些候选并取舍，Decision 要从候选中作最终选择。只比较材料/品类、只问是否值得采用，或只给概念、标准清单、购买流程的题不合格。Branded 则必须形成监控品牌的候选适配、比较或选择判断。
+7. `Commercial intent`：提问者在选购，不是在学习。Generic 的题目措辞必须明确要求具体品牌/供应商/平台/产品候选、候选间比较，或最终候选选择；不能只因为 AI 回答可能或通常会顺带举品牌就判定合格。答案候选可包含监控品牌、已配置竞品或未配置的同类品牌。只比较材料/品类、只问是否值得采用，或只给概念、标准清单、购买流程的题不合格。Branded 则必须形成监控品牌的候选适配、比较或选择判断。
+
+   Generic 使用“无品牌答案测试”：尝试在不写任何具体候选名称的情况下完整回答。若仍可完整回答，说明品牌只会偶然出现，该题 `commercial_intent=false`。
 8. `Category aligned`：明确属于目标品类，没有漂到排除品类、上下游供应商或更大的项目交付对象。只出现 battery、energy storage 等相关词不代表对象对齐。
 9. `Neutral premise`：不预设品牌领先、最受欢迎、便宜、可靠或存在缺陷。
 10. `Field valid`：监测 Prompt 来自 `user_question`；追问回放来自 `standalone_rewrite`。
-11. `Brand boundary`：Generic 不含客户品牌、产品 aliases 或任何竞品实体，但可以使用 `brands / manufacturers / suppliers / platforms / products` 等通用候选词；Branded 必含客户品牌。
+11. `Brand boundary`：Generic 不含客户品牌、产品 aliases、竞品或其他任何具体品牌实体，但可以使用 `brands / manufacturers / suppliers / platforms / products` 等通用候选词；Branded 必含客户品牌。程序对已配置实体做确定性拦截，未配置实体由语义 review 检查。
 12. `Term clarity`：专业缩写单独出现时必须有品类语境；不得用含义不明的 `GEO tools`、`AEO platform` 作为独立问题。
 13. `Chinese translation`：必须提供非空字符串 `zh_translation`，且至少含一个汉字；准确等义、数字/币种保真与合理本地化由语义 review 确认。
 14. `Competitor policy`：竞品题必须使用冻结集合中的等级与比较边界。`direct` 可做标准中性比较；`adjacent/fallback` 只能使用 `allowed_dimensions`；维度为空时只澄清品类或场景，禁止谁更好、全面优劣、绝对排名或全面替代性问法。
@@ -71,7 +73,7 @@
 
 专业术语覆盖也不能覆盖自然度门：术语必须在问题意图中有作用，不得把已完成的问题批量替换同义词或追加 `(GEO/AEO)` 凑数量。整批既要覆盖普通用户常用的 `AI search visibility`，也要覆盖专业买家会使用的规范术语。
 
-二遍语义 review 必须逐条填写 `topic_aligned / category_visible / commercial_intent`，并先回答三问：问题要求 AI 选择的对象，是否仍是 Topic 的同一购买集合；Generic 的合理答案是否必须命名具体品牌/供应商/产品候选；使用的条件是否来自输入或有业务依据。然后检查 Recommendation、Comparison、Decision 的答案终点：给候选、比较候选并取舍、从候选中给最终选择。脚本只拦截确定性词面错误和明显科普/购买流程模式，不能凭正则判断 AI 的完整回答。
+二遍语义 review 必须逐条填写 `topic_aligned / category_visible / commercial_intent`，并先回答三问：问题要求 AI 选择的对象，是否仍是 Topic 的同一购买集合；Generic 的题目是否明确要求品牌/供应商/平台/产品候选，而非只可能在回答中顺带出现；使用的条件是否来自输入或有业务依据。然后检查 Recommendation、Comparison、Decision 的答案终点：给候选、比较候选并取舍、从候选中给最终选择。脚本只拦截确定性词面错误和明显科普/购买流程模式，不能凭正则判断 AI 的完整回答。
 
 ## 品类防漂移
 

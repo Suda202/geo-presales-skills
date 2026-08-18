@@ -76,7 +76,7 @@ v3 删除 `geo_intent`。`funnel_intent` 是唯一意图分类，只允许 `reco
 
 - 信息题直接淘汰；它会把回答带到概念、机制或评估清单。
 - 价格、风险、约束、替代对象只是选购条件，根据回答终点归入 Recommendation、Comparison 或 Decision。
-- “有哪些替代方案”属于 Recommendation；“原方案还是另一类方案”只有在回答还会命名对应的具体候选品牌/产品时才可作为 Generic Comparison。Generic 不点任何具体品牌实体，但它的答案必须带出具体品牌、供应商、产品或平台；点名监控品牌时属于 Branded。
+- “有哪些替代方案”属于 Recommendation；“原方案还是另一类方案”只有在回答还会命名对应的具体候选品牌/产品时才可作为 Generic Comparison。Generic 不点任何具体品牌实体，但题目本身必须要求具体品牌、供应商、产品或平台候选；点名监控品牌时属于 Branded。答案候选不受配置名单限制，可以自然出现监控品牌、已配置竞品或未配置的同类品牌。
 - “是否应试用、购买或采用”属于 Decision；“去哪买、怎么注册”不生成。
 - 固定 `Evaluate...` 品牌总体评价基准题由模板确定性识别，归入 Branded + Decision，不增加额外标签。
 
@@ -84,7 +84,7 @@ v3 删除 `geo_intent`。`funnel_intent` 是唯一意图分类，只允许 `reco
 
 ### 售前商业意图的答案终点
 
-售前 50 题只使用 `recommendation / comparison / decision`，三类均须出现，但不设数量或六格交叉配额，也不新增弱、中、强或 `answer_goal` 字段。三类都必须服务选购。Generic 题不出现配置品牌实体，但答案必须命名具体候选；只给材料差异、选购标准或品类取舍不合格：
+售前 50 题只使用 `recommendation / comparison / decision`，三类均须出现，但不设数量或六格交叉配额，也不新增弱、中、强或 `answer_goal` 字段。三类都必须服务选购。Generic 题不出现具体品牌实体，但题目措辞必须把回答任务锁定到具体候选；只给材料差异、选购标准或品类取舍不合格，即使 AI 可能顺带举出品牌也不能通过：
 
 | 类型组合 | 问题应把回答带到哪里 |
 |-|-|
@@ -95,7 +95,7 @@ v3 删除 `geo_intent`。`funnel_intent` 是唯一意图分类，只允许 `reco
 | Branded Comparison | 将本品牌与正式竞品做中性、有边界的比较 |
 | Branded Decision | 判断是否应该选择、购买或采用本品牌 |
 
-Recommendation、Comparison 与 Decision 的区别是回答任务，不是购买强度：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要对具体候选作最终适配判断。三类都可以带人群、用途、预算和场景；Branded 可以使用会引出理由、条件或风险的 Yes/No 题。Generic 若只问某种材料、方案或品类是否值得采用，而不要求命名候选品牌，不算商业监测题。
+Recommendation、Comparison 与 Decision 的区别是回答任务，不是购买强度：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要对具体候选作最终适配判断。三类都可以带人群、用途、预算和场景；Branded 可以使用会引出理由、条件或风险的 Yes/No 题。Generic 若只问某种材料、方案或品类是否值得采用，而不要求命名候选品牌，不算商业监测题；“回答通常会出现品牌”不等于“问题要求品牌答案”。
 
 ### 商业问题的构成
 
@@ -161,7 +161,7 @@ Branded 中先为每个 Topic 占用 1 个品牌总体评价基准题位置，�
 - 句式重复但人群、场景、约束或比较对象的条件集合不同，不机械判错；二遍 review 要判断答案是否仍会高度雷同。
 - 多个条件共同限定一个购买任务，仍是一题一意图；如果回答必须分别完成两个可独立成立的任务，就是复合问题，必须拆分。
 
-品牌边界使用完整的配置名单：`brand_name + product_name + aliases + competitors + formal competitor aliases`。Generic 问题不得出现任一名称；不能只检查主品牌名而遗漏产品名或缩写别名。程序会兼容驼峰、空格、连字符和下划线的机械变体；语义简称仍由品牌/竞品研究显式写入 aliases。
+品牌边界使用完整的配置名单：`brand_name + product_name + aliases + competitors + formal competitor aliases`。Generic 问题不得出现任一名称，也不得另行写入未配置的具体品牌；不能只检查主品牌名而遗漏产品名或缩写别名。程序会兼容驼峰、空格、连字符和下划线的机械变体；语义简称仍由品牌/竞品研究显式写入 aliases，未配置品牌实体由二遍语义 review 拦截。
 
 同一问题簇只保留真正改变答案边界的变体，例如角色、预算、市场、团队规模、证据类型或决策阶段发生变化；只替换 `best/top/leading` 不算新意图。
 
@@ -169,7 +169,7 @@ Branded 中先为每个 Topic 占用 1 个品牌总体评价基准题位置，�
 
 `target_audiences` 是可用条件来源，不设每个受众的最低题数或占比。整批应避免明显只服务单一受众，但不能为了平均覆盖而生成弱商业意图题；`audience_role` 使用规范化标识，便于二遍 review 看实际分布。
 
-初稿完成后启动独立二遍 review，再填写 `quality_checks`。逐题确认 `topic_aligned / category_visible / commercial_intent`：先检查问题要求 AI 选择的对象是否仍属于 Topic 的同一购买集合，再检查 Generic 的合理答案是否必须命名具体品牌/供应商/产品候选。只命中宽泛相关词不代表对齐：OEM/ODM 电池制造商不能漂成热管理厂商、集装箱式储能系统商或大型储能项目合作伙伴。品牌总体评价基准题还要逐 Topic 检查恰好 1 条、严格匹配模板，并且只出现监控品牌。二遍还要同时查批内与近期其他品牌题库：实体归一后完全重复可直接修复；词面相似只用于召回候选，不得脱离条件取值硬删。
+初稿完成后启动独立二遍 review，再填写 `quality_checks`。逐题确认 `topic_aligned / category_visible / commercial_intent`：先检查问题要求 AI 选择的对象是否仍属于 Topic 的同一购买集合，再检查 Generic 的题目是否明确要求具体品牌/供应商/平台/产品候选，而不是只可能在回答中顺带出现。只命中宽泛相关词不代表对齐：OEM/ODM 电池制造商不能漂成热管理厂商、集装箱式储能系统商或大型储能项目合作伙伴。品牌总体评价基准题还要逐 Topic 检查恰好 1 条、严格匹配模板，并且只出现监控品牌。二遍还要同时查批内与近期其他品牌题库：实体归一后完全重复可直接修复；词面相似只用于召回候选，不得脱离条件取值硬删。
 
 ## 4. 五段式字段隔离
 

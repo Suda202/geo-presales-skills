@@ -175,6 +175,16 @@
     "expected": "Fail commercial_intent. Generic must omit specific brand entities while still requiring the answer to name concrete jewelry brand candidates."
   },
   {
+    "name": "incidental_brand_mentions_do_not_qualify",
+    "input": "A Generic prompt asks whether buying lab-grown colored gemstone jewelry online is safe; an AI response might sometimes mention example brands.",
+    "expected": "Fail commercial_intent because general safety advice can fully answer the prompt. Rewrite it to explicitly ask which brands provide verifiable quality evidence and buyer protection."
+  },
+  {
+    "name": "generic_answer_brand_set_is_open",
+    "input": "A Generic prompt explicitly asks which lab-grown jewelry brands buyers should compare, without seeding any specific brand name.",
+    "expected": "Pass the brand-answer rule. The response may name the monitored brand, configured competitors, or relevant peer brands that were not present in the input."
+  },
+  {
     "name": "broad_topic_coverage_is_batch_level",
     "input": "A broad jewelry Topic covers lab-grown diamonds and colored gemstones, but one prompt asks only about lab-created sapphire jewelry.",
     "expected": "Keep the prompt if the category and commercial intent are clear; verify diamonds, other colored gemstones, mixed designs, and broad-category demand across the batch rather than repeating all subcategories in every prompt."

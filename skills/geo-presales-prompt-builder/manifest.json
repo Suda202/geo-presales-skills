@@ -2,7 +2,7 @@
   "id": "geo-presales-prompt-builder",
   "name": "geo-presales-prompt-builder",
   "display_name": "GEO Presales Prompt Builder",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "owner": "Overseas GEO Project",
   "updated_at": "2026-08-18",
   "review_cadence": "monthly",
@@ -11,7 +11,7 @@
   "lifecycle_stage": "production",
   "context_budget_tier": "production",
   "entrypoint": "SKILL.md",
-  "summary": "Generate and validate commercial English AI-search monitoring questions whose Generic answers name concrete brand candidates without naming configured brands in the prompt; enforce batch-level subcategory coverage, supported intent conditions, visible categories, stable purchasing objects, one fixed Branded benchmark per Topic, competitor guardrails, and input-driven terminology without a fixed word limit.",
+  "summary": "Generate and validate commercial English AI-search monitoring questions whose Generic wording explicitly requires concrete brand candidates without seeding specific brand entities; allow answers to surface monitored, configured-competitor, or unconfigured peer brands; enforce batch-level subcategory coverage, supported conditions, stable purchasing objects, and no fixed word limit.",
   "factory_components": [
     "agents",
     "references",
