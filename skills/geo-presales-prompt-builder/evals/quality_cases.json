@@ -157,7 +157,7 @@
   {
     "name": "bpi_task_89_4751_4753_4755_4757_4759_false_recommendation",
     "input": "Task 89 #4751/#4753–#4755/#4757–#4759 are labeled recommendation but ask only for procurement knowledge, certification criteria, or evaluation frameworks.",
-    "expected": "Fail commercial_intent. A recommendation label is not enough; a reasonable answer must provide battery manufacturer candidates, a recommendation, or a clear trade-off."
+    "expected": "Fail commercial_intent. A recommendation label is not enough; a Generic answer must name concrete battery manufacturer candidates."
   },
   {
     "name": "bpi_task_89_4778_containerized_ess_drift",
@@ -168,5 +168,25 @@
     "name": "bpi_task_89_4789_project_partner_drift",
     "input": "Task 89 #4789 evaluates OEM/ODM rechargeable battery manufacturers, but the question asks for a long-term partner for a 500 MWh energy storage project.",
     "expected": "Fail topic_aligned and category_aligned. A project delivery partner is a broader commercial object with a different candidate set and evaluation criteria."
+  },
+  {
+    "name": "generic_specific_names_absent_but_brand_answer_required",
+    "input": "A Generic prompt names no configured brand, but asks only how lab-grown diamonds differ from natural diamonds.",
+    "expected": "Fail commercial_intent. Generic must omit specific brand entities while still requiring the answer to name concrete jewelry brand candidates."
+  },
+  {
+    "name": "broad_topic_coverage_is_batch_level",
+    "input": "A broad jewelry Topic covers lab-grown diamonds and colored gemstones, but one prompt asks only about lab-created sapphire jewelry.",
+    "expected": "Keep the prompt if the category and commercial intent are clear; verify diamonds, other colored gemstones, mixed designs, and broad-category demand across the batch rather than repeating all subcategories in every prompt."
+  },
+  {
+    "name": "invented_low_frequency_condition_is_not_naturalness",
+    "input": "A generator adds 'when diamond sparkle matters most' only to make a lab-grown diamond brand prompt appear distinct.",
+    "expected": "Remove the invented condition and return to a supported buyer factor; naturalness means a plausible purchase request, not simulated verbatim speech or artificial uniqueness."
+  },
+  {
+    "name": "no_fixed_user_question_word_limit",
+    "input": "A standalone commercial question exceeds 30 English words because it includes several necessary conditions that jointly define one brand shortlist.",
+    "expected": "Do not fail on word count alone. Keep it if every condition changes the same candidate set and the wording remains natural; otherwise simplify under the single-intent gate."
   }
 ]

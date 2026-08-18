@@ -103,10 +103,6 @@ def normalize(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
-def word_count(value: str) -> int:
-    return len(re.findall(r"[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*", value))
-
-
 def contains_name(text: str, name: str) -> bool:
     needle = normalize(name)
     haystack = f" {normalize(text)} "
@@ -555,9 +551,6 @@ def validate(data: dict) -> tuple[list[str], list[str], dict]:
             errors.append(f"{prefix} {question_id}: zh_translation must be a non-empty string")
         elif not CJK_CHARACTER.search(zh_translation):
             errors.append(f"{prefix} {question_id}: zh_translation must contain Chinese characters")
-        count = word_count(user_question)
-        if count > 30:
-            errors.append(f"{prefix} {question_id}: user_question has {count} words; maximum is 30")
         if user_question and not (CONVERSATIONAL_START.search(user_question) or is_brand_sentiment):
             errors.append(f"{prefix} {question_id}: user_question is not a recognized natural question/request")
         if BARE_ACTION.search(user_question):
@@ -565,7 +558,7 @@ def validate(data: dict) -> tuple[list[str], list[str], dict]:
         if is_current_schema and NON_COMMERCIAL_GENERIC.search(user_question):
             errors.append(
                 f"{prefix} {question_id}: generic question is explanatory or purchase-process wording; "
-                "it must ask for recommendations, candidates, or a clear trade-off"
+                "its answer must name concrete brand/supplier/product candidates"
             )
         if AMBIGUOUS_CATEGORY.search(user_question) and not CATEGORY_CLARIFIER.search(user_question):
             errors.append(f"{prefix} {question_id}: ambiguous brand tracking/monitoring lacks an AI-search qualifier")

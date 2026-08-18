@@ -5,7 +5,7 @@
 | 实际问题（英文 / 中文） | 问题在哪里 |
 |-|-|
 | `What certification coverage criteria should buyers evaluate when choosing specialized product suppliers?`<br>买方在选择专业产品供应商时，应评估哪些认证覆盖标准？ | 看不出在问充电电池；`specialized product suppliers` 是跨品类占位词。答案也只会给认证清单，不会稳定给出电池供应商候选。 |
-| `What certifications should OEM procurement managers evaluate when choosing a rechargeable battery manufacturer?`<br>OEM 采购经理在选择充电电池制造商时，应评估哪些认证？ | 品类已经可见，但仍是教育型评估框架；答案大概率只讲认证，不是品牌监控需要的供应商推荐或明确取舍。 |
+| `What certifications should OEM procurement managers evaluate when choosing a rechargeable battery manufacturer?`<br>OEM 采购经理在选择充电电池制造商时，应评估哪些认证？ | 品类已经可见，但仍是教育型评估框架；答案大概率只讲认证，不会命名具体供应商候选。 |
 
 品类落地合格不代表商业意图合格，两道门要分别检查。更合格的商业题例如：
 
@@ -36,7 +36,7 @@
 | `Why is Peec AI better than Profound?` | 预设优劣 | `How do Peec AI and Profound compare for enterprise marketing teams?` | — |
 | `Which CRM is best?` | 无问题；短但品类清楚且要求推荐 | 原样保留 | 不因短于 6 词扩写 |
 | `Which GEO tools are best?` | GEO 可能被理解为 geography，缺少独立语境 | `Which generative engine optimization (GEO) tools work well for SEO agencies?` | retrieval: `best GEO tools for SEO agencies` |
-| `AEO platform pricing` | 缩写歧义、关键词短语 | `How do answer engine optimization (AEO) platforms structure pricing?` | retrieval: `AEO platform pricing` |
+| `AEO platform pricing` | 缩写歧义、关键词短语 | `Which answer engine optimization (AEO) platforms should buyers compare on pricing?` | retrieval: `AEO platform pricing` |
 | `How does Peec AI track AI visibility?`（整批唯一专业词面） | 语义相关，但不能覆盖输入中的 GEO 专业受众 | `How should agencies evaluate Peec AI for generative engine optimization (GEO) reporting?` | — |
 
 ## 冻结竞品的出题边界
@@ -78,13 +78,23 @@
 | 格子 | 合格示例 | 答案终点 |
 |-|-|-|
 | Generic Recommendation | `Which AI visibility platforms are worth considering for a small agency?` | 品牌候选或推荐 |
-| Generic Comparison | `Are dedicated AI visibility platforms or manual AI checks better for a small agency?` | 差异与明确取舍 |
+| Generic Comparison | `Which AI visibility platforms should a small agency compare for weekly reporting, and what trade-offs separate them?` | 命名候选平台，再比较差异并取舍 |
 | Generic Decision | `Which AI visibility platform is the best fit for a small agency?` | 明确推荐或适配判断 |
 | Branded Recommendation | `Should a small agency shortlist Peec AI for weekly AI visibility reporting?` | 是否值得纳入候选及理由 |
 | Branded Comparison | `How does Peec AI compare with Profound on AI answer monitoring?` | 与正式竞品中性比较 |
 | Branded Decision | `Is Peec AI the right choice for a small SEO agency?` | 是否选择或采用品牌 |
 
 表格表达六种答案目标，不代表六格配额。实际有 5 条 Branded Comparison 时，不应是五条换名字的近义题：前三条分别只命中一个正式竞品，后两条使用不点名竞品的关键因素问法，或同时命中两个以上正式竞品。`adjacent/fallback` 即使需要完成独立覆盖，也不能越过其 `allowed_dimensions`。
+
+## Lit by Larry 回归：意图优先于模拟原话
+
+| 反例 | 失败原因 | 修复方向 |
+|-|-|-|
+| `How do lab-grown diamonds compare with natural diamonds in price and quality?` | Generic 答案可以只讲材料差异，不出现珠宝品牌。 | 改问消费者应比较哪些珠宝品牌，以及候选品牌在相关维度上的取舍。 |
+| `What lab-grown diamond jewelry brands should shoppers consider when diamond sparkle matters most?` | “闪耀最重要”是为了制造差异而编出的低频条件，不来自输入。 | 使用设计、工艺、价值、证书、礼赠或线上信任等有依据的购买条件。 |
+| `Should buyers choose one brand offering both lab-grown diamonds and colored gemstones instead of separate specialist brands?` | 把整批品类广度错误变成单题的罕见组合策略。 | 单题可只问钻石、祖母绿、蓝宝石、红宝石或混合设计；整批检查覆盖。 |
+
+Generic 可以写 `Which jewelry brands...`，但不能写 Lit by Larry、Chatham 等具体品牌实体。问题不需要复刻用户逐字说法，也不设词数硬门；它必须清楚表达真实购买意图，并让合理答案自然命名具体候选品牌。
 
 ## 固定品牌总体评价基准题
 

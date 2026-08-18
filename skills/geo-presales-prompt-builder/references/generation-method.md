@@ -26,6 +26,8 @@
 
 品类可见不等于 Topic 对齐。同一品类下有多个 Topic 时，每题还要体现所属 Topic 的具体意图，不能用泛品类题跨 Topic 补量。
 
+广度 Topic 含多个子品类或产品词时，覆盖单位是整批而不是单题。先在意图矩阵记录各子品类的批内覆盖，再让单题自然落到品类大盘、某个子品类、具体产品或组合场景。不得要求每题重复完整品类范围，也不得为了同时出现多个产品词，发明“一个全品类品牌还是多个专业品牌”之类罕见购买任务。
+
 ## 1.5 专业术语与用户自然语言双层覆盖
 
 自然用户不只使用白话，也可能直接输入 GEO、AEO、LLM visibility 等行业术语。生成前必须建立专业术语清单，不能因为追求自然度而把输入中的规范术语全部同义改写掉。新题库先输出 `professional_term_assessment`：对 Topic、受众和品类中的每个候选概念记录 `required / excluded`、来源和理由，再为所有 `required` 概念建立配额。即使结果为空，也必须标记评估已完成并写 `no_required_terms_reason`。
@@ -74,7 +76,7 @@ v3 删除 `geo_intent`。`funnel_intent` 是唯一意图分类，只允许 `reco
 
 - 信息题直接淘汰；它会把回答带到概念、机制或评估清单。
 - 价格、风险、约束、替代对象只是选购条件，根据回答终点归入 Recommendation、Comparison 或 Decision。
-- “有哪些替代方案”属于 Recommendation；“原方案还是另一类方案”属于 Comparison。Generic 可比较不点品牌的品类或方案；点名监控品牌时属于 Branded。
+- “有哪些替代方案”属于 Recommendation；“原方案还是另一类方案”只有在回答还会命名对应的具体候选品牌/产品时才可作为 Generic Comparison。Generic 不点任何具体品牌实体，但它的答案必须带出具体品牌、供应商、产品或平台；点名监控品牌时属于 Branded。
 - “是否应试用、购买或采用”属于 Decision；“去哪买、怎么注册”不生成。
 - 固定 `Evaluate...` 品牌总体评价基准题由模板确定性识别，归入 Branded + Decision，不增加额外标签。
 
@@ -82,18 +84,18 @@ v3 删除 `geo_intent`。`funnel_intent` 是唯一意图分类，只允许 `reco
 
 ### 售前商业意图的答案终点
 
-售前 50 题只使用 `recommendation / comparison / decision`，三类均须出现，但不设数量或六格交叉配额，也不新增弱、中、强或 `answer_goal` 字段。三类都必须服务选购，合理答案应出现品牌/供应商候选、推荐或明确取舍：
+售前 50 题只使用 `recommendation / comparison / decision`，三类均须出现，但不设数量或六格交叉配额，也不新增弱、中、强或 `answer_goal` 字段。三类都必须服务选购。Generic 题不出现配置品牌实体，但答案必须命名具体候选；只给材料差异、选购标准或品类取舍不合格：
 
 | 类型组合 | 问题应把回答带到哪里 |
 |-|-|
 | Generic Recommendation | 给品牌/供应商候选名单或推荐；不能只给标准清单 |
-| Generic Comparison | 比较候选品类/方案并给取舍，或比较品牌候选的关键差异 |
-| Generic Decision | 给明确推荐、适配判断或最终结论 |
+| Generic Comparison | 先带出具体品牌/供应商/产品候选，再比较关键差异并给取舍 |
+| Generic Decision | 从具体品牌/供应商/产品候选中给最终选择或适配结论 |
 | Branded Recommendation | 说明品牌在具体场景是否值得纳入候选，并给理由或适用条件 |
 | Branded Comparison | 将本品牌与正式竞品做中性、有边界的比较 |
 | Branded Decision | 判断是否应该选择、购买或采用本品牌 |
 
-Recommendation、Comparison 与 Decision 的区别是回答任务，不是购买强度：Recommendation 要候选，Comparison 要差异与取舍，Decision 要最终适配判断。三类都可以带人群、用途、预算和场景；Yes/No 形式不是问题，只要回答需要理由、条件或风险，而不是只答一个词。
+Recommendation、Comparison 与 Decision 的区别是回答任务，不是购买强度：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要对具体候选作最终适配判断。三类都可以带人群、用途、预算和场景；Branded 可以使用会引出理由、条件或风险的 Yes/No 题。Generic 若只问某种材料、方案或品类是否值得采用，而不要求命名候选品牌，不算商业监测题。
 
 ### 商业问题的构成
 
@@ -102,7 +104,7 @@ Recommendation、Comparison 与 Decision 的区别是回答任务，不是购买
 - 目标用户：谁在选。
 - 评估标准：买家关心的能力。
 - 约束：预算、集成、地区、合规、MOQ 等。
-- 比较对象：品类或方案，不得在 Generic 中写任何品牌。
+- 比较对象：品类或方案。Generic 问题不得写任何具体品牌实体，但必须要求回答命名对应的品牌/供应商/产品候选。
 
 单一条件示例：`适合医疗设备厂商的充电电池制造商`，只使用目标用户/用途条件。复合条件示例：`适合需要低起订量和医疗认证的初创医疗设备公司的充电电池制造商`，同时使用目标用户、评估标准和约束。
 
@@ -111,10 +113,12 @@ Recommendation、Comparison 与 Decision 的区别是回答任务，不是购买
 四类条件不是四种意图，也不和三类意图一一绑定。目标用户、评估标准或约束都可以进入 Recommendation、Comparison 或 Decision；比较对象通常进入 Comparison，也可作为“替代什么”的 Recommendation 条件。完成具体问题后按答案终点硬分配：
 
 - 回答需要给候选品牌/供应商名单 → `recommendation`
-- 回答需要比较差异并作取舍 → `comparison`
-- 回答需要对一个明确选择给最终适配判断 → `decision`
+- 回答需要命名候选并比较差异、作取舍 → `comparison`
+- 回答需要从具体候选中给最终适配判断 → `decision`
 
 常见问法包括 `best / top / recommended / which / how to choose / what should we use instead of`，但不按句式配额。`How to choose` 只有在回答会比较或推荐具体候选时才合格；`What should I look for...` 这类只产出标准清单的题不合格。
+
+自然度不是逐字复刻真实用户，而是保证问题像一个可成立的购买请求。先保留真实意图与答案终点，再选择清楚、自然的表达；不得为了让 50 题表面不同而编造输入中没有、也不会显著改变候选集合的条件，例如“当钻石的闪耀最重要时”。问题长度不设固定上下限，冗余条件照样按单意图和自然度门删除。
 
 不生成：
 
@@ -165,7 +169,7 @@ Branded 中先为每个 Topic 占用 1 个品牌总体评价基准题位置，�
 
 `target_audiences` 是可用条件来源，不设每个受众的最低题数或占比。整批应避免明显只服务单一受众，但不能为了平均覆盖而生成弱商业意图题；`audience_role` 使用规范化标识，便于二遍 review 看实际分布。
 
-初稿完成后启动独立二遍 review，再填写 `quality_checks`。逐题确认 `topic_aligned / category_visible / commercial_intent`：先检查问题要求 AI 选择的对象是否仍属于 Topic 的同一购买集合，再检查合理答案是否必须给候选品牌/供应商或明确取舍。只命中宽泛相关词不代表对齐：OEM/ODM 电池制造商不能漂成热管理厂商、集装箱式储能系统商或大型储能项目合作伙伴。品牌总体评价基准题还要逐 Topic 检查恰好 1 条、严格匹配模板，并且只出现监控品牌。二遍还要同时查批内与近期其他品牌题库：实体归一后完全重复可直接修复；词面相似只用于召回候选，不得脱离条件取值硬删。
+初稿完成后启动独立二遍 review，再填写 `quality_checks`。逐题确认 `topic_aligned / category_visible / commercial_intent`：先检查问题要求 AI 选择的对象是否仍属于 Topic 的同一购买集合，再检查 Generic 的合理答案是否必须命名具体品牌/供应商/产品候选。只命中宽泛相关词不代表对齐：OEM/ODM 电池制造商不能漂成热管理厂商、集装箱式储能系统商或大型储能项目合作伙伴。品牌总体评价基准题还要逐 Topic 检查恰好 1 条、严格匹配模板，并且只出现监控品牌。二遍还要同时查批内与近期其他品牌题库：实体归一后完全重复可直接修复；词面相似只用于召回候选，不得脱离条件取值硬删。
 
 ## 4. 五段式字段隔离
 

@@ -1,0 +1,49 @@
+{
+  "brand": "Lit by Larry",
+  "source": "User review of the Lit by Larry presales prompt batch on 2026-08-18",
+  "baseline_summary": {
+    "generic_prompts_reviewed": 12,
+    "generic_prompts_without_brand_answer_endpoint": 7,
+    "observed_failures": [
+      "material comparison without brand candidates",
+      "yes/no category adoption without brand selection",
+      "evaluation checklist without brand recommendations",
+      "rare conditions invented to differentiate prompts",
+      "diamond and colored gemstones forced into every prompt"
+    ]
+  },
+  "length_policy": {
+    "hard_max_words": false,
+    "review_rule": "Use the shortest wording that preserves the real purchase condition and brand answer endpoint; do not reject an otherwise valid prompt by word count alone."
+  },
+  "coverage_policy": {
+    "scope": "batch",
+    "rule": "A broad topic may be covered across diamond-only, colored-gemstone-only, mixed-stone, and broad-category prompts. One prompt does not need to repeat the full category scope."
+  },
+  "bad_cases": [
+    {
+      "failure_family": "generic_without_brand_answer_endpoint",
+      "prompt": "How do lab-grown diamonds compare with natural diamonds in price, quality, durability, and long-term value?",
+      "why_it_fails": "The answer can remain a material comparison and never name a jewelry brand.",
+      "expected_repair": "Ask which jewelry brands buyers should compare for lab-grown and natural diamonds on the decision factors that matter."
+    },
+    {
+      "failure_family": "generic_without_brand_answer_endpoint",
+      "prompt": "What should I look for in shipping, returns, resizing, warranties, and after-sales service when buying fine jewelry online?",
+      "why_it_fails": "The answer is an evaluation checklist rather than a brand shortlist or brand comparison.",
+      "expected_repair": "Ask which online jewelry brands offer the relevant shipping, returns, warranty, or after-sales conditions."
+    },
+    {
+      "failure_family": "invented_low_frequency_condition",
+      "prompt": "What lab-grown diamond jewelry brands should shoppers consider when diamond sparkle matters most?",
+      "why_it_fails": "Diamond sparkle was invented to create a distinct condition and is not a meaningful buyer segment in the brief.",
+      "expected_repair": "Use a supported purchase factor such as design, craftsmanship, value, certification, gifting, or online trust."
+    },
+    {
+      "failure_family": "per_question_full_scope_forcing",
+      "prompt": "Should buyers choose one brand offering both lab-grown diamonds and colored gemstones instead of separate specialist brands?",
+      "why_it_fails": "It turns batch-level category breadth into a rare per-question portfolio strategy.",
+      "expected_repair": "Let individual prompts focus on diamonds, one or more colored gemstones, mixed designs, or the broad category, then verify balanced batch coverage."
+    }
+  ]
+}
