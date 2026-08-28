@@ -1,234 +1,200 @@
-# 海外 GEO 售前问题库契约
+# 海外 GEO 售前问题库契约（v8）
 
-## 默认模式
+## 输入字段合同
 
-`presales_diagnostic` 默认生成恰好 50 条问题：Generic 40 条、Branded 10 条。调用方提供其他总题量或问题类型配额时以调用方为准，但必须在生成前冻结并在交付时复核。
+v8 直接接受 Edgelight 评测集 Case 所示的中文字段名，不要求 `target_attributes`，也不把输入改造成另一套 Builder 字段：
 
-### 商业意图不设数量配额
+| 基础字段 | 可编号字段 | 主题与竞品字段 | 补充字段 |
+|---|---|---|---|
+| `公司名`、`业务 / 产品名称`、`品牌名称`、`业务模式`、`品类`、`垂直行业` | `目标客户 1…n`、`痛点 1…n`、`使用场景 1…n`、`产品特性 1…n` | `主题 1…n（宽泛/细分）`（1–3 个）、`官方域名`、三组 `竞品 n` 与 `竞品 n 官网域名` | `差异化优势`、`适用边界`、`补充内容` |
 
-`funnel_intent` 只允许 `recommendation / comparison / decision`，整批三类都必须出现，但不限制各自数量，也不要求 Generic × 三意图、Branded × 三意图的六格数量。意图按答案终点分：Recommendation 要候选，Comparison 要候选间差异与取舍，Decision 要最终选择具体候选。Generic 不出现具体品牌实体，但题目本身必须要求具体品牌/供应商/平台/产品候选，不能依赖回答偶然举出品牌。
+括号中的“宽泛/细分”只帮助理解 Topic，不输出 `topic_type`。品牌、品类、至少一个 Topic、官方域名以及三组竞品名称和官网域名为硬必填；纯 `B2C` 的垂直行业允许留空。`补充内容`字段必须保留但允许为空；为空时三组正式竞品默认适用于全部 Topic。其余业务字段必须足以为每 Topic 派生 3–5 个 P1 属性；P2 少于建议的 5 个时可保留现有数量并报告信息缺口，不得虚构补齐。
 
-总数为 49、Generic/Branded 数量不符、任一商业意图完全缺失、用重复题补齐或生成失败后静默少题，整批均不得进入采集。
+Accuracy 默认配额为 0，不需要上游事实包，也不产生 `fact_value / official_source_url / fact_checked_at`。如用户明确要求 Accuracy，先单独确认事实核验输入和产物合同，不把 Case 声明直接当成已核验真值。
 
-### 六种组合的答案目标
+## Topic、Attribute 与 Tags
 
-- Generic Recommendation：给具体品牌/供应商/产品候选名单或推荐，不能只给定义、标准或采购知识。
-- Generic Comparison：先命名具体候选，再给候选间差异和明确取舍；只比较材料、品类或方案不合格。
-- Generic Decision：从具体候选中给明确品牌/供应商/产品选择或最终适配结论。
-- Branded Recommendation：判断品牌在具体场景是否值得纳入候选，并说明理由、条件或风险。
-- Branded Comparison：与正式竞品做中性、有边界的比较。
-- Branded Decision：询问是否应该选择、购买或采用本品牌。
+- Topic 是 Prompt 集合的主组织单元，代表可长期独立监测的市场、场景或战略机会。每题只回指一个 `topic_id`。
+- Attribute 是希望 AI 形成的战略认知、能力、特征或评价标准。Builder 在 `attribute_plan` 中按 Topic 规划优先级，逐题使用 `Attribute: …` Tag 建立关联；同名 Attribute 可以跨 Topic 聚合。
+- Tags 是统一的自由字符串数组，承接诊断意图、品牌范围、Attribute 和其他横向分类。默认使用命名空间以避免同名冲突，不另建逐题 `attributes` 字段。
 
-这些是生成和语义 review 规则，不是六格配额，也不新增字段或统计维度。
+## 固定结构
 
-`funnel_intent` 的正式值为 `recommendation / comparison / decision`。`awareness / informational / 了解` 只属于 v2 历史题库；新生成的 v3 题库不得使用。
+- `schema_version=overseas-geo-question-bank/v8`
+- 1–3 个 Topic；各 Topic 按 Attribute 信息量独立规划题数，可以不等量，整批总量不得超过 60。每 Topic 10–25 仅为常见规划区间，不是硬门。
+- 不设统一的六类 Intent 默认比例。每个适用竞品各一条 Competitor；Verification / Accuracy / Evaluation / Category Awareness 分别保持 `1/0/1/1`；Evaluation 只覆盖目标品牌，竞品情绪矩阵留给售后生词；Discovery 数量由 P1 全覆盖和有独立诊断价值的 P2/P3 决定。
+- Discovery 必须在每个 Topic 内严格超过 50%，即大于该 Topic 全部非 Discovery 数量之和。1/2/3 个适用竞品时，Discovery 分别至少为 5/6/7；聚合占比不能替代逐 Topic 硬门。
+- `quotas.per_topic` 保存未单列 Topic 共用的实际基线，`quotas.topic_overrides` 保存不同 Topic 的实际配额；二者都是本批规划结果，不是系统默认配额。`quotas.intent_tags` 必须等于所有实际 Topic 配额之和。
+- 每 Topic 的正式可见度题按实际 Discovery、适用 Competitor 与一条 Category Awareness 统计，不预设固定数量。
+- v8 不包含 `diagnosis_intent`、逐题 `attributes`、`topic_type`、`question_type`、`funnel_intent`、`decision_stage`、`metric_scopes`、`attribute_pool`、`attribute_id`、`attribute_ids` 或 `priority_attribute_ids`。
+- v8 必须包含 Builder 派生的 `attribute_plan`；每 Topic 恰好一项，同一 Attribute 和源字段允许被多个 Topic 使用，不做唯一归属。
 
-## Generic 与 Branded
+v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_object_type / category_label / official_domain / derived_field_sources / topics / attribute_plan / expected_total / quotas / competitor_selection`。拒绝 `target_audiences / pain_points / use_cases` 等平行输入字段及其他未声明配置，避免绕过评测集 Case 字段。
 
-`generic`：
+## `attribute_plan` 合同
 
-- 不出现客户品牌、产品名、已配置 aliases、竞品名或其他任何具体品牌实体
-- 可以使用 `brands / manufacturers / suppliers / platforms / products` 等通用候选词；禁止的是具体品牌实体，不是“品牌”这个类别词
-- 测试 AI 在无品牌预埋时会推荐谁；题目措辞必须明确要求品牌/供应商/平台/产品候选、候选比较或最终候选选择
-- 答案允许出现监控品牌、已配置竞品或未配置的其他同类品牌，不以输入名单限制候选集合
-- 必须出现可识别的目标品类或品类下产品词，可以包含角色、场景和约束
-- 只会回答材料差异、是否值得采用、评估标准或购买流程的题不合格；AI 可能顺带举品牌也不构成通过
-- 二遍 review 尝试写一个不含任何具体候选名称的完整答案；如果写得出来，该 Generic 题失败
+- 每个 Topic 恰好一项，只包含 `topic_id / priorities / excluded`。
+- `priorities` 恰好包含 `P1 / P2 / P3`：P1 必须 3–5 个，P2 建议 5–10 个且不得超过 10，P3 允许 0–10 个。
+- P1 每项恰好包含 `attribute / source_field / source_value / decision_reason / verification_statement`；P2/P3 不包含 `verification_statement`。
+- `excluded` 可为空；每项包含 `candidate / source_field / source_value / reason / route`，`route` 只允许 `exclude` 或 `accuracy_only`。
+- 当前 Topic 的 `validation_items` 和 Verification 的 Attribute Tags 必须按顺序与 P1 完全一致；完整示例见 [属性规划](attribute-planning.md)。
 
-`branded`：
+## Edgelight Case / Topic 骨架
 
-- 必须明确出现客户品牌
-- 用于品牌认知、适用性、比较、价格、风险和采购验证
-- 竞品比较保持中性；不得把品牌题天然放在答案顺序第一等同于推荐胜出
-
-### 每 Topic 一条品牌总体评价基准题
-
-标准化基准题直接放在 `branded`，不新增第四种意图或新角色字段。每个 Topic 恰好 1 条：
-
-- 公司：`Evaluate the {品类} company {品牌名} on {主题}`
-- 产品：`Evaluate the {品类} product {品牌名} on {主题}`
-
-固定填写：`question_type=branded`、`funnel_intent=decision`。它计入 Branded 和 Decision 的实际数量；同批仍须另外覆盖 Recommendation 与 Comparison。该基准题不是唯一情绪样本：其余 Branded 商业题仍可形成品牌评价，下游情绪指标使用全部入选有效且提及监控对象的回答。`category_label` 应是自然品类名，不要把 `manufacturer/supplier` 再与 `company` 叠成 `manufacturer company`。例如：
-
-- `Evaluate the CRM software company HubSpot on small business sales management`
-- `Evaluate the men's fragrance product Bleu de Chanel on fragrance gift shopping`
-- `Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement`
-
-这条是固定监测句式，不受普通问句开头规则限制；除此之外不能用 `Evaluate the...` 伪装成普通商业题。校验时除大小写和连续空格外逐字匹配，不自行加问号或句号。若 Topic 数超过 Branded 配额，配置本身失败，不能静默少生成。
-
-实际生成 5 条 Branded Comparison 时，3 条分别覆盖三个正式竞品，每个竞品至少一条独立一对一题；另外 2 条围绕 Topic 关键选型因素，或同时比较两个及以上正式竞品。不得用五条近义一对一问题机械填满数量。少于 5 条时不为了凑 3+2 而增加比较配额，但仍遵守竞品比较边界。
-
-## 默认覆盖要求
-
-- v3 不生成额外的角度意图字段。价格、预算、总成本、限制、风险和替代对象只有在改变购买选择时才作为条件进入 Recommendation、Comparison 或 Decision；不设任何角度配额。
-- 多子品类或多产品广度 Topic 按整批建立覆盖矩阵；单题可只命中一个子品类、具体产品或组合场景，不要求逐题复述 Topic 的全部范围。
-- 自然度不要求复刻用户逐字问法，只要求形成真实、可回答的购买请求。不得为制造题目差异编造低频条件。
-- `user_question` 不设固定词数上下限；长度只接受自然度、单意图和必要条件约束。
-- 至少 3 个用户角色、3 个使用场景、2 类约束条件。
-- `best / top / recommended / which / how to choose` 都是允许的商业问法，不设硬比例；整批过度集中时只提醒复核是否重复测量同一意图。
-- 每个问题簇原则上不超过 3 条；超过时必须证明答案边界不同。
-- `target_audiences` 是条件来源，不设每个受众的题数下限；覆盖情况由整批意图多样性复核。
-- 价格条件不设固定最低配额。有公开价格时可问价格、套餐和预算适配；定制报价时问收费方式、报价因素或总成本；无法校准预算量级时不写具体金额。
-
-## JSON 输入契约
-
-### 冻结竞品集合
-
-正式售前链路将竞品研究产出原样放入 `config.competitor_selection`。该对象必须 `status=frozen`、`selection_count=3`，且恰好包含 3 个 `formal_competitors`：
+下列片段专门展示 Case、Topic、配额和竞品字段，为缩短篇幅省略了 v8 必填的 `attribute_plan`；完整题库必须按上述合同补全。
 
 ```json
 {
-  "status": "frozen",
-  "selection_count": 3,
-  "formal_competitors": [
-    {
-      "name": "Profound",
-      "aliases": ["Profound AI"],
-      "comparability_tier": "direct",
-      "comparison_policy": {
-        "mode": "standard_evidence_based",
-        "allowed_dimensions": ["AI answer monitoring", "reporting"]
-      }
-    },
-    {
-      "name": "Adjacent Example",
-      "aliases": [],
-      "comparability_tier": "adjacent",
-      "comparison_policy": {
-        "mode": "neutral_shared_dimensions_only",
-        "allowed_dimensions": ["AI answer monitoring"]
-      }
-    },
-    {
-      "name": "Fallback Example",
-      "aliases": [],
-      "comparability_tier": "fallback",
-      "comparison_policy": {
-        "mode": "neutral_shared_dimensions_only",
-        "allowed_dimensions": []
-      }
-    }
-  ]
-}
-```
-
-`direct` 可做标准中性比较。`adjacent/fallback` 的比较题只能使用 `allowed_dimensions`；列表为空时只做品类关系或使用场景澄清。任何低可比候选都禁止“谁更好”、全面优劣、绝对排名或全面替代性问法。`competitors` 字符串列表只为旧题库兼容；有冻结对象时以 `formal_competitors` 为正式集合。
-
-校验脚本接受：
-
-```json
-{
-  "schema_version": "overseas-geo-question-bank/v3",
+  "schema_version": "overseas-geo-question-bank/v8",
   "config": {
-    "brand_name": "Peec AI",
-    "product_name": "Peec AI Platform",
+    "case_fields": {
+      "公司名": "Shanghai Edgelight Industry Co., Ltd.",
+      "业务 / 产品名称": "LED Display and Commercial Display Solutions",
+      "品牌名称": "Edgelight",
+      "业务模式": "B2B",
+      "品类": "LED 显示屏制造商与商业显示解决方案提供商",
+      "垂直行业": "商业 AV 零售与商业地产 企业设施 舞台与体育场馆",
+      "目标客户 1": "商业 AV 集成商与 LED 显示屏分销商——关注参数 集成与服务",
+      "目标客户 2": "零售 商业地产与品牌体验团队——关注视觉效果 可靠性与项目成本",
+      "目标客户 3": "企业 政企园区与会议设施团队——关注清晰度 文件与维护",
+      "目标客户 4": "舞台制作 体育场馆与活动技术团队——关注亮度 刷新率与结构灵活性",
+      "痛点 1": "项目团队难以让像素间距 亮度 刷新率 观看距离与结构适配具体场馆",
+      "痛点 2": "安装调试 文件 认证与售后缺口会延误交付并提高项目总成本",
+      "使用场景 1": "在企业与商业空间安装固定式 LED 显示屏",
+      "使用场景 2": "为裸眼 3D 舞台与场馆打造创意沉浸式 LED 体验",
+      "产品特性 1": "室内外 固装 租赁与创意 LED 显示产品组合",
+      "产品特性 2": "像素间距 亮度 刷新率 色彩与画质能力",
+      "产品特性 3": "结构定制与内容控制集成",
+      "产品特性 4": "项目设计 安装调试 文件 认证与售后服务",
+      "差异化优势": "具备 20 多年 LED 领域经验 同时覆盖 LED 显示屏 电源 控制器 广告照明产品与项目解决方案 官网声明拥有五座全球生产基地 产品销往 50 多个国家并获得 100 多项国际认证",
+      "适用边界": "只采购 LED 照明 驱动电源 控制器 广告照明配件或不需要 LED 显示屏的完整建筑 AV 与媒体制作服务的客户",
+      "主题 1（宽泛）": "LED 显示屏制造商与商业显示解决方案提供商",
+      "主题 2（细分）": "面向企业与商业空间的固定安装 LED 显示解决方案",
+      "主题 3（细分）": "面向裸眼 3D 舞台与场馆体验的创意沉浸式 LED 显示屏",
+      "官方域名": "https://edgelight.com",
+      "竞品 1": "SANSI LED (Shanghai Sansi)",
+      "竞品 1 官网域名": "https://www.sansi.com",
+      "竞品 2": "Unilumin",
+      "竞品 2 官网域名": "https://en.unilumin.com",
+      "竞品 3": "LianTronics",
+      "竞品 3 官网域名": "https://www.liantronics.com",
+      "补充内容": "本次只在 LED 显示屏制造与商业显示解决方案范围内评测边光 不把 LED 电源 控制器 装饰照明 广告灯箱和物联网产品混入同一主题。官网列出室内外全彩屏 租赁屏 创意显示 玻璃相关显示与 LED 地砖屏等产品 并展示政企园区 商业环境和裸眼 3D 解决方案 项目案例覆盖商业项目 舞台剧场 会议显示 体育场馆和标识标牌。买家主要比较像素间距 亮度 刷新率 观看距离 色彩与画质 室内外耐候 结构定制 内容与控制集成 安装调试 服务 文件 认证 交期和项目总成本。SANSI LED Unilumin 与 LianTronics 作为可比的 LED 显示与解决方案提供商保留 仅照明或通用 AV 供应商不纳入本 Case。"
+    },
+    "brand_name": "Edgelight",
     "brand_object_type": "company",
-    "category_label": "AI search visibility",
-    "aliases": ["Peec"],
+    "category_label": "LED display manufacturer and commercial display solution provider",
+    "official_domain": "https://edgelight.com",
+    "derived_field_sources": {
+      "brand_name": "品牌名称",
+      "category_label": "品类",
+      "official_domain": "官方域名"
+    },
     "topics": [
       {
-        "topic_id": "ai-search-visibility-platforms",
-        "topic": "AI search visibility platforms for marketing teams"
+        "topic_id": "topic_1",
+        "topic": "LED display manufacturers and commercial display solution providers",
+        "source_field": "主题 1（宽泛）",
+        "source_value": "LED 显示屏制造商与商业显示解决方案提供商"
+      },
+      {
+        "topic_id": "topic_2",
+        "topic": "fixed-installation LED display solutions for corporate and commercial spaces",
+        "source_field": "主题 2（细分）",
+        "source_value": "面向企业与商业空间的固定安装 LED 显示解决方案"
+      },
+      {
+        "topic_id": "topic_3",
+        "topic": "creative immersive LED displays for naked-eye 3D, stage and venue experiences",
+        "source_field": "主题 3（细分）",
+        "source_value": "面向裸眼 3D 舞台与场馆体验的创意沉浸式 LED 显示屏"
       }
     ],
-    "target_audiences": ["seo_agency", "enterprise_marketing"],
-    "competitors": ["Profound", "Otterly AI"],
-    "expected_total": 50,
+    "expected_total": 51,
     "quotas": {
-      "question_type": {"generic": 40, "branded": 10}
-    },
-    "category_expression_set": {
-      "core_terms": [
-        "AI search visibility",
-        "AI visibility",
-        "generative engine optimization"
-      ],
-      "product_terms": [
-        "GEO platform",
-        "AI answer monitoring"
-      ],
-      "placeholder_blacklist": [
-        "specialized product suppliers",
-        "product providers",
-        "solution vendors"
-      ]
-    },
-    "min_distinct_counts": {"audience_roles": 3, "scenarios": 3, "constraints": 2},
-    "professional_term_assessment": {
-      "status": "completed",
-      "decisions": [
-        {
-          "concept": "geo",
-          "source": "input_explicit",
-          "decision": "required",
-          "reason": "The audience explicitly includes GEO agencies."
-        }
-      ]
-    },
-    "required_term_coverage": {
-      "geo": {
-        "label": "generative engine optimization (GEO)",
-        "terms": ["generative engine optimization", "GEO"],
-        "expanded_form": "generative engine optimization",
-        "acronym": "GEO",
-        "context_terms": ["AI search", "AI-generated answers", "generative search"],
-        "min_total": 3,
-        "min_generic": 1,
-        "min_branded": 1,
-        "min_expanded": 1,
-        "min_acronym": 1
+      "intent_tags": {"Intent: Discovery": 33, "Intent: Competitor": 9, "Intent: Verification": 3, "Intent: Accuracy": 0, "Intent: Evaluation": 3, "Intent: Category Awareness": 3},
+      "per_topic": {"Intent: Discovery": 14, "Intent: Competitor": 3, "Intent: Verification": 1, "Intent: Accuracy": 0, "Intent: Evaluation": 1, "Intent: Category Awareness": 1},
+      "topic_overrides": {
+        "topic_2": {"Intent: Discovery": 11, "Intent: Competitor": 3, "Intent: Verification": 1, "Intent: Accuracy": 0, "Intent: Evaluation": 1, "Intent: Category Awareness": 1},
+        "topic_3": {"Intent: Discovery": 8, "Intent: Competitor": 3, "Intent: Verification": 1, "Intent: Accuracy": 0, "Intent: Evaluation": 1, "Intent: Category Awareness": 1}
       }
     },
-    "excluded_categories": ["social listening", "media monitoring", "SERP rank tracking"]
+    "competitor_selection": {
+      "status": "frozen",
+      "selection_count": 3,
+      "formal_competitors": [
+        {"name": "SANSI LED (Shanghai Sansi)", "official_domain": "https://www.sansi.com", "source_fields": ["竞品 1", "竞品 1 官网域名"]},
+        {"name": "Unilumin", "official_domain": "https://en.unilumin.com", "source_fields": ["竞品 2", "竞品 2 官网域名"]},
+        {"name": "LianTronics", "official_domain": "https://www.liantronics.com", "source_fields": ["竞品 3", "竞品 3 官网域名"]}
+      ]
+    }
   },
   "questions": []
 }
 ```
 
-`schema_version` 是新产物必填项。v3 必须提供 `category_expression_set`、`professional_term_assessment` 和 `required_term_coverage`（术语配额可为空对象）。每个 `required` 决策必须对应一个配额概念；不适用的候选用 `excluded` 并写明理由。`decisions=[]` 时必须写 `no_required_terms_reason`。v2 和无 schema 的历史题库仍可校验，但会显式返回 legacy warning；它们不是新题生成模板。
+`formal_competitors[].topic_ids` 为可选字段。省略时表示该竞品适用于全部 Topic；Case 的补充内容声明局部边界时必须填写非空 Topic ID 数组。例如 Botslab 使用 `70mai → [topic_1]`、`Reolink → [topic_2]`、`aosu → [topic_2]`。三组竞品仍是 Case 级正式集合，但 Competitor 题按 Topic 子集生成。
 
-v3 同时必须提供 `brand_object_type=company|product` 和 `category_label`。`category_label` 必须能命中 `category_expression_set` 的品类表达，用于确定性生成每 Topic 的固定品牌总体评价基准题。
+生成 Builder 派生的 `attribute_plan`，但不生成 Attribute ID 或单独的逐题属性字段。同一 Attribute 与 `source_field / source_value` 可以出现在多个 Topic 中；逐题通过 Attribute Tag 关联，默认不读取 Accuracy 事实包。
 
-`category_expression_set` 是逐题品类落地的确定性词表：
+## 每题字段
 
-- `core_terms` 放品类原词与自然变体。
-- `product_terms` 放无需再重复品类原词也能明确归类的产品词。
-- `placeholder_blacklist` 放跨行业空占位词；命中即失败，即使同题还出现了品类词也要删掉占位表达。
+所有问题必填：
 
-不要把只表示采购动作的 `OEM/ODM`、`supplier`、`manufacturer` 单独当作品类词；它们无法告诉读者采购的是什么。
+- `question_id`：全批唯一。
+- `topic_id`：回指 1–3 个正式 Topic；不附带 `topic_type`。
+- `tags`：非空字符串数组；默认至少包含一个 `Intent: …` 和一个 `Brand Scope: …`，按题面需要包含零个或多个 `Attribute: …`，也允许增加其他自由 Tag。
+- `analysis_type`：按 v8 的 Prompt 生成角色填写。
+- `formal_visibility_eligible`：按 v8 的 Prompt 生成角色填写，决定是否进入正式可见度题集。
+- `intent_key`：全批唯一，不能只换措辞伪造新意图。
+- `user_question / zh_translation / monitoring_prompt`：英文根问题、等义中文和采集字段；`monitoring_prompt` 必须等于 `user_question`。
+- `quality_checks`：已执行的检查全部为 `true`。
 
-`aliases` 为可选字符串数组，用于配置品牌缩写、产品别名或常见写法。程序将 `brand_name / product_name / aliases / competitors / formal competitor aliases` 作为 Generic 品牌边界硬门，并自动兼容驼峰、空格、下划线和连字符变体，如 `CreativeHit / Creative Hit`。语义简称如 `Peec` 仍必须显式写入 aliases，避免把普通英文词误判为品牌。
+Verification 额外要求 3–5 个 `validation_items`；每项只包含 `source_field / source_value / statement`，并必须按顺序与当前 Topic 的 P1 溯源、`verification_statement` 和 Attribute Tags 完全一致。默认题库不包含 Accuracy 题或事实包字段。Verification 不包含 `attribute_id / priority_attribute_ids / paired_discovery_ids`。
 
-`target_audiences` 为规范化后的目标受众字符串数组。程序汇总各受众覆盖供二遍 review 使用，但不设置逐受众最低题数或最高占比。
+## Tags 合同
 
-`required_term_coverage` 只配置输入明确出现或经品类判断确认适用的专业术语。它检查规范词面是否真实进入问题，不把 `AI search visibility` 等自然同义表达自动算成 GEO/AEO 覆盖。默认 50 题中，输入明确出现的术语建议 `min_total=3`；相关但未明确输入的核心术语建议 `min_total=2`。每个问题仍必须自然、单意图，不能为了达标堆叠术语。
+`tags` 字段接受任意非空字符串，不设全局封闭枚举。由于 CSV 用分号分隔多个 Tag，单个 Tag 不得包含分号 `;`。Builder 默认使用以下常用命名：
 
-如果使用容易歧义的缩写，配置 `expanded_form / acronym / context_terms`：
+| 命名空间 | 默认值与规则 |
+|---|---|
+| `Intent: …` | 每题恰好一个常用生成角色：`Discovery / Competitor / Verification / Accuracy / Evaluation / Category Awareness`。这些标签用于记录本批实际分配，不代表固定配额，也不限制额外自定义 Intent Tag。 |
+| `Brand Scope: …` | 每题恰好一个。题面出现目标品牌或正式竞品时为 `Branded`，否则为 `Non-Branded`；以实际题面为准。 |
+| `Attribute: …` | 零个或多个；名称必须来自当前 Topic 的 `attribute_plan`。Discovery 的 Attribute Tags 整批覆盖全部 P1；Verification 按顺序写入全部 P1；同名 Attribute 可跨 Topic。 |
 
-- 至少一条问题同时出现全称与缩写。
-- 其他缩写问题必须出现任一 `context_terms`，确保独立采样时不会把 GEO 理解成 geography、把 AEO 理解成其他行业缩写。
-- 术语覆盖必须同时分布到 Generic 与 Branded；只在解释性通用题出现术语，不能验证品牌与品类的关联。
+其他自由 Tags 建议继续使用 `Namespace: Value`，例如 `Lifecycle: Consideration`、`Region: North America`。增删这些 Tags 不得改变分析路由。
 
-每条问题至少包含：
+## 分流合同
 
-- `question_id`
-- `topic_id`：必须命中 `config.topics`，供逐题检查是否围绕所属 Topic
-- `intent_key`：由所属 Topic 和规范化条件集合组成的稳定意图标识；条件集合可为空、单一或复合，多条件按稳定顺序编码；同一组条件不得因措辞或顺序不同生成不同键，相同 `intent_key` 不得重复占配额
-- `question_type`
-- `funnel_intent`
-- `decision_stage`：v3 只允许 `shortlist / evaluation / purchase / implementation / review`，不再使用 `awareness`
-- `cluster`
-- `audience_role`
-- `scenario`
-- `constraint`
-- `evidence_need`
-- `user_question`
-- `zh_translation`：`user_question` 的准确非空中译，仅用于人员理解与复核
-- `standalone_rewrite`
-- `retrieval_rewrite`
-- `evidence_query`
-- `title_seed`
-- `monitoring_prompt`
-- `quality_checks`
+| 默认诊断 Tag | analysis_type | formal_visibility_eligible |
+|---|---|---|
+| `Intent: Discovery` | `visibility` | `true` |
+| `Intent: Competitor` | `visibility` | `true` |
+| `Intent: Verification` | `visibility` | `false` |
+| `Intent: Accuracy` | `accuracy` | `false` |
+| `Intent: Evaluation` | `sentiment` | `false` |
+| `Intent: Category Awareness` | `visibility` | `true` |
 
-v3 的 `quality_checks` 必含并全部为 `true`：`natural / standalone / answerable / single_intent / category_aligned / neutral_premise / monitoring_field_valid / topic_aligned / category_visible / commercial_intent`。后三项必须在独立二遍语义 review 后填写，不能随初稿默认置真。品牌总体评价基准题虽然是固定探测句，也按 Decision 处理并保留 `commercial_intent=true`，不另造例外字段。
+每 Topic 的正式可见度题为实际 Discovery 与适用 Competitor，再加一条 Category Awareness。Verification 只在 visibility 模块展示属性认知，不进入正式 Visibility、声量、排名、Share of Voice 或聚合引用指标。v8 不要求 `metric_scopes`；Tags 只是聚合维度，兼容适配器即使产生旧字段，也不得改变核心路由。
+
+品牌边界：Discovery 与 Category Awareness 不出现目标品牌或任何正式竞品；Competitor 出现目标品牌和恰好一个正式竞品；Verification、Accuracy 与 Evaluation 只出现目标品牌。售前不生成竞品 Evaluation，竞品情绪矩阵留给售后生词。Evaluation 须把 Topic 转写为具体业务范围或场景；只限制英文 Prompt 正文：`user_question / monitoring_prompt` 及 CSV `query` 不得出现独立单词 `topic`。中文翻译、CSV `topic` 列及其他元数据不受此限制。
+
+## CSV 固定字段导出
+
+字段顺序固定为：
+
+| CSV 列 | 来源 |
+|-|-|
+| `query` | `user_question` |
+| `question_zh` | `zh_translation` |
+| `topic` | 对应评测集 `主题 n（宽泛/细分）` 的原始中文值 |
+| `tags` | 逐题 Tags 用 `; ` 连接，例如 `Intent: Discovery; Brand Scope: Non-Branded; Attribute: Easy to Use` |
+| `question_types` | `visibility,sentiment / visibility / sentiment`；Discovery 与 Competitor 填 `visibility,sentiment`，Evaluation 填 `sentiment`，其余填 `visibility` |
+| `purchase_intent` | 可空或 `0 / 1 / 2 / 3`，分别表示无、推荐、比较、决策 |
+| `persona_name` | 可空，最多 200 字符 |
+| `scene_name` | 可空，最多 200 字符 |
+
+不得新增独立 `analysis_type` CSV 列，也不得把 `question_id`、Verification 溯源、官方事实源或其他内部 JSON 字段扩写进该 CSV，除非用户另行要求。
+
+## 旧版兼容
+
+validator 允许只读旧 v7/v6/v5 题库，但新生成默认为 v8。旧 `diagnosis_intent` 只能作为 v7/v6 的兼容字段，不得出现在 v8。不得用 v5 的三个固定 Topic、`target_attributes`、`topic_type`、`metric_scopes`、单属性 Verification 或 `paired_discovery_ids` 作为新题库生成规则；不得只改 `schema_version` 伪造迁移。

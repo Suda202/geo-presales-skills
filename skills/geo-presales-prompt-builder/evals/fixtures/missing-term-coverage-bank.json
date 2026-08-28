@@ -83,7 +83,9 @@
     "topics": [
       {
         "topic_id": "topic-1",
-        "topic": "AI search visibility platform selection"
+        "topic": "AI search visibility platform selection",
+        "brand_evaluation_subject": "an AI search visibility platform for marketing teams",
+        "brand_evaluation_dimensions": ["platform coverage", "reporting"]
       }
     ]
   },

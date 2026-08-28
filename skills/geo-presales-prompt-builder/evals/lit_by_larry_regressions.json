@@ -9,8 +9,20 @@
       "yes/no category adoption without brand selection",
       "evaluation checklist without brand recommendations",
       "rare conditions invented to differentiate prompts",
-      "diamond and colored gemstones forced into every prompt"
+      "diamond and colored gemstones forced into every prompt",
+      "brand evaluation prompt mechanically repeated an internal broad-topic label"
     ]
+  },
+  "brand_evaluation_contract": {
+    "subject": "a lab-grown diamond and colored gemstone jewelry brand",
+    "dimensions": [
+      "design",
+      "gemstone selection",
+      "product information",
+      "online buying support"
+    ],
+    "passing_prompt": "How well does Lit by Larry perform as a lab-grown diamond and colored gemstone jewelry brand on design, gemstone selection, product information, and online buying support?",
+    "passing_translation": "从设计、宝石选择、产品信息和线上购买保障等方面，评价珠宝品牌 Lit by Larry 在培育钻石与培育彩色宝石珠宝中的表现。"
   },
   "generic_answer_scope": {
     "question_requirement": "The prompt wording itself must require brand candidates, a comparison between brand candidates, or a final brand choice.",
@@ -31,6 +43,13 @@
     "rule": "A broad topic may be covered across diamond-only, colored-gemstone-only, mixed-stone, and broad-category prompts. One prompt does not need to repeat the full category scope."
   },
   "bad_cases": [
+    {
+      "failure_family": "opaque_brand_evaluation_topic",
+      "prompt": "Evaluate the lab-grown diamond and colored gemstone jewelry company Lit by Larry on Lab-Grown Diamond and Colored Gemstone Jewelry",
+      "zh_translation": "评价培育钻石与培育彩色宝石珠宝公司 Lit by Larry 在该广度主题上的表现。",
+      "why_it_fails": "The prompt repeats a category label without stating what performance means, and the translation hides the subject behind an internal topic reference.",
+      "expected_repair": "State the jewelry category and evaluate the brand on supported dimensions such as design, gemstone selection, product information, and online buying support."
+    },
     {
       "failure_family": "generic_without_brand_answer_endpoint",
       "prompt": "How do lab-grown diamonds compare with natural diamonds in price, quality, durability, and long-term value?",
@@ -53,7 +72,7 @@
       "failure_family": "invented_low_frequency_condition",
       "prompt": "What lab-grown diamond jewelry brands should shoppers consider when diamond sparkle matters most?",
       "why_it_fails": "Diamond sparkle was invented to create a distinct condition and is not a meaningful buyer segment in the brief.",
-      "expected_repair": "Use a supported purchase factor such as design, craftsmanship, value, certification, gifting, or online trust."
+      "expected_repair": "Use supported purchase factors such as design, craftsmanship, price-quality balance, certification details, gifting needs, returns, warranties, or after-sales support."
     },
     {
       "failure_family": "per_question_full_scope_forcing",

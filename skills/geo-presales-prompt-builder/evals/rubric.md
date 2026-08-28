@@ -1,7 +1,7 @@
 # Quality Rubric
 
-- **5**：v3 题库只包含推荐、比较、决策三类商业意图且三类都有，不含 `geo_intent`；每题所属 Topic 清楚、品类与购买对象不漂移；Generic 不出现任何具体品牌实体，但题目本身明确要求品牌/供应商/平台/产品候选、候选比较或最终候选选择，不能依赖 AI 偶然举品牌；答案可出现监控品牌、已配置竞品或未配置的同类品牌；四类条件来自输入或业务依据，`intent_key` 证明条件取值不同，无只换措辞或编造低频条件的伪意图；多子品类 Topic 按整批覆盖而非逐题重复完整范围；总量与 Generic/Branded 配额精确，每 Topic 恰好一条固定 Branded 总体评价基准题并归为 Decision；问题自然、独立、可回答，不因词数本身通过或失败；中译等义；五字段隔离；冻结竞品边界与适用时的 Branded Comparison 3+2 通过；专业术语覆盖且无缩写歧义；句式和 best/top 不被机械误杀；价格与限制条件合理但不编造事实；独立二遍语义 review 与确定性校验均通过。
-- **4**：硬门全部通过，但角色、场景、平台或 locale 多样性略弱。
-- **3**：问题大体自然，但存在只讲知识、品类不清、同条件换措辞、字段用途不清或专业术语覆盖失衡，需要人工修订。
-- **2**：主要是关键词、内容标题或动作命令，虽有分类但不适合直接监测。
-- **1**：题量/配额错误、品类明显漂移、事实被编造，或把检索词直接作为监测 Prompt。
+- **5**：默认输出 `overseas-geo-question-bank/v8`，直接消费 Edgelight 型评测集 Case 原始中文字段，不要求 `target_attributes`。Topic 是 Prompt 主组织；生题前生成可溯源的 `Attribute × Topic` 规划，每 Topic 有 3–5 个 P1、建议 5–10 个 P2、0–10 个 P3 及可为空的 `excluded`。每题使用自由 `tags`：一个默认 Intent Tag、一个由题面反推的 Branded / Non-Branded Tag、零个或多个来自当前 Topic 规划的 Attribute Tag，并允许其他自由 Tag。P1 与 Verification 的 `validation_items` 及 Attribute Tags 按顺序强绑定，Discovery Attribute Tags 覆盖全部 P1并优先覆盖有独立诊断价值的 P2，Competitor 使用双方可比的 P1 和高优先 P2。Discovery 在每个 Topic 内严格超过 50%；每 Topic 只为目标品牌生成一条 Evaluation，竞品情绪矩阵留给售后。支持 1–3 Topic，按 Attribute 信息量弹性分配且允许 Topic 不等量，实际配额与产物一致，整批不超过 60；10–25/Topic 仅作软参考。`analysis_type` 与 `formal_visibility_eligible` 独立于自由 Tags。默认 Accuracy 为 0；Evaluation 与 Category Awareness 使用固定模板。v8 不含 `diagnosis_intent`、逐题 `attributes`、Attribute ID、`topic_type` 或 `metric_scopes`；JSON、CSV、英文问题、中文译文和确定性校验均通过。
+- **4**：全部硬门通过，但目标客户、场景或评价标准的覆盖分布略弱，或英文表达略显模板化。
+- **3**：实际题量记录与六个常用 Intent Tags 基本正确，但 Topic / Attribute 路由、Attribute Tags、品牌范围 Tag、P1 与 Verification 对齐、竞品同构或固定模板有一项需要人工修订。
+- **2**：仍依赖旧 `target_attributes`、固定三个 Topic、`diagnosis_intent` 固定字段、单属性 Verification 或 v5 双重指标路由，虽能生成问题但不符合新流程。
+- **1**：实际题数与已记录配额不一致、整批超过 60、品牌边界破坏、品类明显漂移、事实被编造，或把检索词直接作为监测 Prompt。

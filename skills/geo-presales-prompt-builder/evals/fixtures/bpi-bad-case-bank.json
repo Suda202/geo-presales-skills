@@ -55,7 +55,14 @@
     "topics": [
       {
         "topic_id": "rechargeable-battery-oem-odm",
-        "topic": "Rechargeable battery manufacturers for OEM/ODM procurement"
+        "topic": "Rechargeable battery manufacturers for OEM/ODM procurement",
+        "brand_evaluation_subject": "a rechargeable battery manufacturer for OEM/ODM buyers",
+        "brand_evaluation_dimensions": [
+          "customization options",
+          "quality controls",
+          "certifications",
+          "supply support"
+        ]
       }
     ]
   },
@@ -166,13 +173,13 @@
       "scenario": "custom_pack_selection",
       "constraint": "validation_support",
       "evidence_need": "brand_fit",
-      "user_question": "Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement",
-      "zh_translation": "评价充电电池制造商 BPI 在面向 OEM/ODM 采购的充电电池制造商主题上的表现。",
-      "standalone_rewrite": "Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement and custom pack validation.",
+      "user_question": "How well does BPI perform as a rechargeable battery manufacturer for OEM/ODM buyers on customization options, quality controls, certifications, and supply support?",
+      "zh_translation": "从定制能力、质量控制、认证和供货支持等方面，评价 BPI 作为 OEM/ODM 买家充电电池制造商的表现。",
+      "standalone_rewrite": "How well does BPI perform as a rechargeable battery manufacturer for OEM/ODM buyers on customization options, quality controls, certifications, and supply support?",
       "retrieval_rewrite": "BPI medical device custom battery pack validation",
       "evidence_query": "BPI medical battery validation capabilities",
       "title_seed": "Is BPI Suitable for Medical Device Battery Packs?",
-      "monitoring_prompt": "Evaluate the rechargeable battery company BPI on Rechargeable battery manufacturers for OEM/ODM procurement",
+      "monitoring_prompt": "How well does BPI perform as a rechargeable battery manufacturer for OEM/ODM buyers on customization options, quality controls, certifications, and supply support?",
       "quality_checks": {
         "natural": true,
         "standalone": true,

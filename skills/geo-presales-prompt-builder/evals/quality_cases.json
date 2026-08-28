@@ -27,7 +27,22 @@
   {
     "name": "quota_failure_blocks_batch",
     "input": "A configured 50-question batch contains 49 rows.",
-    "expected": "Fail the batch and fill the missing intent-matrix cell before collection."
+    "expected": "Fail the batch because the actual row count does not match the recorded allocation; either restore the intentionally planned Prompt or correct the allocation before collection."
+  },
+  {
+    "name": "topic_counts_follow_attribute_value",
+    "input": "Three Topics have 22, 17, and 11 useful Prompts because their P1 and P2 coverage differs, and the batch total is 50.",
+    "expected": "Accept the uneven allocation when every Topic keeps its core diagnostic units, covers all P1 Attributes, records its actual counts, and contains no padding or pseudo-duplicates."
+  },
+  {
+    "name": "presales_evaluation_is_target_only",
+    "input": "A presales Topic has three applicable competitors and one target-brand Evaluation Prompt.",
+    "expected": "Keep only the target-brand Evaluation in presales. Defer competitor sentiment matrices to aftersales Prompt generation so Discovery remains the dominant sample."
+  },
+  {
+    "name": "discovery_is_the_majority_per_topic",
+    "input": "The whole batch has more Discovery Prompts than other roles combined, but one Topic has 9 Discovery and 9 non-Discovery Prompts.",
+    "expected": "Fail that Topic. Discovery must be a strict majority inside every Topic; aggregate balance cannot hide a Topic whose diagnostic add-ons equal or outnumber Discovery."
   },
   {
     "name": "explicit_professional_term_survives",
@@ -145,9 +160,19 @@
     "expected": "Assign recommendation when the answer should give candidates, comparison when it should give differences and a trade-off, and decision when it should give a final fit judgment; do not bind a condition type to one funnel intent."
   },
   {
-    "name": "one_brand_sentiment_prompt_per_topic",
-    "input": "A company Topic has no fixed Evaluate prompt, has two of them, or labels one as recommendation.",
-    "expected": "Fail the bank. Require exactly one Branded prompt per Topic using Evaluate the {category} company {brand} on {topic}, classified as decision without a separate sentiment-intent field."
+    "name": "one_customer_clear_target_evaluation_per_topic",
+    "input": "A Topic omits its target-brand Evaluation, duplicates it, evaluates a competitor, or mechanically inserts the internal Topic into the question.",
+    "expected": "Fail the bank. Require exactly one customer-readable Evaluation Prompt for the target brand and no competitor Evaluation in presales."
+  },
+  {
+    "name": "abstract_topic_label_must_be_expanded",
+    "input": "A question asks how a brand performs on overall value, online trust, technology and sourcing, overall brand fit, or this broad topic without defining the term.",
+    "expected": "Fail standalone review. Expand the label into the actual product/category, user need, and supported decision factors used by this question."
+  },
+  {
+    "name": "translation_must_preserve_evaluation_scope",
+    "input": "The English brand evaluation prompt names the jewelry category and four evaluation dimensions, but the Chinese translation says only '评价该品牌在该广度主题上的表现'.",
+    "expected": "Fail translation review. Preserve the explicit category and dimensions instead of replacing them with an internal topic reference."
   },
   {
     "name": "bpi_task_89_4768_thermal_management_drift",

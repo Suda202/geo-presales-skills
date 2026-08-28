@@ -43,7 +43,14 @@
     "topics": [
       {
         "topic_id": "topic-1",
-        "topic": "AI search visibility platform selection"
+        "topic": "AI search visibility platform selection",
+        "brand_evaluation_subject": "an AI visibility platform for multi-brand teams",
+        "brand_evaluation_dimensions": [
+          "platform coverage",
+          "reporting",
+          "competitive insights",
+          "workflow support"
+        ]
       }
     ]
   },
@@ -346,13 +353,13 @@
       "scenario": "s10",
       "constraint": "multi_brand",
       "evidence_need": "features",
-      "user_question": "Evaluate the AI visibility company Acme on AI search visibility platform selection",
-      "zh_translation": "评价 AI 可见性公司 Acme 在 AI 搜索可见性平台选型主题上的表现。",
-      "standalone_rewrite": "Evaluate the AI visibility company Acme on AI search visibility platform selection for multi-brand teams.",
+      "user_question": "How well does Acme perform as an AI visibility platform for multi-brand teams on platform coverage, reporting, competitive insights, and workflow support?",
+      "zh_translation": "从平台覆盖、报告、竞品洞察和工作流支持等方面，评价 Acme 作为多品牌团队 AI 可见性平台的表现。",
+      "standalone_rewrite": "How well does Acme perform as an AI visibility platform for multi-brand teams on platform coverage, reporting, competitive insights, and workflow support?",
       "retrieval_rewrite": "multi-brand AI visibility software",
       "evidence_query": "AI visibility multi-brand features",
       "title_seed": "Evaluating AI Visibility Software for Multiple Brands",
-      "monitoring_prompt": "Evaluate the AI visibility company Acme on AI search visibility platform selection",
+      "monitoring_prompt": "How well does Acme perform as an AI visibility platform for multi-brand teams on platform coverage, reporting, competitive insights, and workflow support?",
       "quality_checks": {
         "natural": true,
         "standalone": true,

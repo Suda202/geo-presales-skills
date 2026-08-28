@@ -149,7 +149,14 @@
     "topics": [
       {
         "topic_id": "topic-1",
-        "topic": "AI search visibility platform selection"
+        "topic": "AI search visibility platform selection",
+        "brand_evaluation_subject": "an AI search visibility platform for marketing teams",
+        "brand_evaluation_dimensions": [
+          "platform coverage",
+          "reporting",
+          "competitive insights",
+          "workflow support"
+        ]
       }
     ]
   },
@@ -260,13 +267,13 @@
       "scenario": "purchase_decision",
       "constraint": "budget",
       "evidence_need": "pricing_and_value",
-      "user_question": "Evaluate the AI search visibility company Peec AI on AI search visibility platform selection",
-      "zh_translation": "评价 AI 搜索可见性公司 Peec AI 在 AI 搜索可见性平台选型主题上的表现。",
-      "standalone_rewrite": "Evaluate the AI search visibility company Peec AI on AI search visibility platform selection for a small marketing team.",
+      "user_question": "How well does Peec AI perform as an AI search visibility platform for marketing teams on platform coverage, reporting, competitive insights, and workflow support?",
+      "zh_translation": "从平台覆盖、报告、竞品洞察和工作流支持等方面，评价 Peec AI 作为营销团队 AI 搜索可见性平台的表现。",
+      "standalone_rewrite": "How well does Peec AI perform as an AI search visibility platform for marketing teams on platform coverage, reporting, competitive insights, and workflow support?",
       "retrieval_rewrite": "Peec AI value for small marketing teams",
       "evidence_query": "Peec AI pricing features small team reviews",
       "title_seed": "Is Peec AI Worth It for Small Marketing Teams?",
-      "monitoring_prompt": "Evaluate the AI search visibility company Peec AI on AI search visibility platform selection",
+      "monitoring_prompt": "How well does Peec AI perform as an AI search visibility platform for marketing teams on platform coverage, reporting, competitive insights, and workflow support?",
       "quality_checks": {
         "natural": true,
         "standalone": true,

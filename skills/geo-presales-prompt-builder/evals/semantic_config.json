@@ -4,14 +4,12 @@
     "inputs": [
       "brand and product",
       "overseas market and locale",
-      "category definition",
-      "audiences and scenarios",
-      "professional terminology from topic and audiences",
-      "completed professional term assessment",
-      "category expressions and placeholder blacklist",
-      "competitors",
+      "one to three confirmed Topics",
+      "Edgelight-style customer pain-point use-case product-feature and boundary Case fields",
+      "three formal competitors",
       "existing English question bank",
-      "total and Generic/Branded quotas"
+      "six common diagnostic Intent Tags with Attribute-driven per-Topic counts and a 60-Prompt batch cap",
+      "free Tags for Branded or Non-Branded scope, Attributes, and custom analysis"
     ],
     "trigger_actions": [
       "generate overseas GEO English questions",
@@ -19,8 +17,9 @@
       "repair keyword-like or title-like questions",
       "audit question naturalness and category drift",
       "reject educational questions without brand recommendations",
-      "validate question totals and Generic/Branded quotas",
-      "generate one fixed Branded brand sentiment prompt per Topic",
+      "validate one-to-three Topic actual totals and six Intent Tag counts",
+      "validate free Tags, brand scope, and Attribute Tag coverage",
+      "generate one customer-clear target-brand Evaluation Prompt per Topic",
       "preserve GEO and AEO terminology coverage",
       "生成海外 GEO 英文问题库",
       "修复售前监测 Prompt",
@@ -41,7 +40,12 @@
       "professional term assessment",
       "five-field rewrites",
       "Chinese translations",
-      "quota summary",
+      "attribute-driven allocation summary",
+      "derived Attribute-Topic coverage",
+      "free Tags and Branded or Non-Branded coverage",
+      "batch Validation coverage",
+      "analysis type and formal visibility eligibility summary",
+      "target-brand Evaluation coverage summary",
       "repair log",
       "quality report"
     ]
@@ -65,7 +69,7 @@
         "问题自然度",
         "生词质量",
         "问题配额",
-        "品牌情绪 prompt",
+        "品牌总体评价 prompt",
         "推荐 比较 决策三类都有",
         "category drift",
         "品类漂移",
@@ -77,6 +81,17 @@
         ,"专业术语都改没了"
         ,"补覆盖但不要堆关键词"
         ,"professional terminology coverage"
+        ,"3 个主题"
+        ,"三个 topic"
+        ,"按属性价值分配题量"
+        ,"新增诊断意图"
+        ,"痛点 使用场景 产品特性"
+        ,"case fields"
+        ,"批量 validation"
+        ,"不依赖 target attributes"
+        ,"不同 topic 题量可以不同"
+        ,"总量不超过 60 条"
+        ,"60 条海外 geo"
       ]
     }
   },

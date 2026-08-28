@@ -8,7 +8,7 @@
   ],
   "should_trigger": [
     {
-      "text": "为美国市场生成 50 条海外 GEO 售前诊断英文问题，并检查自然度和配额。",
+      "text": "按评测集 Case 里的目标客户、痛点、使用场景、产品特性和 1–3 个主题，依据各 Topic 的 Attribute 信息量弹性生成、整批不超过 60 条海外 GEO 售前诊断英文问题，并检查自然度和实际配额。",
       "family": "overseas_presales_question_bank"
     },
     {
@@ -28,17 +28,21 @@
       "family": "professional_term_coverage"
     },
     {
-      "text": "海外售前生词的品牌题里，每个 Topic 加一条固定 Evaluate 品牌情绪 Prompt，并检查模板。",
-      "family": "brand_sentiment_prompt"
+      "text": "海外售前生词的品牌题里，每个 Topic 加一条说清评价对象和具体维度的品牌总体评价 Prompt，并检查模板。",
+      "family": "brand_evaluation_prompt"
     },
     {
-      "text": "生词不要再按 12/25/13 分配，只要推荐、比较、决策三类都有，通用题和品牌题保持 40/10。",
-      "family": "commercial_intent_coverage"
+      "text": "生词直接消费现有 Case 字段，按 1–3 个主题生成；各 Topic 按 Attribute 价值决定发现题数量，每个适用竞品一题，并各保留一条批量验证、评价和品类认知，不再依赖 target_attributes。",
+      "family": "diagnostic_intent_and_compatibility_mapping"
+    },
+    {
+      "text": "生成 Prompt 时把六类诊断意图、Branded/Non-Branded 和要分析的 Attribute 都放进自由 Tags，并让同一 Attribute 能跨 Topic 聚合。",
+      "family": "topic_attribute_free_tags"
     }
   ],
   "should_not_trigger": [
     {
-      "text": "把这 50 个问题拿去 ChatGPT 实际跑一遍并抓取回答。",
+      "text": "把这 51 个问题拿去 ChatGPT 实际跑一遍并抓取回答。",
       "family": "crawl_answers"
     },
     {

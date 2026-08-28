@@ -117,7 +117,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(len(bank["questions"]), 4)
         self.assertEqual(len(bank["warnings"]), 4)
         self.assertEqual("decision", bank["questions"][-1]["funnel_intent"])
-        self.assertTrue(bank["questions"][-1]["question_text"].startswith("Evaluate the "))
+        self.assertEqual(raw["questions"][-1]["monitoring_prompt"], bank["questions"][-1]["question_text"])
 
     def test_crawler_fixture_contract(self):
         fixture = REPOSITORY_ROOT / "skills/geo-presales-report/fixtures/sample-chatgpt-crawl.json"
