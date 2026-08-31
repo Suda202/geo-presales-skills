@@ -1,6 +1,6 @@
 ---
 name: geo-presales-report-audit
-description: 审计已经生成的 GEO 售前诊断报告及其 JSON 结构化结果，核对可见度与情绪问题类型的独立或重叠样本、诊断意图标签、目标属性关联、品牌提及、首次出现位置、竞品结果、准确性和引用，并回归历史 Bad Case。不要用于生成报告、竞品研究、意图出题、普通网页 GEO 审计或孤立文本情绪判断。
+description: Audit generated GEO presales diagnostic reports and their JSON structured results; verify visibility metrics, sentiment calibration, evidence integrity, and cross-module consistency without recomputing source data.
 metadata:
   author: 海外 GEO 项目
   version: "2.2.0"
@@ -27,6 +27,7 @@ metadata:
 4. [诊断方法口径](references/diagnostic-methodology-audit.md)
 5. [Bad Case 交付契约](references/badcase-output-contract.md)
 6. [回归状态口径](references/regression-status.md)
+- 读取 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)；问题类型枚举、诊断意图值与 Visibility 范围以本文件为准。
 
 涉及网页报告时先使用 `web-access`。涉及飞书 Wiki、多维表格或文档时使用 `lark-cli` 和对应的 `lark-wiki`、`lark-base`、`lark-doc` Skill，并先确认可读写的组织、profile、应用和机器人身份。
 

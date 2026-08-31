@@ -16,6 +16,7 @@ metadata:
 - 读取 [飞书目标与写入合同](references/lark-base-target.md)，并使用 `lark-base` Skill 执行 Base 操作。
 - 读取 [主题生成规则](references/topic-generation-reference.md)；只有拆分存在歧义时再看 [主题拆分示例](references/topic-examples.md)。
 - 读取 [竞品研究交接规则](references/competitor-handoff.md)。竞品名称或官网不足 3 组时，调用 `overseas-geo-competitor-research`；完全未提供竞品时也必须从零研究，不把缺失竞品退回给用户补填。
+- 读取 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)；字段别名与词表以本文件为准。
 - 目标市场、语言和 AI 平台是系统固定参数，不写入 Case。
 
 ## 执行

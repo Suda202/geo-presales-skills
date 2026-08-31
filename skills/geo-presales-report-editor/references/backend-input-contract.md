@@ -14,6 +14,8 @@
 | `topics` | array | 是 | 恰好 3 项；每项含内部字段 `topic_id / topic_type / topic`，客户文案统一称“主题”。 |
 | `tags` | array | 推荐 | 正在新增的 Tag 字段；每项含 `tag_id / tag / topic_ids`，用于在主题下承载更细的分析分组。缺失时继续只用主题。 |
 | `target_attributes` | array | 是 | 来自评测集同一 Case；每项至少含 `attribute_id / attribute`，并通过 `topic_ids`、`tag_ids` 或两者关联。只是采集前目标，不是客户可见一等字段。 |
+
+> **派生来源**：`target_attributes` 由后端摄入层从 Prompt Builder v8 产物（`attribute_plan` 字段 + 逐题 `Attribute: {attribute}` Tags）自动派生并补充 `attribute_id`。Prompt Builder 本身不产出此字段；后端转换步骤不属于任何 skill 的直接职责。Report Editor 侧只消费，不重建。
 | `market / language / task_id` | string | 是 | 市场、语言和任务 ID。 |
 | `batch_id` | string | 否 | 未提供时使用 `task_id`。 |
 | `overview` | object/JSON string | 是 | 后端已算好的总览。 |

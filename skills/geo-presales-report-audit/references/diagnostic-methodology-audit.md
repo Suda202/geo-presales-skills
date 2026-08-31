@@ -9,7 +9,11 @@
 不要再使用“通用问题 / 品牌问题”或“购买意图”分流。每个问题同时检查两个维度：
 
 1. **问题类型**：只有 `visibility`、`sentiment`。按集合处理，允许只含一个，也允许同时包含两个。
-2. **诊断意图**：描述该问题要诊断什么。当前数据兼容 `discovery / competitor / validation / accuracy / sentiment / market_perception` 六个值；后续字段变为标签时允许自由命名和多选，不把旧六值继续当封闭枚举。
+2. **诊断意图**：描述该问题要诊断什么。
+
+> **迁移说明**：当前六个诊断意图值（`discovery / competitor / validation / accuracy / sentiment / market_perception`）对应 Prompt Builder 的 `Intent: …` 默认 Tag 枚举。诊断意图后续将改为自定义 Tags，枚举将不再固定；届时本节的值列表须同步更新。
+
+当前数据兼容 `discovery / competitor / validation / accuracy / sentiment / market_perception` 六个值；后续字段变为标签时允许自由命名和多选，不把旧六值继续当封闭枚举。
 
 问题类型决定核心指标样本：
 
@@ -55,3 +59,16 @@ Validation 必须：
 ## 对账顺序
 
 先按 Topic 对账问题明细总数，再分别统计 `visibility`、`sentiment` 以及两者交集；三项相加不能用来反推总题数。再按诊断意图标签统计样本分布，但不预设标签互斥或数量合计等于总题数。最后核对每个聚合模块的 `included_question_ids / included_answer_ids`。`0/N` 是有样本零结果，`0/0` 是无样本，必须展示为无数据。
+
+## 跨 Skill 可见度范围校验
+
+**校验点**：`formal_visibility_eligible = true` 在 Prompt Builder 中标记了 Discovery、Competitor、Category Awareness 三类。报告侧正式 Visibility 指标（品牌进入率、声量、平均提及排名、问题机会、主要引用生态）**只使用 Discovery**；Competitor 进 M02 竞品模块，Category Awareness 进 M08 品类认知模块。
+
+审计时须核对：
+- 正式 Visibility 分母不得包含 Competitor 或 Category Awareness 样本。
+- M02 声量只使用 Discovery 范围内对竞品的提及，不包含 Competitor 题本身的提及。
+- M08 结果来自后端正式 `market_perception_diagnostics`，不进入品牌 Visibility 聚合。
+
+如报告 CSV 中出现 Visibility 指标引用了非 Discovery 样本，判为 **scope_violation**，输出原因和受影响字段路径。
+
+**关于 `accuracy` 的问题类型**：后端问题类型只有 `visibility`、`sentiment`。含 `Intent: Accuracy` 的问题 `analysis_type = accuracy`，审计时若发现其 `question_type` 字段被写为 `accuracy` 而非 `visibility` 或 `sentiment`，判为类型枚举错误。当前售前 Accuracy 配额为 0，实际无样本；若未来引入，先更新本文件的枚举定义再生成。

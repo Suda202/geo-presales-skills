@@ -20,6 +20,7 @@ metadata:
 
 1. [结论综合规则](references/conclusion-synthesis-guide.md)
 2. [上传 CSV 契约](references/report-upload-csv-contract.md)
+3. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)：模块代码（M01–M08）、意图词表与 `target_attributes` 派生说明。
 
 只有从 v2 后端统计包新生成 CSV 时，再完整读取 [后端输入契约](references/backend-input-contract.md) 和 [报告任务契约](references/backend-report-task-contract.md)。命令和异常恢复见 [使用说明](references/usage.md)。
 
@@ -47,6 +48,8 @@ metadata:
 客户文案按“可被抽取”而非 SEO 写：用直接、具体、AI 能干净引用的句子；提及在自然处补入，不硬塞。复测沿用同口径 Prompt 重跑，只看可见度、引用、品牌表达和准确性的变化，最低验收是“做过的动作是否出现在复测数据里”；不承诺流量、线索或成交。
 
 ## 硬边界
+
+> 模块代码：M05 = 评价/情绪，M06 = 行动建议，M07 = 平台差异，M08 = 品类认知（Market Perception）。完整映射见 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)。
 
 - 指标、分母、分档、行动路由和优先级只使用后端结果；不从明细重算。Visibility 与主要引用生态只用 Discovery，其他诊断各守范围。
 - 客户文案中的六类诊断标签固定为“发现、竞品、验证、准确性、评价、品类认知”；标签单独展示时使用这些名称，在结论句中统一写成“发现类问题、竞品类问题、验证类问题、准确性类问题、评价类问题、品类认知类问题”。不得混用“发现型、纯发现型、竞品比较、功能核实、准确性诊断、品牌评价”等别名。

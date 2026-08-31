@@ -21,6 +21,7 @@ Edgelight 表中的原始 Case 字段就是评测集字段，也是 Builder 的�
 3. 读取 [v8 产物契约](references/presales-contract.md)。
 4. 质检时读取 [质量门](references/quality-gates.md)。
 5. 需要正反例时读取 [Edgelight 示例](references/examples.md)。
+6. 读取 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)；意图 Tag、问题类型与字段名以本文件为准。
 
 ## 唯一输入合同
 
@@ -56,6 +57,8 @@ Accuracy 默认配额为 0，不读取或要求上游事实包。不得从旧评
 
 ## 分析与指标边界
 
+> **注意**：下表中的 `Intent: …` Tag 为当前默认枚举。诊断意图后续将迁移为自定义 Tags，迁移后需在自定义 Tag 定义中重新声明 `analysis_type` 与 `formal_visibility_eligible` 的推导规则。
+
 | 默认诊断 Tag | analysis_type | formal_visibility_eligible |
 |---|---|---|
 | `Intent: Discovery` | `visibility` | `true` |
@@ -74,7 +77,7 @@ Accuracy 默认配额为 0，不读取或要求上游事实包。不得从旧评
 - 输出按 Attribute 信息量规划的实际 Prompt 数，不要求 Topic 等量，整批不得超过 60；同时输出 `attribute_plan`、实际 Topic 配额、Case 字段覆盖、按 Topic 的竞品覆盖、目标品牌 Evaluation 覆盖、Tags 汇总和失败/重写原因。每 Topic 10–25 只作软参考，低于或高于该区间时说明原因，不为进入区间而补写低价值题。
 - 每题包含 `question_id / topic_id / tags / analysis_type / formal_visibility_eligible / intent_key / user_question / zh_translation / monitoring_prompt / quality_checks`；不包含 `diagnosis_intent` 或单独的 `attributes`。
 - Verification 额外包含 3–5 个 `validation_items`，每项直接回指 Case 的 `source_field / source_value`；默认题库不包含 Accuracy 题或事实包字段。
-- CSV 固定字段顺序为 `query,question_zh,topic,tags,question_types,purchase_intent,persona_name,scene_name`。`tags` 用 `; ` 连接同一题的多个 Tag；`question_types` 按产物契约填写。`purchase_intent / persona_name / scene_name` 没有可靠来源时留空，不臆造。
+- CSV 固定字段顺序为 `query,question_zh,topic,tags,question_types,purchase_intent,persona_name,scene_name`。`tags` 用 `; ` 连接同一题的多个 Tag；`question_types` 按产物契约填写。`purchase_intent / persona_name / scene_name` 没有可靠来源时留空，不臆造。（注：JSON 输出中"不生成或保留 `question_type`"指不单独输出题型字段；CSV 的 `question_types` 列是上传平台的映射字段，内容对应 JSON 的 `analysis_type`，值为 `visibility`、`sentiment` 或 `accuracy`，由上传适配器填充。）
 
 ```bash
 python3 scripts/validate_question_bank.py /absolute/path/question-bank.json
