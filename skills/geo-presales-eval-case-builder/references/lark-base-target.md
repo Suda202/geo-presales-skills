@@ -1,6 +1,6 @@
 # 飞书 Case 评测集目标与写入合同
 
-本公开 Skill 不包含具体飞书 Base URL、Base token 或 Table ID。执行前从已获授权的项目私有配置取得当前目标，并确认：
+本公开 Skill 不包含具体飞书 Base URL、Base token 或 Table ID。执行前从已获授权的项目私有配置取得当前目标。需要在本地保存配置时，使用同目录的 `lark-base-target.local.md`，该文件不进入 Git。确认：
 
 - 目标表是用于 GEO 售前诊断的 `Case评测集`；
 - 使用经授权的用户身份（通常为 `--as user`）；

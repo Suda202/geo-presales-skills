@@ -1,3 +1,7 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+
+# 本地私有配置和报告运行产物
+skills/geo-presales-eval-case-builder/references/lark-base-target.local.md
+/runs/

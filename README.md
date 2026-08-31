@@ -1,29 +1,45 @@
-# GEO Presales Skills
+# GEO 售前 Skills
 
-Versioned Skill packages for the GEO presales workflow.
+这是海外 GEO 售前诊断的四个 Skill 包，覆盖从品牌资料整理、监测问题设计，到报告产出和结果审计的流程。
 
-## Included packages
+```text
+品牌资料
+  -> Case Builder
+  -> Prompt Builder
+  -> 外部采集和后端统计（不在本仓库）
+  -> Report Editor
+  -> 客户报告和 CSV
+       -> Report Audit
+```
 
-- `skills/geo-presales-eval-case-builder/` turns verified brand information into a normalized GEO presales Case with one to three monitoring Topics. It can write to an authorized private Lark Base target, but publishes no Base identifier or target configuration.
-- `skills/geo-presales-prompt-builder/` generates and validates `overseas-geo-question-bank/v8` English AI-search monitoring Prompts. It derives an `Attribute × Topic` plan from the Case, records diagnostic intent, brand scope, Attributes, and custom analysis dimensions as free Tags, and keeps each Prompt within the purchasing object defined by its Topic.
-- `skills/geo-presales-report-audit/` audits generated presales reports and their structured JSON results against source evidence and historical Bad Cases. It checks visibility, sentiment, brand mentions, ranking, competitors, accuracy, and citations without generating a report.
-- `skills/geo-presales-report-editor/` turns company-backend statistics into evidence-constrained Chinese analysis conclusions and an upload-ready CSV. It does not recalculate production metrics or render HTML/PDF.
+## 选哪个 Skill
 
-The previous combined `geo-presales-report` package has been split into `geo-presales-report-audit` and `geo-presales-report-editor`.
-- `evals/v3/` contains nine validated, non-production evaluation inputs. The BPI set and the Skill fixtures guard against known category-drift and “procurement knowledge only” failures.
+| Skill | 什么时候用 | 产出 | 不做什么 |
+| --- | --- | --- | --- |
+| `geo-presales-eval-case-builder` | 有品牌资料，需要建立或维护售前评测 Case | 规范化 Case、1 到 3 个监测主题、已核验竞品 | 不出题、不采集回答、不写报告 |
+| `geo-presales-prompt-builder` | 已有 Case，需要生成英文 AI 搜索监测题库 | `overseas-geo-question-bank/v8` 题库、属性规划、质量报告 | 不创建主题、不选竞品、不计算指标 |
+| `geo-presales-report-editor` | 已有后端统计和初步结论，需要生成或修改客户报告 | 有证据约束的中文结论、可上传 CSV | 不重算生产指标，不生成 HTML 或 PDF |
+| `geo-presales-report-audit` | 要核对报告、JSON 结果或历史 Bad Case 是否正确 | 审计结论、可复现的问题说明、必要的 Bad Case 草稿 | 不生成客户报告，不做竞品研究或出题 |
 
-## Core rules
+`geo-presales-report` 是旧的合并包，已经拆成 `geo-presales-report-editor` 和 `geo-presales-report-audit`。要写报告时用 editor，要检查报告或底层结果时用 audit，两者可以连续使用。
 
-1. Build an independent P1/P2/P3 Attribute plan for every Topic before writing Prompts. Topic is the primary monitoring unit; the same Attribute may have different priorities across Topics.
-2. Allocate Prompt counts from each Topic’s useful Attribute coverage. Topics may have different totals, 10–25 per Topic is a soft planning range, and the complete batch must contain no more than 60 Prompts. Do not create repetitive questions to fill a quota.
-3. Discovery must be a strict majority inside every Topic: `Discovery > Competitor + Verification + Accuracy + Evaluation + Category Awareness`. An aggregate majority across the batch cannot compensate for a Topic that fails this rule.
-4. Each applicable competitor receives exactly one controlled Competitor Prompt per Topic. Verification, Accuracy, target-brand Evaluation, and Category Awareness use per-Topic counts of `1/0/1/1` by default.
-5. Presales Evaluation measures only the target brand. Competitor sentiment matrices are deferred to aftersales monitoring so they do not displace Discovery coverage.
-6. Discovery and Category Awareness do not name the target brand or competitors. Competitor Prompts name the target brand and one applicable competitor; Verification and Evaluation name only the target brand.
-7. Every Prompt uses free `tags` for its default Intent, actual Branded or Non-Branded scope, and applicable Attributes. Tags do not override `analysis_type` or `formal_visibility_eligible`.
-8. The product category and purchasing object must remain clear from the wording. Questions that drift to another supplier set, ask only for generic procurement knowledge, or add facts not supported by the Case are invalid.
+## Prompt Builder 的关键约束
 
-## Validation
+- 每个 Topic 都要先做独立的 P1、P2、P3 属性规划。
+- 题数按 Topic 的有效属性覆盖分配，整批最多 60 题，不为凑数重复提问。
+- 每个 Topic 内，发现类问题必须严格多于其他问题类型之和。
+- 发现类和品类认知类问题不出现具体品牌。竞品类问题只比较目标品牌和一个适用竞品。
+- 每题都用自由 `tags` 标记诊断意图、品牌范围和实际测试的属性。详细字段和校验规则见该 Skill 的 `SKILL.md`。
+
+## `evals/v3` 是什么
+
+`evals/v3/` 里有 9 份旧版 `overseas-geo-question-bank/v3` 题库样本，包含不同品牌和品类的历史输入与生成结果。
+
+它们现在不是四个 Skill 的运行依赖，也不会被下方测试命令执行。保留它们是为了回看旧版题库结构、复盘品类漂移和“只问采购知识”等历史问题。新题库一律使用 v8，新增改动应以各 Skill 自带的 fixture 和测试为准，不要把 v3 当作当前产物合同。
+
+## 本地验证
+
+在仓库根目录运行：
 
 ```bash
 python3 -m unittest discover -s skills/geo-presales-eval-case-builder/evals -p 'test_*.py'
@@ -32,4 +48,4 @@ python3 -m unittest discover -s skills/geo-presales-report-audit/tests -p 'test_
 python3 -m unittest discover -s skills/geo-presales-report-editor/scripts/tests -p 'test_*.py'
 ```
 
-The test suite is self-contained and does not call external AI platforms.
+测试不调用外部 AI 平台。
