@@ -1,0 +1,529 @@
+{
+  "version": 1,
+  "purpose": "跨品牌客户结论语义回归；事实与品牌名均为通用占位，不用于重算指标。",
+  "cases": [
+    {
+      "id": "visibility_vs_sentiment",
+      "facts": {
+        "visibility": "可见度统计中目标品牌未被提及",
+        "sentiment": "情绪分析全部为正向，且问题本身会提及目标品牌"
+      },
+      "must_conclude": [
+        "品牌在可见度统计中未被提到",
+        "正向情绪只说明品牌印象或可识别特点"
+      ],
+      "must_not_conclude": [
+        "品牌已进入推荐、询价、供应商候选名单或真实采购流程"
+      ]
+    },
+    {
+      "id": "all_zero_customer_competitors",
+      "facts": {
+        "target": "目标品牌未被提及",
+        "competitors": "客户提供的正式竞品也均未被提及",
+        "other_brands": "回答出现了其他品牌"
+      },
+      "must_conclude": [
+        "当前数据无法比较目标品牌与正式竞品的相对表现",
+        "无法仅凭现有结果区分问题覆盖不足与这些品牌出现较少"
+      ],
+      "must_not_conclude": [
+        "客户竞品选错、应替换正式竞品、其他品牌已经是真实市场竞品"
+      ]
+    },
+    {
+      "id": "specific_risk_or_delete",
+      "facts": {
+        "risk": "只有某类项目需要核实的泛化提醒，没有目标业务、核实对象或材料证据"
+      },
+      "must_conclude": [
+        "删除该风险；若后端另有具体证据，再写适用场景、缺口和所需材料"
+      ],
+      "must_not_conclude": [
+        "保留需单独核实、门槛更高或公开资料不能替代验证等空话"
+      ]
+    },
+    {
+      "id": "source_taxonomy_boundary",
+      "facts": {
+        "source_type": "后端只标记为其他来源，没有更细分类"
+      },
+      "must_conclude": [
+        "保留其他来源这一正式分类，并说明无法进一步细分"
+      ],
+      "must_not_conclude": [
+        "自行猜测媒体、论坛、企业官网或其他具体来源"
+      ]
+    },
+    {
+      "id": "non_overlapping_actions",
+      "facts": {
+        "directions": "后端同时提供公开页面和采购审核资料两个行动方向"
+      },
+      "must_conclude": [
+        "公开页面负责让事实可查可读，审核资料负责提供后端方向要求的非公开核验材料"
+      ],
+      "must_not_conclude": [
+        "两条行动重复罗列相同材料，或都只写完善内容",
+        "没有后端证据时，自行声称资料分散、只在图片或附件、分散在不同人员或部门"
+      ]
+    },
+    {
+      "id": "low_metric_does_not_auto_route_to_content",
+      "facts": {
+        "visibility": "目标主题的品牌提及较低",
+        "action_context": "后端没有提供 route_type，也没有确认能力理解或第三方信任状态"
+      },
+      "must_conclude": [
+        "只能保留低提及这一诊断事实，行动模块沿用后端已有方向或降级"
+      ],
+      "must_not_conclude": [
+        "自行判断内容不存在、创建更多 Blog 或 FAQ 就能解决"
+      ]
+    },
+    {
+      "id": "trust_gap_routes_to_third_party_corroboration",
+      "facts": {
+        "route_type": "trust_gap",
+        "target_surfaces": [
+          "official_blog",
+          "third_party_source"
+        ],
+        "verification_signals": [
+          "citation",
+          "visibility"
+        ]
+      },
+      "must_conclude": [
+        "以第三方独立佐证为主要动作，官网 Blog 只补充解释",
+        "复测目标第三方来源是否进入引用，以及同口径品牌提及是否变化"
+      ],
+      "must_not_conclude": [
+        "只增加官网自述，或保证第三方内容一定提升推荐与排名"
+      ]
+    },
+    {
+      "id": "delivery_scope_and_client_ownership",
+      "facts": {
+        "target_surfaces": [
+          "official_blog",
+          "third_party_source",
+          "non_blog_official_page",
+          "internal_material"
+        ],
+        "geo_team_delivery": "生成官网 Blog、第三方内容并提供产品页修改清单",
+        "client_action": "客户修改并上线产品页",
+        "client_inputs": [
+          "集成清单",
+          "案例授权"
+        ]
+      },
+      "must_conclude": [
+        "我方负责 Blog、第三方内容和产品页修改清单，客户相关团队负责内部事实确认与产品页修改上线"
+      ],
+      "must_not_conclude": [
+        "我方直接修改客户产品页，或把集成、价格、政策和服务承诺全部塞进 Blog"
+      ]
+    },
+    {
+      "id": "verification_signal_is_not_attribution",
+      "facts": {
+        "verification_signals": [
+          "visibility",
+          "citation",
+          "brand_expression",
+          "accuracy"
+        ],
+        "attribution_data": "售前诊断未接入 AI Referral Traffic、线索或成交数据"
+      },
+      "must_conclude": [
+        "复测只观察同口径的品牌提及、引用、品牌表达和事实准确性变化"
+      ],
+      "must_not_conclude": [
+        "计算 AI 流量、线索、成交或收入归因"
+      ]
+    },
+    {
+      "id": "page_opportunity_relevance_and_citation_are_independent",
+      "facts": {
+        "scan_scope": "主题/Tag 相关官网页面，而非已引用页面子集",
+        "cited_high_relevance": "/support/local-storage 高相关且已引用",
+        "uncited_high_relevance": "/blog/continuous-recording-guide 高相关但未引用",
+        "low_relevance_cited": "/about-us 已引用但与当前范围低相关"
+      },
+      "must_conclude": [
+        "已引用的高相关页面用于强化具体能力表达，未引用的高相关页面作为 Citation Gap",
+        "低相关已引用页面一般不为当前主题/Tag 硬改"
+      ],
+      "must_not_conclude": [
+        "只检查已引用页面，或把未引用等同于低相关和低质量"
+      ]
+    },
+    {
+      "id": "attribute_is_carried_by_topic_or_tag",
+      "facts": {
+        "topic": "家庭安防摄像头",
+        "tag": "本地存储",
+        "internal_attribute": "no subscription",
+        "product_model": "Attribute 不是独立一等字段"
+      },
+      "must_conclude": [
+        "按家庭安防摄像头主题或本地存储 Tag 组织建议，并写清强化无需订阅这一具体能力"
+      ],
+      "must_not_conclude": [
+        "新增独立 Attribute 模块、上传列或跨平台状态"
+      ]
+    },
+    {
+      "id": "platform_consistency_boundary",
+      "facts": {
+        "sample_scope": "同市场、同语言、同采集窗口的匹配 Discovery Prompt",
+        "mention_consistency": "ChatGPT 和 Gemini 有提及，Perplexity 未提及",
+        "position_consistency": "获得提及时，平均提及排名也存在差异"
+      },
+      "must_conclude": [
+        "可比平台的品牌进入结果存在差异，尚未形成稳定共识",
+        "提及一致性与平均提及排名一致性分别表达"
+      ],
+      "must_not_conclude": [
+        "全网尚未形成共识",
+        "直接归因于某个平台、页面、来源或模型机制",
+        "直接提出只优化某一个平台"
+      ]
+    },
+    {
+      "id": "platform_consistent_absence",
+      "facts": {
+        "sample_scope": "同口径 Discovery 样本",
+        "mention_consistency": "所有可比平台均未提及目标品牌",
+        "position_consistency": "not_applicable"
+      },
+      "must_conclude": [
+        "可比平台均未提及品牌，缺席并非单一平台现象",
+        "无提及时不讨论平均提及排名"
+      ],
+      "must_not_conclude": [
+        "品牌在全网缺席",
+        "平台间排名一致或均为第 0 名"
+      ]
+    },
+    {
+      "id": "competitor_decisive_win_rate",
+      "facts": {
+        "target_wins": 29,
+        "competitor_wins": 10,
+        "ties": 7,
+        "unclear": 4,
+        "target_decisive_win_rate": "74.36%"
+      },
+      "must_conclude": [
+        "对该正式竞品的竞品胜率为 74.36%，分母只包含 39 个决胜回答",
+        "平局和无法判断保留为样本边界但不进入胜率分母"
+      ],
+      "must_not_conclude": [
+        "另写总体胜率或把 29/50 称为第二种胜率",
+        "把胜率改写成情绪或全市场份额"
+      ]
+    },
+    {
+      "id": "competitor_comparison_evidence_only",
+      "facts": {
+        "advantage": "报告易用性有 2 个正面对比回答支持",
+        "disadvantage": "平台覆盖有 1 个正面对比回答支持",
+        "sentiment": "另有一般正向评价",
+        "discovery": "提及率较低"
+      },
+      "must_conclude": [
+        "优势与劣势只引用正面对比主题，并保留维度与支持样本"
+      ],
+      "must_not_conclude": [
+        "把一般正向情绪或 Discovery 提及率当作竞品优劣势证据"
+      ]
+    },
+    {
+      "id": "market_perception_formal_diagnosis",
+      "facts": {
+        "alignment_status": "missing",
+        "intended_differentiator": "多平台覆盖",
+        "market_criteria": "报告能力与价格"
+      },
+      "must_conclude": [
+        "当前购买框架尚未把多平台覆盖作为主要选择标准"
+      ],
+      "must_not_conclude": [
+        "该差异点缺失直接导致品牌低 Visibility、输给竞品或没有成交"
+      ]
+    },
+    {
+      "id": "topic_consensus_stability",
+      "facts": {
+        "scope_type": "topic",
+        "scope_id": "coverage",
+        "mention_consistency": "consistent_present",
+        "position_consistency": "consistent"
+      },
+      "must_conclude": [
+        "可比平台对覆盖主题的品牌进入和平均提及排名判断相对稳定"
+      ],
+      "must_not_conclude": [
+        "把三个平台写成三次独立胜利，或给相关 Attribute 新增独立共识状态"
+      ]
+    },
+    {
+      "id": "topic_platform_split",
+      "facts": {
+        "scope_type": "topic",
+        "scope_id": "coverage",
+        "mention_consistency": "mixed",
+        "position_consistency": "mixed"
+      },
+      "must_conclude": [
+        "覆盖主题的跨平台判断尚未稳定，并分别说明品牌进入与平均提及排名差异"
+      ],
+      "must_not_conclude": [
+        "给 Attribute 新增 unsettled 或排名—可见度状态，自行推断来源权重，或直接提出只优化某个平台"
+      ]
+    },
+    {
+      "id": "low_discovery_low_validation_comprehension_gap",
+      "facts": {
+        "visibility": "目标主题下几乎没有提及",
+        "validation": "外部信源和引用也很弱"
+      },
+      "must_conclude": [
+        "这更像理解缺口，优先补站内可抽取的能力说明",
+        "不要把单个低指标直接解释成信任缺口"
+      ],
+      "must_not_conclude": [
+        "先把问题写成第三方信任不足",
+        "只说要继续加内容，却不说明要让哪类事实更容易被抽取"
+      ]
+    },
+    {
+      "id": "low_discovery_high_validation_trust_gap",
+      "facts": {
+        "visibility": "目标品牌提及仍少",
+        "validation": "但已有第三方评测、榜单或外部引用支撑"
+      },
+      "must_conclude": [
+        "这更像信任缺口，应优先补第三方佐证",
+        "站外承接要先更新已有提及，再进入已有信源，最后才新建来源"
+      ],
+      "must_not_conclude": [
+        "继续堆官网自述当主要解法",
+        "把一个页面当作足以解决信任问题的唯一动作"
+      ]
+    },
+    {
+      "id": "objection_reframe_case",
+      "facts": {
+        "objection": "回答里出现了明确的负面认知或异议",
+        "support": "事实证据能说明适用范围和取舍"
+      },
+      "must_conclude": [
+        "要用真实事实重构而不是辩解",
+        "写清楚适用范围、边界和为什么这不是否定品牌本身"
+      ],
+      "must_not_conclude": [
+        "直接否认真实短板",
+        "把品牌说没有问题当成纠正负面认知的方法"
+      ]
+    },
+    {
+      "id": "strength_amplification_case",
+      "facts": {
+        "strength": "品牌已经形成可复述的优势",
+        "surfaces": "站内页面、第三方信源和比较内容都能承接"
+      },
+      "must_conclude": [
+        "应把优势放大到多个相关 surface，而不是只写一条内容",
+        "单条正向样本不等于市场共识"
+      ],
+      "must_not_conclude": [
+        "把一个页面当作足够",
+        "把少量优势样本写成普遍结论"
+      ]
+    },
+    {
+      "id": "measurement_loop_same_prompts",
+      "facts": {
+        "before": "改写前后的同一批 prompts 都可复跑",
+        "signals": "visibility、citation、brand_expression、accuracy"
+      },
+      "must_conclude": [
+        "复测要用同一批 prompts、同一市场和同一采集口径",
+        "用四类信号对比变化，而不是换一套问法"
+      ],
+      "must_not_conclude": [
+        "把复测写成流量、线索或成交归因",
+        "只看单页结果就断言改动整体成功"
+      ]
+    },
+    {
+      "id": "overall_rate_is_not_discovery",
+      "facts": {
+        "overall_mention_rate": "整体提及率包含六类诊断意图",
+        "discovery_mention_rate": "发现类问题中目标品牌提及率为 0%"
+      },
+      "must_conclude": [
+        "整体提及率不能直接称为发现表现",
+        "现有露出来自其他已覆盖诊断意图，品牌尚未在用户未指定品牌的发现类问题中进入回答"
+      ],
+      "must_not_conclude": [
+        "品牌已有自然可见度基础",
+        "把发现称为纯发现型"
+      ]
+    },
+    {
+      "id": "question_mechanism_is_not_insight",
+      "facts": {
+        "intent": "竞品类问题",
+        "question": "题面已写出目标品牌与竞品",
+        "mention": "目标品牌 100% 提及且平均提及排名第 1"
+      },
+      "must_conclude": [
+        "直接删除题面驱动的提及和排名，不写提问方式或指标过滤解释",
+        "只有后端提供具体对手比较结果、竞争层级或证据主题时才输出竞品结论"
+      ],
+      "must_not_conclude": [
+        "竞品类问题中品牌提及稳定、位置领先或值得维护",
+        "解释题面已写出品牌、题型机制或指标不能证明什么"
+      ]
+    },
+    {
+      "id": "diagnostic_intent_names_are_consistent",
+      "facts": {
+        "internal_intents": "discovery、competitor、verification、accuracy、evaluation、category_awareness"
+      },
+      "must_conclude": [
+        "客户文案统一使用发现、竞品、验证、准确性、评价、品类认知"
+      ],
+      "must_not_conclude": [
+        "混用发现型、纯发现型、竞品比较、功能核实、准确性诊断或品牌评价"
+      ]
+    },
+    {
+      "id": "multi_dimension_tension",
+      "facts": {
+        "discovery": "两个平台的发现提及均为 0%",
+        "evaluation": "评价全部正向",
+        "verification": "官网事实在验证中被采用",
+        "discovery_citation": "发现问题中的官网引用为 0",
+        "competitors": "两个平台由不同竞品占位"
+      },
+      "must_conclude": [
+        "品牌缺席方向一致，但竞争结构存在平台差异",
+        "品牌具备基础好感且官网事实可被读取，但尚未自然进入发现回答和发现引用"
+      ],
+      "must_not_conclude": [
+        "把所有维度压成采购叙事",
+        "把平台差异归因于模型机制",
+        "不人为区分正式结论与切片观察"
+      ]
+    },
+    {
+      "id": "onpage_multi_context_three_questions",
+      "facts": {
+        "route_type": "comprehension_gap",
+        "page_opportunities": "后端提供承载页面、已引用页面和高引用量页面证据",
+        "capability": "本地存储无需订阅"
+      },
+      "must_conclude": [
+        "先检查承载页面是否存在且可抽取，再列还能自然补入提及的页面，最后说明如何自然补入",
+        "同一能力应出现在站内多个相关语境，优先补入已被引用和高引用量页面"
+      ],
+      "must_not_conclude": [
+        "只建一个新页面即可解决",
+        "建议堆砌 FAQ 墙或在不相关页面硬塞提及"
+      ]
+    },
+    {
+      "id": "objection_silence_and_owning_real_tradeoffs",
+      "facts": {
+        "route_type": "objection_reframe",
+        "coverage": "品牌对该负面话题没有任何站内内容",
+        "objection_truth": "证据显示该短板部分属实"
+      },
+      "must_conclude": [
+        "无承载内容时回答只能采用外部负面表述，先建承载内容属于行动一部分",
+        "对属实短板写清适用范围和取舍，重构表达跨多个 surface"
+      ],
+      "must_not_conclude": [
+        "否认属实短板或写品牌没有该问题",
+        "只改一个页面即可改变负面叙事"
+      ]
+    },
+    {
+      "id": "offpage_says_matters_more_than_link",
+      "facts": {
+        "route_type": "trust_gap",
+        "existing_mention": "某评测页已提及品牌但表述过时、缺少目标能力"
+      },
+      "must_conclude": [
+        "写清要把该来源的哪句表述更新成什么方向",
+        "有现成关系的信源优先承接"
+      ],
+      "must_not_conclude": [
+        "把行动写成获取外链或提升域名权重",
+        "把榜单收录当作唯一或主要动作"
+      ]
+    },
+    {
+      "id": "competitor_citation_gap_from_citation_list",
+      "facts": {
+        "citation_evidence": "引用清单显示某评测域名引用了两个正式竞品但未引用目标品牌"
+      },
+      "must_conclude": [
+        "该来源是站外承接的优先候选，可点名具体域名"
+      ],
+      "must_not_conclude": [
+        "从竞品可见度反推承接来源",
+        "承诺进入该来源后可见度必然提升"
+      ]
+    },
+    {
+      "id": "objection_breadth_and_positioning_alignment",
+      "facts": {
+        "negative_theme": "同一负面主题跨多个问题重复出现",
+        "positive_theme": "正向认可集中在非预设差异点维度"
+      },
+      "must_conclude": [
+        "写清负面主题的覆盖范围属于跨问题重复而非单题触发",
+        "市场认可的特点与品牌主打差异点不同，供客户判断定位表达"
+      ],
+      "must_not_conclude": [
+        "把跨题重复淡化成个别现象，或把单题负面写成普遍认知"
+      ]
+    },
+    {
+      "id": "retest_minimum_bar_and_signal_pace",
+      "facts": {
+        "action": "已更新目标页面和一处第三方表述",
+        "retest": "同口径复测中引用已变化，品牌表达暂无变化"
+      },
+      "must_conclude": [
+        "以做过的动作是否出现在复测数据里为最低验收",
+        "品牌表达信号变化通常慢于可见度和引用，暂无变化不等于动作无效"
+      ],
+      "must_not_conclude": [
+        "因品牌表达未变判定行动失败",
+        "把复测写成流量、线索或成交归因"
+      ]
+    },
+    {
+      "id": "csv_only_delivery_boundary",
+      "facts": {
+        "input": "用户已提供后台导出的报告 CSV 和已确认统计",
+        "requested_output": "修改后的 CSV"
+      },
+      "must_conclude": [
+        "直接更新 CSV 内容并保持上传契约",
+        "输出新 CSV 供用户确认"
+      ],
+      "must_not_conclude": [
+        "进入报告页面回填、提交或上传",
+        "要求先重建后端报告才能修改现成 CSV"
+      ]
+    }
+  ]
+}

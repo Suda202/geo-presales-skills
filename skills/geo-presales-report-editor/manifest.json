@@ -1,0 +1,24 @@
+{
+  "name": "geo-presales-report-editor",
+  "version": "2.4.3",
+  "owner": "海外GEO项目",
+  "updated_at": "2026-08-28",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "review_cadence": "per-release",
+  "target_platforms": [
+    "openai",
+    "claude",
+    "generic",
+    "agent-skills-compatible"
+  ],
+  "factory_components": [
+    "scripts",
+    "references",
+    "agents",
+    "reports",
+    "evals"
+  ]
+}

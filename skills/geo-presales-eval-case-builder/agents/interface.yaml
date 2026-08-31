@@ -1,0 +1,21 @@
+interface:
+  display_name: "GEO 售前评测集 Case 生成器"
+  short_description: "生成售前诊断 Case、主题并自动补齐竞品"
+  default_prompt: "Use $geo-presales-eval-case-builder to create or update one Case as a Record in the configured Feishu Base, without a Case sequence number, and generate one to three Chinese monitoring Topics. Treat Topic as the primary container for an independently monitored market, use case, or strategic opportunity; keep cross-Topic capabilities and evaluation criteria in their Case fields for downstream Attribute planning, and leave diagnostic intent, brand scope, and other horizontal classifications to downstream Tags. If fewer than three confirmed competitor name-domain pairs are supplied, invoke $overseas-geo-competitor-research, including from-scratch discovery when none are supplied, then write its three frozen formal competitors back into the Record."
+compatibility:
+  canonical_format: "agent-skills"
+  adapter_targets: ["openai", "claude", "generic"]
+  activation:
+    mode: "manual"
+    paths: []
+  execution:
+    context: "inline"
+    shell: "bash"
+  trust:
+    source_tier: "local"
+    remote_inline_execution: "forbid"
+    remote_metadata_policy: "allow-metadata-only"
+  degradation:
+    openai: "metadata-adapter"
+    claude: "neutral-source-plus-adapter"
+    generic: "neutral-source"

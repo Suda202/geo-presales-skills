@@ -1,0 +1,24 @@
+interface:
+  display_name: "GEO 售前报告质量审计"
+  short_description: "审计可见度/情绪重叠样本、诊断标签、品牌关联、比较、准确性与引用"
+  default_prompt: "使用 $geo-presales-report-audit 审计这份 GEO 售前报告或 JSON：确认问题类型只有 visibility 与 sentiment、允许同一问题同时拥有两类并分别进入两个指标；将诊断意图作为独立标签审计，兼容当前六个值和未来自由多标签；同时复核属性关联、竞品结果、准确性、正文首次出现位置、情绪与引用，并报告实际修改内容。"
+compatibility:
+  canonical_format: "agent-skills"
+  adapter_targets:
+    - "openai"
+    - "claude"
+    - "generic"
+  activation:
+    mode: "manual"
+    paths: []
+  execution:
+    context: "inline"
+    shell: "bash"
+  trust:
+    source_tier: "local"
+    remote_inline_execution: "forbid"
+    remote_metadata_policy: "allow-metadata-only"
+  degradation:
+    openai: "使用中立 SKILL.md、项目工具与本地脚本执行"
+    claude: "使用中立 SKILL.md、项目工具与本地脚本执行"
+    generic: "缺少飞书或浏览器能力时降级为只读审计与待写入清单"

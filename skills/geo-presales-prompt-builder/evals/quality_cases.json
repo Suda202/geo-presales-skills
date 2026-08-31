@@ -223,5 +223,40 @@
     "name": "no_fixed_user_question_word_limit",
     "input": "A standalone commercial question exceeds 30 English words because it includes several necessary conditions that jointly define one brand shortlist.",
     "expected": "Do not fail on word count alone. Keep it if every condition changes the same candidate set and the wording remains natural; otherwise simplify under the single-intent gate."
+  },
+  {
+    "name": "discovery_without_trigger_noun_returns_advice",
+    "input": "A Discovery prompt asks 'How do I improve LED display uniformity for a conference room?'",
+    "expected": "Fail format-intent alignment: without a candidate trigger noun (manufacturer, supplier, provider, tool, platform, solution, brand) the answer will be tips instead of a brand list. Rewrite to explicitly request concrete candidates."
+  },
+  {
+    "name": "competitor_soft_compare_yields_hedging",
+    "input": "A Competitor prompt says only 'Compare BrandA and BrandB.'",
+    "expected": "Fail the three-element check: it lacks a specific use case and an explicit recommendation ask, so the answer will hedge without a decisive verdict. Add the buyer scenario and require a clear choice."
+  },
+  {
+    "name": "leading_prompt_produces_worthless_data",
+    "input": "A prompt asks 'Why is BrandA the most reliable rechargeable battery manufacturer for medical devices?'",
+    "expected": "Fail neutral-premise review. The question presupposes the desired answer; measurement prompts must reflect the intent being measured, not the answer the brand hopes to see."
+  },
+  {
+    "name": "category_label_variants_from_case_fields",
+    "input": "The Case fields contain both 'LED display manufacturer' and 'commercial display solutions provider', and the builder keeps one baseline Discovery prompt per label.",
+    "expected": "Accept both baseline prompts: visibility can differ sharply per category label, so each Case-supported label is a distinct market entrance. Reject any additional label the builder invents beyond Case fields."
+  },
+  {
+    "name": "phrasing_variant_cannot_pad_majority",
+    "input": "A Topic fails the Discovery strict majority, and the builder adds a reworded duplicate of an existing P1 prompt to restore the majority.",
+    "expected": "Fail as pseudo-duplication. A phrasing variant for a top P1 attribute is allowed only when P1/P2 coverage is already satisfied and quota has room; it must never be used to reach the majority or the count range."
+  },
+  {
+    "name": "attribute_read_is_aggregated_not_per_prompt",
+    "input": "Two Discovery prompts tagged with the same Attribute return different candidate lists on one platform.",
+    "expected": "Do not treat single-prompt divergence as a generation defect; the attribute-level read aggregates across its tagged prompts. Coverage aims at a trustworthy read per P1, not at cataloging every possible phrasing."
+  },
+  {
+    "name": "multi_field_support_raises_p1_confidence",
+    "input": "One capability appears independently in 痛点 2, 产品特性 1, and 差异化优势, while another candidate appears only in one 使用场景 field.",
+    "expected": "Prefer the triangulated capability for P1 and record the single most decision-relevant source_field; the single-source candidate needs its own decision rationale to reach P1."
   }
 ]

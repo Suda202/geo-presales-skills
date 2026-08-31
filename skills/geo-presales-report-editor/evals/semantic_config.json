@@ -1,0 +1,220 @@
+{
+  "fallback_positive_concepts": [
+    "report_conclusions",
+    "evidence_synthesis",
+    "upload_csv"
+  ],
+  "positive_concepts": {
+    "report_conclusions": {
+      "weight": 0.42,
+      "phrases": [
+        "geo presales conclusions",
+        "presales report conclusions",
+        "customer-facing conclusions",
+        "analysis conclusions",
+        "售前分析结论",
+        "售前报告结论",
+        "报告结论",
+        "分析结论",
+        "修改报告里的分析结论",
+        "客户可用的 geo 售前分析结论",
+        "通读结论",
+        "客户结论",
+        "给客户看",
+        "把这段结论改得准确",
+        "把结论改成有判断",
+        "修改 csv 内容",
+        "只保留有判断和具体行动的客户结论",
+        "客户售前报告",
+        "写进客户售前报告",
+        "正式诊断纳入报告",
+        "纳入报告",
+        "客户可读结论",
+        "综合成客户可读结论",
+        "纳入 geo 售前报告"
+      ]
+    },
+    "evidence_synthesis": {
+      "weight": 0.34,
+      "phrases": [
+        "backend statistics",
+        "accepted module evidence",
+        "evidence-backed analysis",
+        "synthesize the diagnosis",
+        "后端统计",
+        "模块证据",
+        "综合主诊断",
+        "指标已经确认",
+        "提及和情绪指标没问题",
+        "可见度和情绪范围写对",
+        "竞品都是零提及",
+        "跨平台一致性",
+        "后端已经算好",
+        "平台一致性已经算好",
+        "决胜回答胜率",
+        "竞品优劣势",
+        "购买框架",
+        "market perception",
+        "主题共识",
+        "主题平台分歧",
+        "纳入正式诊断",
+        "行动路由",
+        "信息理解缺口",
+        "第三方信任缺口",
+        "错误事实纠正",
+        "官网 blog 和第三方信源",
+        "客户修改官网正式页面",
+        "复测信号",
+        "页面机会",
+        "高相关已引用",
+        "高相关未引用",
+        "citation gap",
+        "主题或 tag 承载 attribute"
+      ]
+    },
+    "upload_csv": {
+      "weight": 0.28,
+      "phrases": [
+        "upload-ready report csv",
+        "upload csv",
+        "report csv",
+        "上传 csv",
+        "后台上传格式",
+        "导出上传 csv",
+        "报告 csv",
+        "直接修改 csv",
+        "只更新 csv",
+        "不要去页面里改"
+      ]
+    },
+    "useful_analysis": {
+      "weight": 0.18,
+      "phrases": [
+        "useful analysis",
+        "non-redundant analysis",
+        "not just list data",
+        "有用的分析",
+        "有判断而不是罗列数据",
+        "支持客户决策",
+        "去掉难懂术语",
+        "删除空话",
+        "说人话",
+        "竞品选错",
+        "证据承接"
+      ]
+    }
+  },
+  "negative_concepts": {
+    "metric_audit": {
+      "weight": 0.62,
+      "exclusive": true,
+      "phrases": [
+        "audit mentions",
+        "audit rankings",
+        "recalculate metrics",
+        "审计品牌提及",
+        "排名和情绪判断是否准确",
+        "统计有没有算错",
+        "指标统计有没有算错",
+        "提及率 平均提及排名和正负情绪统计有没有算错",
+        "修改底层 json"
+      ]
+    },
+    "prompt_generation": {
+      "weight": 0.72,
+      "exclusive": true,
+      "phrases": [
+        "generate prompts",
+        "search prompts",
+        "生成 50 条",
+        "监测问题和 prompt"
+      ]
+    },
+    "answer_collection": {
+      "weight": 0.72,
+      "exclusive": true,
+      "phrases": [
+        "collect answers",
+        "crawl chatgpt",
+        "重复采集",
+        "采集这些关键词的回答"
+      ]
+    },
+    "rendering": {
+      "weight": 0.64,
+      "exclusive": true,
+      "phrases": [
+        "render html",
+        "render pdf",
+        "渲染成 html 和 pdf"
+      ]
+    },
+    "format_conversion": {
+      "weight": 0.55,
+      "exclusive": true,
+      "phrases": [
+        "convert csv to xlsx",
+        "csv 转成 xlsx",
+        "内容保持完全不变"
+      ]
+    },
+    "competitor_research": {
+      "weight": 0.58,
+      "exclusive": true,
+      "phrases": [
+        "research competitors",
+        "重新研究竞品",
+        "补齐三个正式竞品"
+      ]
+    },
+    "platform_metric_audit": {
+      "weight": 0.62,
+      "exclusive": true,
+      "phrases": [
+        "recalculate cross-platform consistency",
+        "重新计算跨平台一致率",
+        "计算共识阈值",
+        "不同平台的原始回答"
+      ]
+    },
+    "competitor_metric_audit": {
+      "weight": 0.62,
+      "exclusive": true,
+      "phrases": [
+        "重新判断每题胜者",
+        "手算总体胜率",
+        "手算决胜胜率",
+        "competitor 原始回答"
+      ]
+    },
+    "market_perception_metric_audit": {
+      "weight": 0.62,
+      "exclusive": true,
+      "phrases": [
+        "从 market perception 原始回答",
+        "重新归纳购买标准",
+        "重新判断品牌差异点"
+      ]
+    },
+    "traffic_attribution": {
+      "weight": 0.62,
+      "exclusive": true,
+      "phrases": [
+        "ai referral traffic 归因",
+        "计算 ai 带来的线索",
+        "成交归因",
+        "收入归因"
+      ]
+    },
+    "report_page_mutation": {
+      "weight": 0.68,
+      "exclusive": true,
+      "phrases": [
+        "登录销售后台修改报告",
+        "在报告页面逐项修改",
+        "直接提交上传不要 csv",
+        "操作报告页面"
+      ]
+    }
+  }
+}

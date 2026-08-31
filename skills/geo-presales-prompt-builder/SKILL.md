@@ -3,7 +3,7 @@ name: geo-presales-prompt-builder
 description: Use when generating, rewriting, auditing, or validating an English AI-search Prompt bank from an overseas GEO evaluation Case, including Attribute-by-Topic planning and free Tags for diagnostic intent, Branded or Non-Branded scope, Attributes, and custom analysis. Do not use it to create Topics, select competitors, crawl answers, calculate metrics, or write report conclusions.
 metadata:
   author: Overseas GEO Project
-  version: "4.4.0"
+  version: "4.5.0"
 ---
 
 # GEO Presales Prompt Builder
@@ -47,7 +47,7 @@ Accuracy 默认配额为 0，不读取或要求上游事实包。不得从旧评
 1. 归一化中英文名称、品类、业务边界、1–3 个 Topic 和三组正式竞品；只把输入中的“宽泛/细分”当作理解提示，不保存为字段。读取补充内容中的 Topic 局部竞品边界，为每个正式竞品写入适用的 `topic_ids`；未提供局部边界时，三者默认适用于全部 Topic。不得把 Case 中可跨 Topic 的能力重新升级为 Topic。
 2. 先抽取候选属性，再按 `Attribute × Topic` 完成 `attribute_plan`：每 Topic 有 3–5 个 P1、建议 5–10 个 P2、0–10 个 P3，以及可为空的 `excluded`。同一属性在不同 Topic 可有不同优先级，同一 Case 字段也可跨 Topic 复用。P3 仍必须有购买参考价值；纯目录事实进入 `exclude`，需要独立真值的单款 SKU 精确数值进入 `accuracy_only`。
 3. 按各 Topic 的 Attribute 信息量规划实际题量，不设置统一的每 Topic 默认配额。每个适用竞品保留一条 Competitor；Verification、目标品牌 Evaluation 与 Category Awareness 各保留一条；Accuracy 保持 0。售前不生成竞品 Evaluation，竞品情绪矩阵留给售后生词。Discovery 必须是每个 Topic 的严格多数，即 `Discovery > 该 Topic 全部其他题型之和`，不能用其他 Topic 的 Discovery 抵消。Discovery 必须覆盖全部 P1，再为能形成独立购买问题的 P2 增题，P3 只在仍有明显增量价值时使用。每 Topic 10–25 题只作为常见规划区间，不是硬门；不同 Topic 可以有不同题量，信息不足以支撑 Discovery 严格多数时停止并报告 Case 过薄，不得用伪重复凑题。整批不得超过 60 题；超过时不得削减到 Discovery 失去多数，应减少 Topic、缩小竞品适用范围或重新确认诊断范围，同时保存并校验实际 Topic 配额，失败不得静默少题。
-4. 按生成方法编写自然英文根问题及等义中文。Discovery 和 Category Awareness 不出现任何具体品牌；Competitor、Verification、Accuracy、Evaluation 遵守各自品牌边界。按题面实际品牌提及写入唯一品牌范围 Tag：出现目标品牌或正式竞品为 `Brand Scope: Branded`，否则为 `Brand Scope: Non-Branded`。
+4. 按生成方法编写自然英文根问题及等义中文。Discovery 和 Category Awareness 不出现任何具体品牌；Competitor、Verification、Accuracy、Evaluation 遵守各自品牌边界。按题面实际品牌提及写入唯一品牌范围 Tag：出现目标品牌或正式竞品为 `Brand Scope: Branded`，否则为 `Brand Scope: Non-Branded`。逐题守住四条写作规则：意图与格式匹配（Discovery 含候选触发名词，Competitor 具备场景、双具名品牌和明确推荐要求，Verification 逐项判断，Evaluation 明确评价任务）、不引导答案、缩写和跨品类歧义在题面内消解、买家语境只来自 Case 字段。Case 字段提供多个既有品类称呼时，基线候选题可按称呼各留一题，称呼变体不得自造。
 5. Discovery 必须覆盖当前 Topic 全部 P1，其余单属性题优先覆盖 P2；只有 P1/P2 已充分覆盖时才使用 P3。每题把实际测试的属性写为一个或多个 `Attribute: {attribute}` Tag；无独立属性条件的品类基线题允许不写 Attribute Tag。Competitor 优先使用双方都能合理比较的 P1 和高优先 P2，只覆盖当前 Topic 的适用竞品，每个适用竞品恰好一题。当前 Topic 有两条以上 Competitor 题时，除竞品名称外，英文问题的字符、条件、任务、比较维度和 Attribute Tags 完全同构。
 6. 将 Verification 写成一条批量验证题，当前 Topic 的 P1 必须按 `attribute_plan` 顺序全部进入 `validation_items`，并按同一顺序写为 Attribute Tags；其 `source_field / source_value / statement` 分别等于 P1 的溯源字段、原值和 `verification_statement`。固定要求逐项返回 `Yes / No / Unknown + 判断依据`；不生成 `attribute_id / priority_attribute_ids / paired_discovery_ids`。
 7. 不生成 Accuracy 问题，也不要求 `fact_value / official_source_url / fact_checked_at`。如用户明确要求 Accuracy，停止默认流程并先确认独立的事实核验输入与产物合同，不得临时从 Case 或模型记忆补真值。

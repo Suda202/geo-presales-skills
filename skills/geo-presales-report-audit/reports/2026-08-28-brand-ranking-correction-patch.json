@@ -1,0 +1,85 @@
+{
+  "rows": [
+    {
+      "platform": "gemini",
+      "wordid": 8167,
+      "brand_rankings": [
+        {"brand_name": "PETKIT", "rank_pos": 1},
+        {"brand_name": "CATLINK", "rank_pos": 2},
+        {"brand_name": "PETLIBRO", "rank_pos": 3},
+        {"brand_name": "Litter-Robot", "rank_pos": 4}
+      ]
+    },
+    {
+      "platform": "gemini",
+      "wordid": 8173,
+      "brand_rankings": [
+        {"brand_name": "PETLIBRO", "rank_pos": 1},
+        {"brand_name": "SureFeed", "rank_pos": 2},
+        {"brand_name": "Whisker", "rank_pos": 3},
+        {"brand_name": "Cat Mate", "rank_pos": 4},
+        {"brand_name": "PETKIT", "rank_pos": 5}
+      ]
+    },
+    {
+      "platform": "chatgpt",
+      "wordid": 8175,
+      "brand_rankings": [
+        {"brand_name": "SureFeed", "rank_pos": 1},
+        {"brand_name": "PETLIBRO", "rank_pos": 2},
+        {"brand_name": "HONEYGUARDIAN", "rank_pos": 3},
+        {"brand_name": "PawsPik", "rank_pos": 4},
+        {"brand_name": "PetSafe", "rank_pos": 5}
+      ]
+    },
+    {
+      "platform": "chatgpt",
+      "wordid": 8176,
+      "brand_rankings": [
+        {"brand_name": "PETLIBRO", "rank_pos": 1},
+        {"brand_name": "PETKIT", "rank_pos": 2},
+        {"brand_name": "Catit", "rank_pos": 3},
+        {"brand_name": "Sure Petcare", "rank_pos": 4}
+      ]
+    },
+    {
+      "platform": "gemini",
+      "wordid": 8179,
+      "brand_rankings": [
+        {"brand_name": "PETKIT", "rank_pos": 1},
+        {"brand_name": "PETLIBRO", "rank_pos": 2},
+        {"brand_name": "PetSafe", "rank_pos": 3},
+        {"brand_name": "Oneisall", "rank_pos": 4}
+      ]
+    },
+    {
+      "platform": "gemini",
+      "wordid": 8186,
+      "brand_rankings": [
+        {"brand_name": "PETLIBRO", "rank_pos": 1},
+        {"brand_name": "PetSafe", "rank_pos": 2},
+        {"brand_name": "Oneisall", "rank_pos": 3},
+        {"brand_name": "Catit", "rank_pos": 4}
+      ]
+    },
+    {
+      "platform": "gemini",
+      "wordid": 8187,
+      "brand_rankings": [
+        {"brand_name": "PETLIBRO", "rank_pos": 1},
+        {"brand_name": "Voluas", "rank_pos": 2},
+        {"brand_name": "Oneisall", "rank_pos": 3},
+        {"brand_name": "PETKIT", "rank_pos": 4}
+      ]
+    },
+    {
+      "platform": "gemini",
+      "wordid": 8188,
+      "brand_rankings": [
+        {"brand_name": "PETKIT", "rank_pos": 1},
+        {"brand_name": "PetSafe", "rank_pos": 2},
+        {"brand_name": "SureFeed", "rank_pos": 3}
+      ]
+    }
+  ]
+}

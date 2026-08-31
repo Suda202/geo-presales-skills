@@ -1,0 +1,24 @@
+{
+  "recommended_threshold": 0.5,
+  "should_trigger": [
+    {"text": "按照售前输入字段，把这家公司的资料整理成一个新的评测集 Case。", "family": "create_case"},
+    {"text": "把官网、品牌 Brief 和三个已确认竞品转成 GEO 售前诊断输入项。", "family": "brief_to_case"},
+    {"text": "检查 Fumego 这个评测集 Case 的必填项、语言和数量是否合规。", "family": "audit_case"},
+    {"text": "给海外售前报告输入评测集追加一个品牌 Case，补充内容没有必要就别写。", "family": "append_case"},
+    {"text": "把这个品牌的品类、目标客户、痛点、场景、特性、主题和竞品归一化成表单输入。", "family": "normalize_case"},
+    {"text": "只调整现有 Case 的三个监测主题，按垂直行业、痛点、场景和产品特性重新判断拆分。", "family": "topic_maintenance"},
+    {"text": "生成这个品牌的评测集 Case，但客户没有提供任何竞品，请自动研究并补齐三个竞品和官网。", "family": "case_with_zero_competitors"}
+  ],
+  "should_not_trigger": [
+    {"text": "只研究一下这个品牌有哪些海外竞品并自动补足三个，不生成 Case。", "family": "competitor_research_only"},
+    {"text": "按这三个主题生成 51 条监测 Prompt。", "family": "prompt_generation"},
+    {"text": "抓取 ChatGPT 回答并计算品牌可见度。", "family": "answer_collection"},
+    {"text": "根据现有数据写一份客户可看的 GEO 售前报告。", "family": "report_writing"},
+    {"text": "解释一下 GEO 售前诊断需要哪些输入字段。", "family": "explain_only"}
+  ],
+  "near_neighbor": [
+    {"text": "只检查这三个竞品是否可比，不要生成评测集 Case。", "family": "competitor_audit_only"},
+    {"text": "将评测集里的品牌名称全部改成英文，其他不动。", "family": "mechanical_edit"},
+    {"text": "把客户填写指南改写得更容易理解。", "family": "guide_editing"}
+  ]
+}

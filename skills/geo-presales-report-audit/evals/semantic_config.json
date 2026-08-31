@@ -1,0 +1,109 @@
+{
+  "fallback_positive_concepts": [
+    "report_quality_audit",
+    "badcase_regression"
+  ],
+  "positive_concepts": {
+    "report_quality_audit": {
+      "weight": 0.5,
+      "phrases": [
+        "审计已经生成的海外 geo 售前诊断报告",
+        "全面检查报告质量",
+        "全面检查售前报告",
+        "售前诊断报告",
+        "报告质量审计",
+        "检查这份海外 geo 报告",
+        "核对报告里的竞品归类",
+        "检查这个售前 json 的品牌提及",
+        "首次出现顺序排名",
+        "情绪问题结果",
+        "visibility 和 sentiment 同时属于",
+        "visibility 和 sentiment 强制二选一",
+        "同一道问题同时属于两类",
+        "诊断意图自由多标签",
+        "诊断意图是否仍写死六个枚举",
+        "未来自由多标签不会被拒绝",
+        "生成纠正版",
+        "页面题数和问题明细对不上",
+        "audit the generated overseas geo presales report",
+        "presales report quality audit"
+      ]
+    },
+    "badcase_regression": {
+      "weight": 0.35,
+      "phrases": [
+        "回归历史 bad case",
+        "历史问题是否修复",
+        "对照售前 bad case 库回归",
+        "新增 bad case",
+        "更新到 bad case 表",
+        "更新飞书多维表格状态",
+        "拆成能独立回归的 bad case",
+        "historical bad case regression",
+        "find new bad cases"
+      ]
+    },
+    "evidence_delivery": {
+      "weight": 0.15,
+      "phrases": [
+        "补 task 记录号 错误类型 具体例子 证据截图",
+        "写 task 记录号和错误类型",
+        "带红框和箭头的证据截图",
+        "补具体例子",
+        "annotated evidence screenshot"
+      ]
+    }
+  },
+  "negative_concepts": {
+    "report_generation": {
+      "weight": 0.55,
+      "exclusive": true,
+      "phrases": [
+        "生产一份新的海外 geo 售前报告",
+        "生成客户可看的售前报告",
+        "生成售前报告",
+        "produce a presales report"
+      ]
+    },
+    "competitor_or_intent_work": {
+      "weight": 0.5,
+      "exclusive": true,
+      "phrases": [
+        "研究一下 profound 的海外同类竞品",
+        "哪些同类公司可以作为竞品",
+        "生成 50 条海外 geo 用户意图题",
+        "竞品研究",
+        "竞品分级",
+        "用户意图题"
+      ]
+    },
+    "other_audit": {
+      "weight": 0.5,
+      "exclusive": true,
+      "phrases": [
+        "审计这个官网页面",
+        "文章的引用链接",
+        "page geo audit"
+      ]
+    },
+    "generic_operation": {
+      "weight": 0.45,
+      "exclusive": true,
+      "phrases": [
+        "普通飞书多维表格",
+        "一共有多少条记录",
+        "不需要审计报告"
+      ]
+    },
+    "design_or_explain_only": {
+      "weight": 0.45,
+      "exclusive": true,
+      "phrases": [
+        "解释一下什么是",
+        "优化售前报告的版式",
+        "不要检查数据质量",
+        "只看这一段第三方模型回答"
+      ]
+    }
+  }
+}

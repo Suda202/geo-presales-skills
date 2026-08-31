@@ -1,0 +1,24 @@
+{
+  "name": "geo-presales-report-audit",
+  "version": "2.2.0",
+  "owner": "海外 GEO 项目",
+  "updated_at": "2026-08-28",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "review_cadence": "per-release",
+  "target_platforms": [
+    "openai",
+    "claude",
+    "generic",
+    "agent-skills-compatible"
+  ],
+  "factory_components": [
+    "references",
+    "scripts",
+    "evals",
+    "reports",
+    "tests"
+  ]
+}

@@ -4,8 +4,12 @@ Versioned Skill packages for the GEO presales workflow.
 
 ## Included packages
 
+- `skills/geo-presales-eval-case-builder/` turns verified brand information into a normalized GEO presales Case with one to three monitoring Topics. It can write to an authorized private Lark Base target, but publishes no Base identifier or target configuration.
 - `skills/geo-presales-prompt-builder/` generates and validates `overseas-geo-question-bank/v8` English AI-search monitoring Prompts. It derives an `Attribute × Topic` plan from the Case, records diagnostic intent, brand scope, Attributes, and custom analysis dimensions as free Tags, and keeps each Prompt within the purchasing object defined by its Topic.
-- `skills/geo-presales-report/` turns company-backend statistics into evidence-constrained Chinese analysis conclusions and an upload-ready CSV. It does not recalculate production metrics or render HTML/PDF.
+- `skills/geo-presales-report-audit/` audits generated presales reports and their structured JSON results against source evidence and historical Bad Cases. It checks visibility, sentiment, brand mentions, ranking, competitors, accuracy, and citations without generating a report.
+- `skills/geo-presales-report-editor/` turns company-backend statistics into evidence-constrained Chinese analysis conclusions and an upload-ready CSV. It does not recalculate production metrics or render HTML/PDF.
+
+The previous combined `geo-presales-report` package has been split into `geo-presales-report-audit` and `geo-presales-report-editor`.
 - `evals/v3/` contains nine validated, non-production evaluation inputs. The BPI set and the Skill fixtures guard against known category-drift and “procurement knowledge only” failures.
 
 ## Core rules
@@ -22,8 +26,10 @@ Versioned Skill packages for the GEO presales workflow.
 ## Validation
 
 ```bash
+python3 -m unittest discover -s skills/geo-presales-eval-case-builder/evals -p 'test_*.py'
 python3 -m unittest discover -s skills/geo-presales-prompt-builder/evals -p 'test_*.py'
-python3 -m unittest discover -s skills/geo-presales-report/scripts/tests -p 'test_*.py'
+python3 -m unittest discover -s skills/geo-presales-report-audit/tests -p 'test_*.py'
+python3 -m unittest discover -s skills/geo-presales-report-editor/scripts/tests -p 'test_*.py'
 ```
 
 The test suite is self-contained and does not call external AI platforms.

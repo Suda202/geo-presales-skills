@@ -1,0 +1,4 @@
+interface:
+  display_name: "GEO Presales Report Editor"
+  short_description: "根据已确认统计直接修改客户可用的售前报告上传 CSV"
+  default_prompt: "使用 $geo-presales-report-editor 根据已确认统计直接更新报告 CSV：先拆分发现类、竞品类、验证类、准确性类、评价类和品类认知类问题，再综合整体、主题、平台与引用结论；不要重算事实、操作报告页面或上传。"

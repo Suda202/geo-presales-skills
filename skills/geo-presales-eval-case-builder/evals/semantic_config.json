@@ -1,0 +1,36 @@
+{
+  "fallback_positive_concepts": ["case_or_topic_work"],
+  "positive_concepts": {
+    "case_or_topic_work": {
+      "weight": 1.0,
+      "phrases": ["brand case", "品牌 case", "evaluation set", "评测集 case", "新增 case", "追加 case", "售前诊断输入", "表单输入", "监测主题", "调整主题", "生成主题", "主题拆分", "topic-only maintenance"]
+    }
+  },
+  "negative_concepts": {
+    "competitor_research": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": ["只研究一下这个品牌", "只研究竞品", "只做竞品调研", "不生成 case"]
+    },
+    "competitor_only": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": ["只检查这三个竞品", "竞品是否可比", "不要生成评测集 case"]
+    },
+    "prompt_generation": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": ["生成 prompt", "监测问题", "问题集"]
+    },
+    "answer_or_metrics": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": ["采集回答", "抓取回答", "计算可见度", "情绪指标"]
+    },
+    "report_writing": {
+      "weight": 0.95,
+      "exclusive": true,
+      "phrases": ["写售前报告", "报告撰写", "客户报告"]
+    }
+  }
+}

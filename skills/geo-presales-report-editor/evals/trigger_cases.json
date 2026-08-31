@@ -1,0 +1,129 @@
+{
+  "recommended_threshold": 0.4,
+  "should_trigger": [
+    {
+      "text": "基于这份海外 GEO 报告 CSV，把结论改成有判断而不是罗列数据，并保持后台上传格式。",
+      "family": "csv_edit"
+    },
+    {
+      "text": "两份报告 CSV 已经导出，请直接根据最新统计修改 CSV 内容，别去报告页面里改。",
+      "family": "csv_only_edit"
+    },
+    {
+      "text": "用后端统计和已确认的模块证据，生成客户可用的 GEO 售前分析结论。",
+      "family": "backend_synthesis"
+    },
+    {
+      "text": "这份 report JSON 的指标已经确认，不重算数据，帮我综合主诊断和行动并导出上传 CSV。",
+      "family": "json_to_csv"
+    },
+    {
+      "text": "品牌提及和情绪指标没问题，只修改报告里的分析结论，让每条结论都能支持客户决策。",
+      "family": "conclusion_edit"
+    },
+    {
+      "text": "数据已经核过，不重算，通读结论，把可见度和情绪范围写对并去掉难懂术语。",
+      "family": "plain_language_scope_edit"
+    },
+    {
+      "text": "客户给的竞品都是零提及，别说竞品选错，帮我把这段结论改得准确且能给客户看。",
+      "family": "all_zero_competitor_edit"
+    },
+    {
+      "text": "删除报告里需核实、证据承接等空话，只保留有判断和具体行动的客户结论。",
+      "family": "remove_jargon_and_filler"
+    },
+    {
+      "text": "后端已经算好 ChatGPT、Gemini 和 Perplexity 的平台一致性，帮我纳入 GEO 售前报告并输出上传 CSV。",
+      "family": "platform_consistency_synthesis"
+    },
+    {
+      "text": "竞品类问题的决胜回答胜率和正面对比优劣势已经由后端算好，帮我写进客户售前报告。",
+      "family": "competitor_decisive_win_synthesis"
+    },
+    {
+      "text": "把后端 Market Perception 的 included、missing、conflicting 结果作为购买框架正式诊断纳入报告。",
+      "family": "market_perception_synthesis"
+    },
+    {
+      "text": "后端已给出整体和主题的跨平台一致与分歧状态，帮我综合成客户可读结论。",
+      "family": "topic_consistency_synthesis"
+    },
+    {
+      "text": "后端已给出信息理解、第三方信任和错误事实的行动路由，帮我写进客户售前报告，并写清官网 Blog、第三方信源、客户页面和内部材料各由谁负责以及如何复测。",
+      "family": "action_routing_and_ownership"
+    },
+    {
+      "text": "后端已经按主题和 Tag 扫描官网候选页并给出页面相关性、Citation 状态和页面价值，帮我把高相关已引用与高相关未引用页面的优化机会写进客户售前报告。",
+      "family": "page_opportunity_synthesis"
+    },
+    {
+      "text": "品牌被提到，但有明确的负面认知，不要直接否认，帮我写成重构表达的报告结论。",
+      "family": "objection_reframe"
+    }
+  ],
+  "should_not_trigger": [
+    {
+      "text": "审计品牌提及排名和情绪判断是否准确，必要时修改底层 JSON。",
+      "family": "metric_audit"
+    },
+    {
+      "text": "按三个主题为这个品牌生成 51 条海外 AI 搜索监测问题和 Prompt。",
+      "family": "prompt_generation"
+    },
+    {
+      "text": "去 ChatGPT 重复采集这些关键词的回答并保存原文。",
+      "family": "answer_collection"
+    },
+    {
+      "text": "把现有报告渲染成 HTML 和 PDF，不要修改文案。",
+      "family": "rendering"
+    },
+    {
+      "text": "登录销售后台，在报告页面逐项修改结论并直接提交上传，不需要 CSV。",
+      "family": "report_page_mutation"
+    }
+  ],
+  "near_neighbor": [
+    {
+      "text": "看看这份报告的提及率、平均提及排名和正负情绪统计有没有算错。",
+      "family": "metric_audit"
+    },
+    {
+      "text": "把这个 CSV 转成 XLSX，内容保持完全不变。",
+      "family": "format_conversion"
+    },
+    {
+      "text": "根据品牌官网重新研究竞品并补齐三个正式竞品。",
+      "family": "competitor_research"
+    },
+    {
+      "text": "拿这些不同平台的原始回答，帮我重新计算跨平台一致率和共识阈值。",
+      "family": "platform_metric_audit"
+    },
+    {
+      "text": "从这批 Competitor 原始回答重新判断每题胜者，并手算总体胜率和决胜胜率。",
+      "family": "competitor_metric_audit"
+    },
+    {
+      "text": "从 Market Perception 原始回答重新归纳购买标准并判断品牌差异点是否缺失。",
+      "family": "market_perception_metric_audit"
+    },
+    {
+      "text": "接入网站分析和 CRM，计算 AI Referral Traffic、线索、成交与收入归因。",
+      "family": "traffic_attribution"
+    },
+    {
+      "text": "品牌几乎没被提到，但第三方已经有一些独立认可，先判断应该走理解缺口还是信任缺口。",
+      "family": "routing_without_report_edit"
+    },
+    {
+      "text": "低提及不一定是内容不够，先帮我判断这次更像站内表达缺口还是站外信任缺口。",
+      "family": "routing_without_report_edit"
+    },
+    {
+      "text": "这个品牌已经有清晰优势，帮我把优势放大到官网和第三方多个表面，而不是只写一条内容。",
+      "family": "content_strategy_without_csv"
+    }
+  ]
+}

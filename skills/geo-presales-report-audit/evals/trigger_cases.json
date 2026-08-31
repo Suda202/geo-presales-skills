@@ -1,0 +1,93 @@
+{
+  "recommended_threshold": 0.42,
+  "should_trigger": [
+    {
+      "text": "全面检查一下 Task 103 的售前诊断报告，看看多维表里的历史问题是否修复，有新增 bad case 就补进去。",
+      "family": "full_report_audit"
+    },
+    {
+      "text": "对照售前 Bad Case 库回归这份预览报告，修好的改状态，没修好的补具体例子。",
+      "family": "historical_regression"
+    },
+    {
+      "text": "检查这份海外 GEO 报告还有没有新增问题，所有 Case 都要写 Task、记录号和错误类型。",
+      "family": "new_badcase_discovery"
+    },
+    {
+      "text": "把这几条报告问题拆成能独立回归的 Bad Case，并给每条配带红框和箭头的证据截图。",
+      "family": "badcase_delivery"
+    },
+    {
+      "text": "核对报告里的竞品归类、正文首次出现顺序排名、情绪问题的正中负和引用解析是否与回答原文一致。",
+      "family": "structured_result_audit"
+    },
+    {
+      "text": "检查这个售前 JSON 的品牌提及、首次出现顺序排名和情绪问题结果，并直接生成纠正版。",
+      "family": "structured_json_correction"
+    },
+    {
+      "text": "页面题数和问题明细对不上，请做报告质量审计并把成立的问题更新到 Bad Case 表。",
+      "family": "aggregation_audit"
+    },
+    {
+      "text": "审计报告是否把 visibility 和 sentiment 强制二选一；同一道问题同时属于两类时要分别进入两个指标。",
+      "family": "overlapping_question_types"
+    },
+    {
+      "text": "检查诊断意图是否仍写死六个枚举，并验证未来自由多标签不会被拒绝或误算。",
+      "family": "diagnostic_intent_tags"
+    }
+  ],
+  "should_not_trigger": [
+    {
+      "text": "为这个品牌生产一份新的海外 GEO 售前报告。",
+      "family": "report_generation"
+    },
+    {
+      "text": "研究一下某品牌的海外同类竞品，并给出竞品分级。",
+      "family": "competitor_research"
+    },
+    {
+      "text": "按目标属性和三个 Topic 为这个品牌生成 51 条海外 GEO 用户意图题。",
+      "family": "intent_generation"
+    },
+    {
+      "text": "审计这个官网页面的 GEO 友好度和结构化内容。",
+      "family": "page_audit"
+    },
+    {
+      "text": "帮我在普通飞书多维表格里新增一个负责人字段。",
+      "family": "generic_lark_operation"
+    },
+    {
+      "text": "解释一下什么是海外 GEO 售前诊断报告。",
+      "family": "explain_only"
+    }
+  ],
+  "near_neighbor": [
+    {
+      "text": "Task 103 的数据已经准备好了，直接生成客户可看的售前报告。",
+      "family": "generate_vs_audit"
+    },
+    {
+      "text": "只看这一段第三方模型回答，帮我判断语气是正向、中性还是负向。",
+      "family": "isolated_sentiment_judgment"
+    },
+    {
+      "text": "看看这个品牌还有哪些同类公司可以作为竞品。",
+      "family": "competitor_discovery"
+    },
+    {
+      "text": "优化售前报告的版式和视觉设计，但不要检查数据质量。",
+      "family": "visual_design_only"
+    },
+    {
+      "text": "读取飞书 Bad Case 表，告诉我一共有多少条记录，不需要审计报告。",
+      "family": "base_read_only"
+    },
+    {
+      "text": "检查某篇文章的引用链接有没有失效。",
+      "family": "generic_citation_check"
+    }
+  ]
+}

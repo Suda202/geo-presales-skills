@@ -1,0 +1,160 @@
+{
+  "citation_cases": [
+    {
+      "name": "Gemini 非链接来源组件整体排除",
+      "input_html": "<p>正文先写 PETLIBRO，随后写 PETKIT。</p><div class=\"source-inline-chip-container\"><button><span class=\"source-title\">PETKIT</span></button></div>",
+      "expected_cleaned": "正文先写 PETLIBRO，随后写 PETKIT。",
+      "expected_removed": [
+        "PETKIT"
+      ]
+    },
+    {
+      "name": "品牌只出现在 citation pill 时排除",
+      "input_html": "<p>正文只讨论价格。</p><span data-testid=\"webpage-citation-pill\"><a href=\"https://source.example\">Leap+1</a></span>",
+      "expected_cleaned": "正文只讨论价格。",
+      "expected_removed": ["Leap+1"]
+    },
+    {
+      "name": "同一品牌在正文和引用中出现时保留正文",
+      "input_html": "<p>Chatham 提供实验室培育宝石。</p><span data-testid=\"webpage-citation-pill\"><a href=\"https://source.example\">Chatham Inc.</a></span>",
+      "expected_cleaned": "Chatham 提供实验室培育宝石。",
+      "expected_removed": ["Chatham Inc."]
+    },
+    {
+      "name": "产品卡可见品牌保留而普通引用锚文本删除",
+      "input_html": "<div data-testid=\"product-card\"><a href=\"/product\">MiaDonna Halo Ring</a></div><a href=\"https://source.example\">Review Site</a>",
+      "expected_cleaned": "MiaDonna Halo Ring",
+      "expected_removed": ["Review Site"]
+    },
+    {
+      "name": "ChatGPT shopping-product-metadata 商品卡链接标题保留",
+      "input_html": "<div data-testid=\"shopping-product-metadata-0\"><a href=\"/product\">Aurate Diamond Ring</a></div><a href=\"https://source.example\">Merchant Source</a>",
+      "expected_cleaned": "Aurate Diamond Ring",
+      "expected_removed": ["Merchant Source"]
+    }
+  ],
+  "ranking_cases": [
+    {
+      "name": "开放同类竞品按首次出现顺序计入",
+      "cleaned_text": "先比较 Chatham，随后是 MiaDonna，最后回到 Lit by Larry。",
+      "entity_catalog": [
+        {"canonical_name": "Lit by Larry", "aliases": [], "eligible": true},
+        {"canonical_name": "MiaDonna", "aliases": [], "eligible": true},
+        {"canonical_name": "Chatham", "aliases": [], "eligible": true}
+      ],
+      "expected": [
+        {"brand_name": "Chatham", "rank_pos": 1},
+        {"brand_name": "MiaDonna", "rank_pos": 2},
+        {"brand_name": "Lit by Larry", "rank_pos": 3}
+      ]
+    },
+    {
+      "name": "跨正文别名统一为一个标准品牌",
+      "cleaned_text": "Lit by Aria 的设计接近 Lit by Larry，Lit byarry 也指同一品牌。",
+      "entity_catalog": [
+        {
+          "canonical_name": "Lit by Larry",
+          "aliases": ["Lit by Aria", "Lit byarry"],
+          "eligible": true
+        }
+      ],
+      "expected": [{"brand_name": "Lit by Larry", "rank_pos": 1}]
+    },
+    {
+      "name": "merchant 媒体机构和履历品牌不自动计入",
+      "cleaned_text": "Marketplace 销售 Lit by Larry。Review Site 引用了 GIA；创始人曾任职 Tiffany。Chatham 是当前替代选择。",
+      "entity_catalog": [
+        {"canonical_name": "Marketplace", "aliases": [], "eligible": false},
+        {"canonical_name": "Review Site", "aliases": [], "eligible": false},
+        {"canonical_name": "GIA", "aliases": [], "eligible": false},
+        {"canonical_name": "Tiffany", "aliases": [], "eligible": false},
+        {"canonical_name": "Lit by Larry", "aliases": [], "eligible": true},
+        {"canonical_name": "Chatham", "aliases": [], "eligible": true}
+      ],
+      "expected": [
+        {"brand_name": "Lit by Larry", "rank_pos": 1},
+        {"brand_name": "Chatham", "rank_pos": 2}
+      ]
+    },
+    {
+      "name": "同一标准品牌多次出现仍只排名一次",
+      "cleaned_text": "MiaDonna 先出现，随后是 Lit by Larry，最后再次出现 MIADONNA。",
+      "entity_catalog": [
+        {"canonical_name": "Lit by Larry", "aliases": [], "eligible": true},
+        {"canonical_name": "MiaDonna", "aliases": ["MIADONNA"], "eligible": true}
+      ],
+      "expected": [
+        {"brand_name": "MiaDonna", "rank_pos": 1},
+        {"brand_name": "Lit by Larry", "rank_pos": 2}
+      ]
+    },
+    {
+      "name": "短别名不得命中较长英文单词内部",
+      "cleaned_text": "The chair is available, but A is the actual brand mentioned later.",
+      "entity_catalog": [
+        {"canonical_name": "A", "aliases": [], "eligible": true}
+      ],
+      "expected": [{"brand_name": "A", "rank_pos": 1}]
+    },
+    {
+      "name": "已列候选即使不满足核心需求仍保留排名",
+      "cleaned_text": "候选依次为 PETKIT、CATLINK、PETLIBRO 和 Litter-Robot；其中后两者不能统一控制全部设备。",
+      "entity_catalog": [
+        {"canonical_name": "PETKIT", "aliases": [], "eligible": true},
+        {"canonical_name": "CATLINK", "aliases": [], "eligible": true},
+        {"canonical_name": "PETLIBRO", "aliases": [], "eligible": true},
+        {"canonical_name": "Litter-Robot", "aliases": [], "eligible": true}
+      ],
+      "expected": [
+        {"brand_name": "PETKIT", "rank_pos": 1},
+        {"brand_name": "CATLINK", "rank_pos": 2},
+        {"brand_name": "PETLIBRO", "rank_pos": 3},
+        {"brand_name": "Litter-Robot", "rank_pos": 4}
+      ]
+    },
+    {
+      "name": "批次规范名不机械采用官网小写",
+      "cleaned_text": "oneisall 与 PETLIBRO 都是候选。",
+      "entity_catalog": [
+        {"canonical_name": "Oneisall", "aliases": ["oneisall"], "eligible": true},
+        {"canonical_name": "PETLIBRO", "aliases": [], "eligible": true}
+      ],
+      "expected": [
+        {"brand_name": "Oneisall", "rank_pos": 1},
+        {"brand_name": "PETLIBRO", "rank_pos": 2}
+      ]
+    }
+  ],
+  "sentiment_cases": [
+    {
+      "name": "可见度和情绪可以同时成立并保留正向",
+      "question_types": ["visibility", "sentiment"],
+      "dominant_polarity": "positive_dominant",
+      "expected": "positive"
+    },
+    {
+      "name": "情绪类型明确认可为正向",
+      "question_types": ["sentiment"],
+      "dominant_polarity": "positive_dominant",
+      "expected": "positive"
+    },
+    {
+      "name": "情绪类型证据不足为中性",
+      "question_types": ["sentiment"],
+      "dominant_polarity": "balanced_or_insufficient",
+      "expected": "neutral"
+    },
+    {
+      "name": "可见度与情绪重叠时风险主导为负向",
+      "question_types": ["visibility", "sentiment"],
+      "dominant_polarity": "negative_dominant",
+      "expected": "negative"
+    },
+    {
+      "name": "有条件推荐经人工判定正向后保持正向",
+      "question_types": ["sentiment"],
+      "dominant_polarity": "positive_dominant",
+      "expected": "positive"
+    }
+  ]
+}
