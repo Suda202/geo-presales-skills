@@ -1,6 +1,6 @@
 ---
 name: geo-presales-report-editor
-description: Edit or generate an upload-ready GEO presales report CSV with customer-facing conclusions from confirmed metrics and evidence, without recomputing facts or modifying the report webpage.
+description: Use when correcting brand mention recognition or sentiment classification results in a GEO presales diagnostic report, and submitting bad cases to the project documentation. Delivers an upload-ready CSV from confirmed metrics. Does not recompute source data or modify the report webpage.
 metadata:
   author: Overseas GEO Project
   version: "2.4.3"

@@ -1,6 +1,6 @@
 ---
 name: geo-presales-report-audit
-description: Audit generated GEO presales diagnostic reports and their JSON structured results; verify visibility metrics, sentiment calibration, evidence integrity, and cross-module consistency without recomputing source data.
+description: Use when editing or correcting the analytical conclusions of a GEO presales diagnostic report, including visibility metrics, sentiment calibration, evidence integrity, and cross-module consistency. Does not generate customer reports, perform competitor research, or build Prompt banks.
 metadata:
   author: 海外 GEO 项目
   version: "2.2.0"

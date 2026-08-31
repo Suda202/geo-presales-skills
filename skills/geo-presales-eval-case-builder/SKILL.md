@@ -1,6 +1,6 @@
 ---
 name: geo-presales-eval-case-builder
-description: Use when creating, completing, normalizing, auditing, or maintaining a brand Case in the overseas GEO presales diagnostic input evaluation set, including generating or revising one to three monitoring Topics, writing the result to the project Feishu Base, and delegating missing competitor discovery to overseas-geo-competitor-research. Also use for Topic-only maintenance of an existing Case. Do not use for competitor-only research, Prompt generation, answer collection, metric calculation, or report writing.
+description: Use when building or updating standardized input fields for the overseas GEO presales diagnostic report from brand materials, and accumulating evaluation Cases to the project Feishu Base. Also use for Topic-only maintenance of an existing Case. Do not use for Prompt generation, answer collection, metric calculation, or report writing.
 metadata:
   author: 海外 GEO 项目
   version: "1.5.0"
