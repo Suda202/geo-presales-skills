@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "source_incident": "Task 190",
+  "purpose": "防止正式可见度混入非 Discovery、情绪样本被 Discovery 条件误删，以及客户指标名混淆。",
+  "cases": [
+    {
+      "id": "visibility_excludes_non_discovery",
+      "record": {
+        "diagnostic_intents": ["competitor"],
+        "metric_scopes": ["visibility"],
+        "target_mentioned": true
+      },
+      "expected": {
+        "include_in_formal_visibility": false,
+        "include_in_primary_citation_ecosystem": false
+      }
+    },
+    {
+      "id": "discovery_included_in_visibility",
+      "record": {
+        "diagnostic_intents": ["discovery"],
+        "metric_scopes": ["visibility"],
+        "target_mentioned": true
+      },
+      "expected": {
+        "include_in_formal_visibility": true,
+        "include_in_primary_citation_ecosystem": true
+      }
+    },
+    {
+      "id": "sentiment_retained_without_discovery",
+      "record": {
+        "diagnostic_intents": ["competitor"],
+        "analysis_type": "sentiment",
+        "target_mentioned": true,
+        "sentiment": "neutral"
+      },
+      "expected": {
+        "include_in_formal_visibility": false,
+        "include_in_sentiment": true,
+        "sentiment": "neutral"
+      }
+    },
+    {
+      "id": "sentiment_retained_with_overlapping_intents",
+      "record": {
+        "diagnostic_intents": ["competitor"],
+        "analysis_type": "sentiment",
+        "target_mentioned": true,
+        "sentiment": "positive"
+      },
+      "expected": {
+        "include_in_formal_visibility": false,
+        "include_in_sentiment": true,
+        "sentiment": "positive"
+      }
+    },
+    {
+      "id": "sentiment_caveat_not_automatically_negative",
+      "facts": {
+        "target_assessment": "核心能力得到肯定",
+        "caveats": ["竞品在单一维度更强", "需要进一步核验", "独立证据不足"],
+        "dominant_tone": "cautiously_positive"
+      },
+      "expected": {
+        "forbid_automatic_negative": true,
+        "judge_by_target_brand_dominant_tone": true
+      }
+    },
+    {
+      "id": "rank_metrics_remain_distinct",
+      "facts": {
+        "mention_rate_rank": 1,
+        "average_first_position": 3.2
+      },
+      "expected_customer_terms": {
+        "mention_rate_rank": "提及率排名",
+        "average_first_position": "平均提及位置"
+      },
+      "forbidden_equivalence": true
+    },
+    {
+      "id": "mention_rate_rank_required_in_core_and_visibility_summary",
+      "facts": {
+        "discovery_mention_rate": "1.6%",
+        "mention_rate_rank": "49/125",
+        "average_first_position": "8",
+        "competitor_context": "主要竞品的提及率排名均显著领先"
+      },
+      "expected": {
+        "core_conclusion_mentions": "提及率排名第49/125，相比主要竞品明显靠后",
+        "visibility_summary_mentions": "提及率排名第49/125",
+        "average_mention_position_kept_separate": true
+      },
+      "forbidden": [
+        "用平均提及位置第8代替提及率排名第49/125",
+        "把平均提及位置解释为品牌竞争排名或推荐强弱"
+      ]
+    },
+    {
+      "id": "deprecated_copy_terms_rejected",
+      "forbidden_customer_terms": [
+        "平均提及排名",
+        "引用占比",
+        "官网引用占比"
+      ],
+      "required_customer_terms": [
+        "平均提及位置",
+        "引用份额"
+      ]
+    }
+  ]
+}

@@ -12,6 +12,12 @@
 
 三项成立时保留为 Topic。候选只是多个 Topic 共有的能力、特征或评价标准时，将它保留在 Case 原业务字段供 Prompt Builder 派生 Attribute；无需在 Case 中创建 Attribute 配置。诊断意图、是否提及品牌或其他横向分析维度由下游 Tags 承载，不生成对应 Topic。
 
+## Case 与产品线边界
+
+- 把“一条 Case”作为单一产品线单元，要求品牌或产品实体、核心购买集合、目标客户和三个正式竞品在两个 Topic 中保持一致。
+- 遇到同一公司同时提供触觉数据采集手套、机器人全身触觉系统、智能座舱或陪伴触感产品等不同产品线时，分别建立 Case。不得将不同产品线当作一条 Case 的两个 Topic。
+- 先锁定产品线，再在该产品线内生成两个 Topic：核心品类 Coverage Topic + 一个会改变购买判断的 Depth Topic。
+
 ## 字段如何参与主题生成
 
 | 字段 | 对主题的作用 |
@@ -40,10 +46,10 @@
 
 ## 数量与类型
 
-- “主题”字段允许 1–3 个值，至少填写 1 个，多个值用 `，` 分隔；逗号只放在不同主题之间，主题名称内部尽量使用“和”“或”或“；”，不要使用逗号或顿号。
+- “主题”字段必须有且仅有 2 个值，用 `，` 分隔；第一个为 Coverage Topic，第二个为同产品线 Depth Topic。逗号只放在两个主题之间，主题名称内部尽量使用“和”“或”或“；”，不要使用逗号或顿号。
 - 宽泛 Coverage Topic 扫描核心品类整体候选和竞争格局；名称优先使用最短且可识别的品类表达，不能只是行业名或全部业务线拼盘。
 - 细分 Depth Topic 聚焦值得持续投入的具体人群，场景或产品机会，必须改变至少一项核心购买判断；名称可比 Coverage Topic 稍长，但只增加一个必要限定。
-- 宽泛 / 细分数量不限；没有足够商业差异时只保留一个或两个。
+- 每条 Case 固定保留一个 Coverage Topic 和一个 Depth Topic。Depth Topic 不能由另一产品线补位；应从同产品线的核心受众、任务或场景中选择最能改变购买判断的一项。
 
 ## 命名与可生成性
 
@@ -65,4 +71,4 @@
 
 ## 工作记录与 Case 写入
 
-候选记录 `selected / merged / rejected / needs_confirmation` 及原因；被判为横向 Attribute 的候选记录 `routed_to_attribute` 及其 Case 来源字段。正式 Case 只写 1–3 个选中主题的名称，不输出宽泛或细分标签。Case Builder 不创建 Attribute 配置、Attribute ID、逐题 Tags 或 Prompt 配额；这些由 Prompt Builder 从 Case 字段派生。
+候选记录 `selected / merged / rejected / needs_confirmation` 及原因；被判为横向 Attribute 的候选记录 `routed_to_attribute` 及其 Case 来源字段。额外记录被拆为独立 Case 的产品线候选及拆分原因。正式 Case 只写 2 个选中主题的名称，不输出宽泛或细分标签。Case Builder 不创建 Attribute 配置、Attribute ID、逐题 Tags 或 Prompt 配额；这些由 Prompt Builder 从 Case 字段派生。

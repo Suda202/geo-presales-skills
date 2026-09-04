@@ -44,6 +44,10 @@ class TopicValidationTest(unittest.TestCase):
     def test_accepts_concise_topic_names(self) -> None:
         self.assertEqual([], self.errors_for("彩色宝石首饰，日常佩戴宝石首饰"))
 
+    def test_rejects_a_single_topic(self) -> None:
+        errors = self.errors_for("彩色宝石首饰")
+        self.assertTrue(any("主题数量必须为 2–2" in error for error in errors))
+
     def test_rejects_english_prompt_as_topic(self) -> None:
         errors = self.errors_for(
             "What are the best lab-grown colored gemstone jewelry brands for everyday wear?"
@@ -58,11 +62,11 @@ class TopicValidationTest(unittest.TestCase):
 
 class VerticalIndustryValidationTest(unittest.TestCase):
     def test_accepts_blank_vertical_industry_for_b2c(self) -> None:
-        errors = MODULE.validate_case(1, BASE_BODY.format(topics="彩色宝石首饰"))
+        errors = MODULE.validate_case(1, BASE_BODY.format(topics="彩色宝石首饰，日常佩戴宝石首饰"))
         self.assertEqual([], errors)
 
     def test_rejects_vertical_industry_for_b2c(self) -> None:
-        body = BASE_BODY.format(topics="彩色宝石首饰").replace(
+        body = BASE_BODY.format(topics="彩色宝石首饰，日常佩戴宝石首饰").replace(
             "| 品类 | 彩色宝石首饰 |",
             "| 品类 | 彩色宝石首饰 |\n| 垂直行业 | 珠宝零售 |",
         )

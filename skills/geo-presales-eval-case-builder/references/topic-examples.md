@@ -41,6 +41,8 @@
 
 医疗设备与工业设备的认证、安全、耐用性、温度和连续供货标准明显不同；这些标准分别下沉到 Prompt。OEM 与 ODM 只是采购模式用词变化，不单独拆分。
 
-## 只保留一个或两个主题
+## 产品线与双 Topic
 
-若输入只支持“工业金属带锯床制造商”一个稳定购买集合，其他线索只是型号或参数，正式输出可以只有一个主题。不得为填满三行制造虚假机会。
+- TachinGlove Case：`touch data acquisition gloves` 为 Coverage Topic，`robot teleoperation and imitation learning` 为同一手套产品线内的 Depth Topic。
+- 机器人全身触觉系统、智能座舱触感和陪伴触感是不同产品线；即使来自同一公司，也应各自建 Case，不能作为 TachinGlove Case 的第二 Topic。
+- 若输入只支持“工业金属带锯床制造商”一个核心品类，继续从同产品线的核心客户或使用任务中选择一个会改变购买判断的 Depth Topic；不得用型号、参数或另一产品线补位。

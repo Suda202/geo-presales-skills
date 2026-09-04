@@ -2,14 +2,14 @@
 
 ## 输入字段合同
 
-v8 直接接受 Edgelight 评测集 Case 所示的中文字段名，不要求 `target_attributes`，也不把输入改造成另一套 Builder 字段：
+v8 直接接受系统接口提交的评测 Case 中文业务字段，不要求 `target_attributes`，也不把输入改造成另一套 Builder 字段：
 
 | 基础字段 | 可编号字段 | 主题与竞品字段 | 补充字段 |
 |---|---|---|---|
 | `公司名`、`业务 / 产品名称`、`品牌名称`、`业务模式`、`品类`、`垂直行业` | `目标客户 1…n`、`痛点 1…n`、`使用场景 1…n`、`产品特性 1…n` | `主题 1…n（宽泛/细分）`（1–3 个）、`官方域名`、三组 `竞品 n` 与 `竞品 n 官网域名` | `差异化优势`、`适用边界`、`补充内容` |
 
-**格式兼容说明**：Prompt Builder 同时接受以下两种输入格式，优先使用当前飞书 Base 的真实 schema（单字段合并格式）：
-- **单字段合并格式**（当前 Base 真实 schema）：`痛点`、`使用场景`、`产品特性`、`目标客户` 各为一个字段，多个值用 `，` 分隔；`主题` 为一个字段，1–3 个主题用 `，` 分隔，不带类型标注。
+**格式兼容说明**：Prompt Builder 同时接受以下两种接口输入格式：
+- **单字段合并格式**：`痛点`、`使用场景`、`产品特性`、`目标客户` 各为一个字段，多个值用 `，` 分隔；`主题` 为一个字段，1–3 个主题用 `，` 分隔，不带类型标注。
 - **编号字段格式**（历史兼容）：`痛点 1…n`、`使用场景 1…n` 等分字段；`主题 1…n（宽泛/细分）`，括号标注仅作理解提示，不输出到 v8 字段。
 若两种格式混合出现，以实际内容语义为准，不因字段名格式报错。
 
@@ -26,11 +26,11 @@ Accuracy 默认配额为 0，不需要上游事实包，也不产生 `fact_value
 ## 固定结构
 
 - `schema_version=overseas-geo-question-bank/v8`
-- 1–3 个 Topic；各 Topic 按 Attribute 信息量独立规划题数，可以不等量，整批总量不得超过 60。每 Topic 10–25 仅为常见规划区间，不是硬门。
-- 不设统一的六类 Intent 默认比例。每个适用竞品各一条 Competitor；Verification / Accuracy / Evaluation / Category Awareness 分别保持 `1/0/1/1`；Evaluation 只覆盖目标品牌，竞品情绪矩阵留给售后生词；Discovery 数量由 P1 全覆盖和有独立诊断价值的 P2/P3 决定。
-- Discovery 必须在每个 Topic 内严格超过 50%，即大于该 Topic 全部非 Discovery 数量之和。1/2/3 个适用竞品时，Discovery 分别至少为 5/6/7；聚合占比不能替代逐 Topic 硬门。
-- `quotas.per_topic` 保存未单列 Topic 共用的实际基线，`quotas.topic_overrides` 保存不同 Topic 的实际配额；二者都是本批规划结果，不是系统默认配额。`quotas.intent_tags` 必须等于所有实际 Topic 配额之和。
-- 每 Topic 的正式可见度题按实际 Discovery、适用 Competitor 与一条 Category Awareness 统计，不预设固定数量。
+- 1–3 个 Topic；每 Topic 固定 25 题，整批总量为 25/50/75。
+- 当前 Topic 适用竞品数为 `n`（1–3）时，六类 Intent 固定为 Discovery `23 - 2n`、Competitor `n`、Verification `0`、Accuracy `0`、Evaluation `1 + n`、Category Awareness `1`。
+- Competitor 覆盖每个适用竞品各一条；Evaluation 覆盖目标品牌一条与每个适用竞品各一条；Discovery 在覆盖 P1 的前提下用独立购买问题补足固定配额。
+- `quotas.per_topic` 保存未单列 Topic 共用的配额，`quotas.topic_overrides` 只在 Topic 的适用竞品数不同时使用。`quotas.intent_tags` 必须等于所有 Topic 配额之和。
+- 每 Topic 的正式可见度题按实际 Discovery 与一条 Category Awareness 统计，不预设固定数量。
 - v8 不包含 `diagnosis_intent`、逐题 `attributes`、`topic_type`、`question_type`、`funnel_intent`、`decision_stage`、`metric_scopes`、`attribute_pool`、`attribute_id`、`attribute_ids` 或 `priority_attribute_ids`。
 - v8 必须包含 Builder 派生的 `attribute_plan`；每 Topic 恰好一项，同一 Attribute 和源字段允许被多个 Topic 使用，不做唯一归属。
 
@@ -40,11 +40,12 @@ v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_ob
 
 - 每个 Topic 恰好一项，只包含 `topic_id / priorities / excluded`。
 - `priorities` 恰好包含 `P1 / P2 / P3`：P1 必须 3–5 个，P2 建议 5–10 个且不得超过 10，P3 允许 0–10 个。
+- P1 / P2 / P3 表示 Attribute 在当前 Topic 下的优先级，不是 Attribute 类型或 Prompt 优先级；这些分档属于本项目的生成合同，不是 Profound 原始分类。
 - P1 每项恰好包含 `attribute / source_field / source_value / decision_reason / verification_statement`；P2/P3 不包含 `verification_statement`。
 - `excluded` 可为空；每项包含 `candidate / source_field / source_value / reason / route`，`route` 只允许 `exclude` 或 `accuracy_only`。
-- 当前 Topic 的 `validation_items` 和 Verification 的 Attribute Tags 必须按顺序与 P1 完全一致；完整示例见 [属性规划](attribute-planning.md)。
+- 当前 Topic 的 `validation_items` 和 Verification 的 Attribute Tags 与 P1 的强绑定已随 Verification 配额归 0 暂停使用；完整示例见 [属性规划](attribute-planning.md)。
 
-## Edgelight Case / Topic 骨架
+## Case / Topic 示例骨架
 
 下列片段专门展示 Case、Topic、配额和竞品字段，为缩短篇幅省略了 v8 必填的 `attribute_plan`；完整题库必须按上述合同补全。
 
@@ -114,14 +115,10 @@ v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_ob
         "source_value": "面向裸眼 3D 舞台与场馆体验的创意沉浸式 LED 显示屏"
       }
     ],
-    "expected_total": 51,
+    "expected_total": 75,
     "quotas": {
-      "intent_tags": {"Intent: Discovery": 33, "Intent: Competitor": 9, "Intent: Verification": 3, "Intent: Accuracy": 0, "Intent: Evaluation": 3, "Intent: Category Awareness": 3},
-      "per_topic": {"Intent: Discovery": 14, "Intent: Competitor": 3, "Intent: Verification": 1, "Intent: Accuracy": 0, "Intent: Evaluation": 1, "Intent: Category Awareness": 1},
-      "topic_overrides": {
-        "topic_2": {"Intent: Discovery": 11, "Intent: Competitor": 3, "Intent: Verification": 1, "Intent: Accuracy": 0, "Intent: Evaluation": 1, "Intent: Category Awareness": 1},
-        "topic_3": {"Intent: Discovery": 8, "Intent: Competitor": 3, "Intent: Verification": 1, "Intent: Accuracy": 0, "Intent: Evaluation": 1, "Intent: Category Awareness": 1}
-      }
+      "intent_tags": {"Intent: Discovery": 51, "Intent: Competitor": 9, "Intent: Verification": 0, "Intent: Accuracy": 0, "Intent: Evaluation": 12, "Intent: Category Awareness": 3},
+      "per_topic": {"Intent: Discovery": 17, "Intent: Competitor": 3, "Intent: Verification": 0, "Intent: Accuracy": 0, "Intent: Evaluation": 4, "Intent: Category Awareness": 1}
     },
     "competitor_selection": {
       "status": "frozen",
@@ -154,17 +151,17 @@ v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_ob
 - `user_question / zh_translation / monitoring_prompt`：英文根问题、等义中文和采集字段；`monitoring_prompt` 必须等于 `user_question`。
 - `quality_checks`：已执行的检查全部为 `true`。
 
-Verification 额外要求 3–5 个 `validation_items`；每项只包含 `source_field / source_value / statement`，并必须按顺序与当前 Topic 的 P1 溯源、`verification_statement` 和 Attribute Tags 完全一致。默认题库不包含 Accuracy 题或事实包字段。Verification 不包含 `attribute_id / priority_attribute_ids / paired_discovery_ids`。
+默认题库不包含 Verification 题与 `validation_items`、Accuracy 题或事实包字段。如用户明确要求 Verification 或 Accuracy，先单独确认产物合同，不临时复用默认 Builder 合同。
 
 ## Tags 合同
 
-`tags` 字段接受任意非空字符串，不设全局封闭枚举。由于 CSV 用分号分隔多个 Tag，单个 Tag 不得包含分号 `;`。Builder 默认使用以下常用命名：
+`tags` 字段接受任意非空字符串，不设全局封闭枚举。单个 Tag 不得包含分号 `;`，以便 JSON 被其他兼容适配器安全序列化；当前上传 CSV 本身不输出 Tags。Builder 默认使用以下常用命名：
 
 | 命名空间 | 默认值与规则 |
 |---|---|
-| `Intent: …` | 每题恰好一个常用生成角色：`Discovery / Competitor / Verification / Accuracy / Evaluation / Category Awareness`。这些标签用于记录本批实际分配，不代表固定配额，也不限制额外自定义 Intent Tag。 |
+| `Intent: …` | 每题恰好一个常用生成角色：`Discovery / Competitor / Verification / Accuracy / Evaluation / Category Awareness`。六类数量必须符合固定 Topic 配额；仍可添加其他非默认自定义 Intent Tag。 |
 | `Brand Scope: …` | 每题恰好一个。题面出现目标品牌或正式竞品时为 `Branded`，否则为 `Non-Branded`；以实际题面为准。 |
-| `Attribute: …` | 零个或多个；名称必须来自当前 Topic 的 `attribute_plan`。Discovery 的 Attribute Tags 整批覆盖全部 P1；Verification 按顺序写入全部 P1；同名 Attribute 可跨 Topic。 |
+| `Attribute: …` | 零个或多个；名称必须来自当前 Topic 的 `attribute_plan`。Discovery 的 Attribute Tags 整批覆盖全部 P1；同名 Attribute 可跨 Topic。 |
 
 其他自由 Tags 建议继续使用 `Namespace: Value`，例如 `Lifecycle: Consideration`、`Region: North America`。增删这些 Tags 不得改变分析路由。
 
@@ -172,16 +169,16 @@ Verification 额外要求 3–5 个 `validation_items`；每项只包含 `source
 
 | 默认诊断 Tag | analysis_type | formal_visibility_eligible |
 |---|---|---|
-| `Intent: Discovery` | `visibility` | `true` |
-| `Intent: Competitor` | `visibility` | `true` |
-| `Intent: Verification` | `visibility` | `false` |
+| `Intent: Discovery` | `visibility,sentiment` | `true` |
+| `Intent: Competitor` | `sentiment` | `false` |
+| `Intent: Verification` | 空 | `false` |
 | `Intent: Accuracy` | `accuracy` | `false` |
 | `Intent: Evaluation` | `sentiment` | `false` |
-| `Intent: Category Awareness` | `visibility` | `true` |
+| `Intent: Category Awareness` | 空 | `true` |
 
-每 Topic 的正式可见度题为实际 Discovery 与适用 Competitor，再加一条 Category Awareness。Verification 只在 visibility 模块展示属性认知，不进入正式 Visibility、声量、排名、Share of Voice 或聚合引用指标。v8 不要求 `metric_scopes`；Tags 只是聚合维度，兼容适配器即使产生旧字段，也不得改变核心路由。
+每 Topic 的正式可见度题为实际 Discovery，再加一条 Category Awareness。Competitor 只统计情感，不进入正式 Visibility、声量、排名、Share of Voice 或聚合引用指标。v8 不要求 `metric_scopes`；Tags 只是聚合维度，兼容适配器即使产生旧字段，也不得改变核心路由。
 
-品牌边界：Discovery 与 Category Awareness 不出现目标品牌或任何正式竞品；Competitor 出现目标品牌和恰好一个正式竞品；Verification、Accuracy 与 Evaluation 只出现目标品牌。售前不生成竞品 Evaluation，竞品情绪矩阵留给售后生词。Evaluation 须把 Topic 转写为具体业务范围或场景；只限制英文 Prompt 正文：`user_question / monitoring_prompt` 及 CSV `query` 不得出现独立单词 `topic`。中文翻译、CSV `topic` 列及其他元数据不受此限制。
+品牌边界：Discovery 与 Category Awareness 不出现目标品牌或任何正式竞品；Competitor 出现目标品牌和恰好一个正式竞品；Evaluation 每题只出现一个品牌，并在每 Topic 内分别覆盖目标品牌和每个适用竞品恰好一次；不得使用不适用于当前 Topic 的竞品。Evaluation 须把 Topic 转写为具体业务范围或场景；只限制英文 Prompt 正文：`user_question / monitoring_prompt` 及 CSV `query` 不得出现独立单词 `topic`。中文翻译、CSV `topic` 列及其他元数据不受此限制。
 
 ## CSV 固定字段导出
 
@@ -192,13 +189,14 @@ Verification 额外要求 3–5 个 `validation_items`；每项只包含 `source
 | `query` | `user_question` |
 | `question_zh` | `zh_translation` |
 | `topic` | 对应评测集 `主题 n（宽泛/细分）` 的原始中文值 |
-| `tags` | 逐题 Tags 用 `; ` 连接，例如 `Intent: Discovery; Brand Scope: Non-Branded; Attribute: Easy to Use` |
-| `question_types` | `visibility,sentiment / visibility / sentiment`；Discovery 与 Competitor 填 `visibility,sentiment`，Evaluation 填 `sentiment`，其余填 `visibility` |
+| `diagnosis_intent` | 从 JSON 唯一默认 Intent Tag 转写：`discovery / competitor / verification / accuracy / evaluation / category_awareness` |
+| `tags` | 上传适配列：允许留空；若填写必须短于 200 字符，并使用英文逗号、中文逗号或换行分隔，且优先保留可上传的最小化摘要，不把 JSON 里的完整 Attribute 列表直接搬进来 |
+| `question_types` | `visibility,sentiment / sentiment`；Discovery、Verification、Accuracy 与 Category Awareness 填 `visibility,sentiment`，Competitor 与 Evaluation 填 `sentiment` |
 | `purchase_intent` | 可空或 `0 / 1 / 2 / 3`，分别表示无、推荐、比较、决策 |
 | `persona_name` | 可空，最多 200 字符 |
 | `scene_name` | 可空，最多 200 字符 |
 
-不得新增独立 `analysis_type` CSV 列，也不得把 `question_id`、Verification 溯源、官方事实源或其他内部 JSON 字段扩写进该 CSV，除非用户另行要求。
+CSV 上传模板现在包含 `tags` 列，但它只用于补充上传侧的自由标签；JSON 仍保留完整 `tags` 数组作为唯一权威来源。上传 CSV 不应承载 JSON 里完整的 Attribute 列表或过长的标签串。JSON 仍不生成独立 `diagnosis_intent` 或 `question_type` 字段；这两个 CSV 字段只由上传适配器导出。
 
 ## 旧版兼容
 

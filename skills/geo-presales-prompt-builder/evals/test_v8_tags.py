@@ -52,6 +52,69 @@ def valid_v8_bank(topic_count: int = 1) -> dict:
             if index < len(p1):
                 tags.append(f"Attribute: {p1[index]}")
         row["tags"] = tags
+
+    # Adapt the legacy v7 fixture to the fixed v8 presales quota contract:
+    # 17 Discovery, 3 Competitor, 0 Verification, 4 Evaluation and 1
+    # Category Awareness per Topic.  The v7 fixture already supplies 14/3/1/1/1.
+    competitors = [
+        item["name"]
+        for item in data["config"]["competitor_selection"]["formal_competitors"]
+    ]
+    for topic in data["config"]["topics"]:
+        topic_id = topic["topic_id"]
+        discoveries = [
+            row for row in data["questions"]
+            if row["topic_id"] == topic_id and "Intent: Discovery" in row["tags"]
+        ]
+        source = discoveries[-1]
+        for offset in (1, 2, 3):
+            row = dict(source)
+            row["question_id"] = f"Q-{topic_id}-D{14 + offset:02d}"
+            row["intent_key"] = f"{topic_id}-discovery-extra-{offset}"
+            row["user_question"] = (
+                f"Which LED display solution providers should buyers consider for "
+                f"{topic['topic']} requirement {14 + offset}?"
+            )
+            row["monitoring_prompt"] = row["user_question"]
+            data["questions"].append(row)
+        # Remove the single legacy verification row (quota is now 0).
+        data["questions"] = [
+            row for row in data["questions"]
+            if not (
+                row["topic_id"] == topic_id
+                and "Intent: Verification" in row["tags"]
+            )
+        ]
+        for index, competitor in enumerate(competitors, start=2):
+            row = next(
+                row for row in data["questions"]
+                if row["topic_id"] == topic_id and "Intent: Evaluation" in row["tags"]
+            )
+            evaluation = dict(row)
+            evaluation["question_id"] = f"Q-{topic_id}-E{index:02d}"
+            evaluation["intent_key"] = f"{topic_id}-evaluation-{index}"
+            evaluation["user_question"] = MODULE.build_v6_sentiment_prompt(
+                data["config"]["category_label"],
+                data["config"]["brand_object_type"],
+                competitor,
+                topic["topic"],
+            )
+            evaluation["monitoring_prompt"] = evaluation["user_question"]
+            data["questions"].append(evaluation)
+
+    data["config"]["expected_total"] = 25 * topic_count
+    per_topic = {
+        "Intent: Discovery": 17,
+        "Intent: Competitor": 3,
+        "Intent: Verification": 0,
+        "Intent: Accuracy": 0,
+        "Intent: Evaluation": 4,
+        "Intent: Category Awareness": 1,
+    }
+    data["config"]["quotas"]["per_topic"] = per_topic
+    data["config"]["quotas"]["intent_tags"] = {
+        key: value * topic_count for key, value in per_topic.items()
+    }
     return data
 
 
@@ -65,7 +128,7 @@ class V8TagsTests(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertEqual([], warnings)
         self.assertTrue(all("diagnosis_intent" not in row for row in data["questions"]))
-        self.assertEqual(2, summary["tags"]["Intent: Verification"])
+        self.assertEqual(0, summary["tags"].get("Intent: Verification", 0))
         self.assertEqual(1, summary["tags"]["Lifecycle: Consideration"])
 
     def test_v8_rejects_semicolons_inside_a_single_free_tag(self) -> None:
@@ -172,19 +235,15 @@ class V8TagsTests(unittest.TestCase):
             errors,
         )
 
-    def test_v8_verification_attribute_tags_follow_ordered_p1(self) -> None:
+    def test_v8_verification_is_not_generated_by_default(self) -> None:
         data = valid_v8_bank()
-        verification = next(
+        verification_rows = [
             row for row in data["questions"] if "Intent: Verification" in row["tags"]
-        )
-        attribute_tags = [tag for tag in verification["tags"] if tag.startswith("Attribute: ")]
-        other_tags = [tag for tag in verification["tags"] if not tag.startswith("Attribute: ")]
-        verification["tags"] = other_tags + list(reversed(attribute_tags))
-        errors, _, _ = MODULE.validate(data)
-        self.assertTrue(
-            any("must exactly match the ordered P1 plan" in error for error in errors),
-            errors,
-        )
+        ]
+        self.assertEqual([], verification_rows)
+        errors, warnings, _ = MODULE.validate(data)
+        self.assertEqual([], errors)
+        self.assertEqual([], warnings)
 
     def test_v8_rejects_retired_diagnosis_and_parallel_attributes_fields(self) -> None:
         data = valid_v8_bank()
@@ -201,9 +260,9 @@ class V8TagsTests(unittest.TestCase):
             row for row in data["questions"] if "Intent: Competitor" in row["tags"]
         )
         competitor["tags"].append("Intent: Custom Buyer Comparison")
-        competitor["analysis_type"] = "sentiment"
+        competitor["analysis_type"] = "visibility"
         errors, _, _ = MODULE.validate(data)
-        self.assertTrue(any("analysis_type must equal visibility" in error for error in errors), errors)
+        self.assertTrue(any("analysis_type must equal sentiment" in error for error in errors), errors)
 
     def test_v8_competitor_attribute_tags_must_be_non_empty_and_isomorphic(self) -> None:
         missing = valid_v8_bank()
@@ -239,12 +298,28 @@ class V8TagsTests(unittest.TestCase):
         errors, _, _ = MODULE.validate(data)
         self.assertTrue(any("priorities.P1 must be an array" in error for error in errors), errors)
 
-    def test_v8_rejects_too_many_verification_items_without_crashing(self) -> None:
+    def test_v8_rejects_too_many_validation_items_on_legacy_rows(self) -> None:
+        # v8 no longer generates verification rows; validation_items only
+        # appears on legacy v6/v7 rows.  The validator must still reject
+        # an out-of-range legacy payload without crashing.
         data = valid_v8_bank()
-        verification = next(
-            row for row in data["questions"] if "Intent: Verification" in row["tags"]
-        )
-        verification["validation_items"] = verification["validation_items"] * 2
+        row = {
+            "question_id": "Q-legacy-v01",
+            "topic_id": "topic_1",
+            "diagnosis_intent": "verification",
+            "analysis_type": "accuracy",
+            "formal_visibility_eligible": False,
+            "intent_key": "topic_1-verification-legacy",
+            "user_question": "For Edgelight, determine whether each statement is true.",
+            "zh_translation": "请逐项判断。",
+            "monitoring_prompt": "For Edgelight, determine whether each statement is true.",
+            "quality_checks": {"reviewed": True},
+            "validation_items": [
+                {"source_field": "产品特性 1", "source_value": "x", "statement": "y"}
+            ] * 6,
+            "tags": ["Intent: Verification", "Brand Scope: Branded"],
+        }
+        data["questions"].append(row)
         errors, _, _ = MODULE.validate(data)
         self.assertTrue(any("validation_items must contain 3 to 5" in error for error in errors), errors)
 
@@ -254,7 +329,7 @@ class V8TagsTests(unittest.TestCase):
         errors, _, _ = MODULE.validate(data)
         self.assertTrue(any("analysis_type must equal" in error for error in errors), errors)
 
-    def test_v8_evaluation_is_target_only_and_rejects_competitors(self) -> None:
+    def test_v8_evaluation_covers_target_and_each_competitor(self) -> None:
         data = valid_v8_bank()
         errors, warnings, _ = MODULE.validate(data)
         self.assertEqual([], errors)
@@ -270,11 +345,11 @@ class V8TagsTests(unittest.TestCase):
         evaluation["monitoring_prompt"] = evaluation["user_question"]
         errors, _, _ = MODULE.validate(data)
         self.assertTrue(
-            any("evaluation must name only the target brand" in error for error in errors),
+            any("evaluation brand" in error or "evaluations must cover" in error for error in errors),
             errors,
         )
 
-    def test_v8_accepts_uneven_attribute_driven_topic_counts(self) -> None:
+    def test_v8_rejects_uneven_attribute_driven_topic_counts(self) -> None:
         data = valid_v8_bank(3)
         discovery_limits = {"topic_1": 12, "topic_2": 10, "topic_3": 10}
         seen = {topic_id: 0 for topic_id in discovery_limits}
@@ -293,7 +368,7 @@ class V8TagsTests(unittest.TestCase):
             return {
                 "Intent: Discovery": discovery,
                 "Intent: Competitor": 3,
-                "Intent: Verification": 1,
+                "Intent: Verification": 0,
                 "Intent: Accuracy": 0,
                 "Intent: Evaluation": 1,
                 "Intent: Category Awareness": 1,
@@ -303,7 +378,7 @@ class V8TagsTests(unittest.TestCase):
             "intent_tags": {
                 "Intent: Discovery": 32,
                 "Intent: Competitor": 9,
-                "Intent: Verification": 3,
+                "Intent: Verification": 0,
                 "Intent: Accuracy": 0,
                 "Intent: Evaluation": 3,
                 "Intent: Category Awareness": 3,
@@ -317,17 +392,9 @@ class V8TagsTests(unittest.TestCase):
         data["config"]["expected_total"] = 50
 
         errors, warnings, summary = MODULE.validate(data)
-        self.assertEqual([], errors)
-        self.assertEqual([], warnings)
-        self.assertEqual(
-            {"topic 1": 18, "topic 2": 16, "topic 3": 16},
-            {
-                topic_id: sum(counts.values())
-                for topic_id, counts in summary["topic_default_intent_tags"].items()
-            },
-        )
+        self.assertTrue(any("must remain 4" in error or "must total exactly 25" in error for error in errors), errors)
 
-    def test_v8_requires_discovery_to_be_each_topics_strict_majority(self) -> None:
+    def test_v8_requires_discovery_to_match_fixed_quota(self) -> None:
         data = valid_v8_bank()
         discoveries = [
             row for row in data["questions"] if "Intent: Discovery" in row["tags"]
@@ -341,12 +408,9 @@ class V8TagsTests(unittest.TestCase):
         data["config"]["expected_total"] = 12
 
         errors, _, _ = MODULE.validate(data)
-        self.assertTrue(
-            any("discovery must be a strict majority" in error for error in errors),
-            errors,
-        )
+        self.assertTrue(any("must remain 17" in error or "must total exactly 25" in error for error in errors), errors)
 
-    def test_v8_topic_range_is_guidance_not_a_hard_quota(self) -> None:
+    def test_v8_topic_quota_is_a_hard_25_question_contract(self) -> None:
         data = valid_v8_bank()
         source = next(
             row for row in data["questions"] if "Intent: Discovery" in row["tags"]
@@ -365,19 +429,18 @@ class V8TagsTests(unittest.TestCase):
         data["config"]["quotas"]["intent_tags"]["Intent: Discovery"] = 21
         data["config"]["expected_total"] = 27
 
-        errors, warnings, summary = MODULE.validate(data)
-        self.assertEqual([], errors)
-        self.assertEqual(27, summary["total"])
-        self.assertTrue(any("recommended 10-25 range" in warning for warning in warnings), warnings)
+        errors, _, _ = MODULE.validate(data)
+        self.assertTrue(any("must remain 17" in error or "must total exactly 25" in error for error in errors), errors)
 
-    def test_v8_csv_uses_one_semicolon_delimited_free_tags_column(self) -> None:
+    def test_v8_csv_uses_the_upload_diagnosis_intent_column(self) -> None:
         headers = MODULE.V8_CSV_HEADERS
         rows = [
             {
                 "query": "Which providers should I consider?",
                 "question_zh": "应考虑哪些供应商？",
                 "topic": "主题",
-                "tags": "Intent: Discovery; Brand Scope: Non-Branded; Attribute: Easy to Use; Lifecycle: Consideration",
+                "diagnosis_intent": "discovery",
+                "tags": "",
                 "question_types": "visibility,sentiment",
                 "purchase_intent": "",
                 "persona_name": "",
@@ -386,15 +449,36 @@ class V8TagsTests(unittest.TestCase):
         ]
         errors, summary = MODULE.validate_v8_csv_rows(headers, rows)
         self.assertEqual([], errors)
-        self.assertEqual(1, summary["tags"]["Attribute: Easy to Use"])
+        self.assertEqual(1, summary["diagnosis_intent"]["discovery"])
+        self.assertEqual({}, summary["tags"])
 
-    def test_v8_csv_rejects_wrong_brand_scope_and_empty_attribute(self) -> None:
+    def test_v8_csv_accepts_short_tags_in_upload_column(self) -> None:
+        rows = [
+            {
+                "query": "Should buyers compare Edgelight with Profound?",
+                "question_zh": "买家是否应将 Edgelight 与 Profound 进行比较？",
+                "topic": "LED 显示屏",
+                "diagnosis_intent": "competitor",
+                "tags": "Intent: Competitor, Brand Scope: Branded",
+                "question_types": "sentiment",
+                "purchase_intent": "",
+                "persona_name": "",
+                "scene_name": "",
+            }
+        ]
+        errors, summary = MODULE.validate_v8_csv_rows(MODULE.V8_CSV_HEADERS, rows)
+        self.assertEqual([], errors)
+        self.assertEqual(1, summary["tags"]["Intent: Competitor"])
+        self.assertEqual(1, summary["tags"]["Brand Scope: Branded"])
+
+    def test_v8_csv_rejects_overlong_tags(self) -> None:
         rows = [
             {
                 "query": "How well does Edgelight perform for LED display buyers?",
                 "question_zh": "Edgelight 对 LED 显示屏买家的表现如何？",
                 "topic": "LED 显示屏",
-                "tags": "Intent: Evaluation; Brand Scope: Non-Branded; Attribute:",
+                "diagnosis_intent": "evaluation",
+                "tags": "X" * 201,
                 "question_types": "sentiment",
                 "purchase_intent": "",
                 "persona_name": "",
@@ -402,37 +486,43 @@ class V8TagsTests(unittest.TestCase):
             }
         ]
         errors, _ = MODULE.validate_v8_csv_rows(MODULE.V8_CSV_HEADERS, rows)
-        self.assertTrue(any("Brand Scope must equal" in error for error in errors), errors)
-        self.assertTrue(any("Attribute labels must be non-empty" in error for error in errors), errors)
+        self.assertTrue(any("tags must not exceed 200 characters" in error for error in errors), errors)
 
-    def test_v8_csv_competitor_attribute_tags_must_be_non_empty_and_isomorphic(self) -> None:
-        def competitor_row(query: str, attribute: str = "") -> dict:
-            attribute_tag = f"; Attribute: {attribute}" if attribute else ""
+    def test_v8_csv_rejects_an_unknown_diagnosis_intent(self) -> None:
+        rows = [
+            {
+                "query": "How well does Edgelight perform for LED display buyers?",
+                "question_zh": "Edgelight 对 LED 显示屏买家的表现如何？",
+                "topic": "LED 显示屏",
+                "diagnosis_intent": "unknown",
+                "tags": "",
+                "question_types": "sentiment",
+                "purchase_intent": "",
+                "persona_name": "",
+                "scene_name": "",
+            }
+        ]
+        errors, _ = MODULE.validate_v8_csv_rows(MODULE.V8_CSV_HEADERS, rows)
+        self.assertTrue(any("unsupported diagnosis_intent" in error for error in errors), errors)
+
+    def test_v8_csv_competitor_requires_sentiment_question_type(self) -> None:
+        def competitor_row(query: str, question_types: str) -> dict:
             return {
                 "query": query,
                 "question_zh": "对比两个品牌。",
                 "topic": "LED 显示屏",
-                "tags": f"Intent: Competitor; Brand Scope: Branded{attribute_tag}",
-                "question_types": "visibility,sentiment",
+                "diagnosis_intent": "competitor",
+                "tags": "",
+                "question_types": question_types,
                 "purchase_intent": "",
                 "persona_name": "",
                 "scene_name": "",
             }
 
-        missing = [competitor_row("Should buyers choose Edgelight or Unilumin?")]
-        errors, _ = MODULE.validate_v8_csv_rows(MODULE.V8_CSV_HEADERS, missing)
+        rows = [competitor_row("Should buyers choose Edgelight or Unilumin?", "visibility,sentiment")]
+        errors, _ = MODULE.validate_v8_csv_rows(MODULE.V8_CSV_HEADERS, rows)
         self.assertTrue(
-            any("Competitor must include at least one Attribute tag" in error for error in errors),
-            errors,
-        )
-
-        mismatched = [
-            competitor_row("Should buyers choose Edgelight or Unilumin?", "Brightness"),
-            competitor_row("Should buyers choose Edgelight or LianTronics?", "Refresh Rate"),
-        ]
-        errors, _ = MODULE.validate_v8_csv_rows(MODULE.V8_CSV_HEADERS, mismatched)
-        self.assertTrue(
-            any("Competitor Attribute tags must keep the same dimensions" in error for error in errors),
+            any("requires question_types 'sentiment'" in error for error in errors),
             errors,
         )
 

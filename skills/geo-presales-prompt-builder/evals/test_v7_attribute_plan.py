@@ -40,7 +40,7 @@ def valid_v7_bank(topic_count: int = 1) -> dict:
         )
         p2 = [
             {
-                "attribute": f"{topic_id} comparison attribute {index}",
+                "attribute": f"{topic_id} P2 attribute {index}",
                 "source_field": source_field,
                 "source_value": case_fields[source_field],
                 "decision_reason": "It materially affects comparison or buyer preference.",
@@ -100,7 +100,7 @@ class V7AttributePlanTests(unittest.TestCase):
         priorities["P2"] = priorities["P2"][:4]
         errors, warnings, _ = MODULE.validate(data)
         self.assertTrue(any("P1 must contain 3 to 5" in error for error in errors), errors)
-        self.assertTrue(any("fewer than the recommended 5" in warning for warning in warnings), warnings)
+        self.assertTrue(any("fewer than the recommended 5 P2 attributes" in warning for warning in warnings), warnings)
 
     def test_v7_verification_must_exactly_follow_the_ordered_p1_plan(self) -> None:
         data = valid_v7_bank()

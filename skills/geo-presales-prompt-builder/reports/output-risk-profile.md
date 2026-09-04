@@ -3,7 +3,8 @@
 | 风险 | 自检 |
 |---|---|
 | 静默少题或机械均分 | 校验各 Topic 实际配额、聚合配额与最终题数一致，并强制整批不超过 60；10–25/Topic 只告警，不为达标凑题。 |
-| 仍依赖旧属性配置 | 只消费 Edgelight 型评测集 Case 原始业务字段；不生成 Attribute Pool 或 Attribute ID。 |
+| 仍依赖旧属性配置 | 只消费系统接口提交的评测 Case 原始业务字段；不生成 Attribute Pool 或 Attribute ID。 |
+| 把优先级误写成属性类型 | P1 / P2 / P3 只表示 Attribute 在当前 Topic 下的优先级；不使用“入围属性”“比较属性”“补充属性”等分类名。 |
 | Verification 太笼统 | 每 Topic 直接按需选择 3–5 条 Case 信息，逐项要求 Yes / No / Unknown 与依据。 |
 | 竞品控制变量漂移 | 每 Topic 对每个适用竞品各生成一题，多条 Competitor 除竞品名称外保持完全同构。 |
 | 售前情绪范围膨胀 | 每 Topic 只保留一条目标品牌 Evaluation；竞品情绪矩阵留给售后生词。 |

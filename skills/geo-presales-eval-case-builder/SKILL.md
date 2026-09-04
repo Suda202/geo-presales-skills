@@ -1,9 +1,9 @@
 ---
 name: geo-presales-eval-case-builder
-description: Use when building or updating standardized input fields for the overseas GEO presales diagnostic report from brand materials, and accumulating evaluation Cases to the project Feishu Base. Also use for Topic-only maintenance of an existing Case. Do not use for Prompt generation, answer collection, metric calculation, or report writing.
+description: Use when creating, completing, normalizing, auditing, or maintaining a single-product-line brand Case in the overseas GEO presales diagnostic input evaluation set, including generating or revising exactly two monitoring Topics, splitting different product lines into separate Cases, writing results to the project Feishu Base, and delegating missing competitor discovery to overseas-geo-competitor-research. Also use for Topic-only maintenance of an existing Case. Do not use for competitor-only research, Prompt generation, answer collection, metric calculation, or report writing.
 metadata:
   author: 海外 GEO 项目
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # GEO 售前诊断输入评测集 Case 生成器
@@ -21,12 +21,12 @@ metadata:
 
 ## 执行
 
-1. 归一化公司、业务 / 产品、品牌、官网、业务模式及输入证据，保留来源冲突和待人工确认项。公司名保留可识别主体名，按字段合同省略无区分度的法律实体后缀。业务模式按当前 Case 的主要购买路径选择 `B2B` 或 `B2C`；只有企业和个人均为核心买方，且购买标准、场景和竞品基本重合时才使用 `B2B / B2C`。两类购买决策差异明显时拆分 Case。
+1. 归一化公司、业务 / 产品、品牌、官网、业务模式及输入证据，保留来源冲突和待人工确认项。先锁定单一产品线：一条 Case 只能服务一个购买集合、一组核心客户和一套可共用的竞品。输入包含手套、机器人全身触觉、智能座舱等不同产品线时，按产品线分别创建 Case，不得用多个 Topic 把不同产品线塞进同一条 Case。公司名保留可识别主体名，按字段合同省略无区分度的法律实体后缀。业务模式按当前 Case 的主要购买路径选择 `B2B` 或 `B2C`；只有企业和个人均为核心买方，且购买标准、场景和竞品基本重合时才使用 `B2B / B2C`。两类购买决策差异明显时拆分 Case。
 2. 提取品类、垂直行业、目标客户、2–5 条痛点、2–5 条使用场景、2–5 条产品特性、1–5 条差异化优势和适用边界。纯 `B2C` Case 的“垂直行业”保持为空；只有 `B2B` 和 `B2B / B2C` 填写。目标客户只写会改变购买判断的核心角色或人群，不写“关注什么”；关注点分别归入痛点、使用场景、产品特性或主题。同一字段的多个值合并为一行，值之间用 `，` 分隔；单个值内部尽量用“和”“或”或“；”连接并列要素。适用边界用一句话写清主要适用条件或排除范围，不罗列产品卖点。不得用空泛营销话术补齐。
-3. 从第 2 步字段生成主题候选，先按 [主题、属性与标签边界](references/topic-generation-reference.md#主题属性与标签边界) 判断候选是否足以成为 Prompt 集合的主组织单元，再按 `目标客户 × 核心任务 × 评价标准 × 候选品牌 × 优化动作` 合并或拆分。选择 1–3 个正式中文主题，合并写入同一个“主题”字段并用 `，` 分隔。Topic 名通常使用 2–5 个词，优先 2–4 个词，只表达一个核心主题；宽泛 Coverage Topic 应更短，细分 Depth Topic 仅在受众或任务确实改变购买判断时增加一个必要限定。将横跨 Topic 的能力、特征和评价标准保留在原 Case 字段，供下游派生 Attribute；将诊断意图、品牌范围和其他横向分类留给下游 Tags。只写主题名称，不输出宽泛或细分标签，不为凑数编造机会，也不分配 Prompt 数量。
+3. 从第 2 步字段生成主题候选，先按 [主题、属性与标签边界](references/topic-generation-reference.md#主题属性与标签边界) 判断候选是否足以成为 Prompt 集合的主组织单元，再按 `目标客户 × 核心任务 × 评价标准 × 候选品牌 × 优化动作` 合并或拆分。每条 Case 生成恰好 2 个正式中文主题：第一个是当前产品线的核心品类 Coverage Topic，第二个是同一产品线内、会改变购买判断的一个受众、任务或场景 Depth Topic。两者合并写入同一个“主题”字段并用 `，` 分隔。细分 Topic 必须与核心品类共用目标品牌、产品边界和正式竞品；若候选实际属于另一条产品线，必须另建 Case，不得当作第二 Topic。Topic 名通常使用 2–5 个词，优先 2–4 个词，只表达一个核心主题；Coverage Topic 应更短，Depth Topic 仅增加一个必要限定。将横跨 Topic 的能力、特征和评价标准保留在原 Case 字段，供下游派生 Attribute；将诊断意图、品牌范围和其他横向分类留给下游 Tags。只写主题名称，不输出宽泛或细分标签，也不分配 Prompt 数量。
 4. 处理竞品：已有 3 组经过同一购买集合核验的名称与官网时直接使用；只有 0–2 组、官网缺失或尚未核验购买集合时，调用 `overseas-geo-competitor-research`。已提供项作为优先核验候选，未通过时记录淘汰并自动替换；只将 3 个通过硬门槛的 `formal_competitors` 写回 Case。研究无法冻结时保留错误与证据缺口，不用相邻产品凑数。
 5. “补充内容”默认留空。只有当信息无法归入其他字段，且能明确说明会改变哪类问题设计时才填写；与品类、目标客户、痛点、使用场景、产品特性、差异化优势或适用边界重复时保持为空。补充内容不得替代必填字段。
-6. 按 [飞书目标与写入合同](references/lark-base-target.md) 定位目标表，先读取真实 Field schema，再读取现有 Records。以 `品牌名称 + 业务 / 产品名称 + 主题` 判断记录归属：同一 Case 的补全或维护更新已有 Record；新品牌或新的明确业务颗粒度创建 Record。Topic-only 模式只更新“主题”及确需同步的 Topic 边界说明。
+6. 按 [飞书目标与写入合同](references/lark-base-target.md) 定位目标表，先读取真实 Field schema，再读取现有 Records。以 `品牌名称 + 业务 / 产品名称` 识别单一产品线 Case，用“主题”确认和维护该 Case 的两个监测视角：同一产品线的补全或维护更新已有 Record；新品牌或新产品线创建新 Record。Topic-only 模式只更新“主题”及确需同步的 Topic 边界说明。
 7. 创建使用 `record-batch-create`，维护使用 `record-batch-update`。新增 Record 按飞书默认位置自然追加，不置顶、不倒序，也不移动已有记录。只提交真实 schema 中存在的业务字段，不写 `Case序号`，不维护编号。认证或权限失败时按 `lark-shared` 以原身份修复，不静默切换 Bot 身份或改交 Markdown。
 8. 写入后读回目标 Record，至少核对品牌名称、主题、官方域名、三组竞品及官网、补充内容；确认记录存在且本轮提交字段一致后交付。
 

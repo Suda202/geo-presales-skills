@@ -120,6 +120,7 @@ def normalize_question_bank(raw: dict | list, config: dict) -> dict:
             "question_type": question_type,
             "funnel_intent": intent,
             "diagnostic_intent": diagnostic_intent or None,
+            "analysis_type": item.get("analysis_type"),
             "metric_scopes": item.get("metric_scopes") if is_v5 else None,
             "topic_id": item.get("topic_id"),
             "topic_type": item.get("topic_type"),

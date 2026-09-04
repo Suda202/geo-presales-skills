@@ -1,8 +1,8 @@
 # 海外 GEO 售前生题方法（v8）
 
-## 1. 冻结 Edgelight 评测集 Case 输入
+## 1. 冻结接口传入的评测 Case
 
-只消费评测集 Case 已有的中文业务字段：公司与品牌、业务 / 产品、业务模式、品类、垂直行业、目标客户、痛点、使用场景、产品特性、差异化优势、适用边界、1–3 个 Topic、官方域名、三组正式竞品及官网域名、补充内容。Edgelight 表中的这些字段本身就是评测集字段，不再转写成另一套 Prompt Builder 输入。
+只消费系统接口提交的评测 Case 中文业务字段：公司与品牌、业务 / 产品、业务模式、品类、垂直行业、目标客户、痛点、使用场景、产品特性、差异化优势、适用边界、1–3 个 Topic、官方域名、三组正式竞品及官网域名、补充内容。不再转写成另一套 Prompt Builder 输入。
 
 把 `主题 1（宽泛）`、`主题 2（细分）` 一类标签解析为 Topic 顺序和文本；不要在 v8 配置或问题中保存 `topic_type`。Topic 只承载独立市场、场景或战略机会；跨 Topic 的能力、特征和评价标准进入 Attribute 规划。默认生成英文问题；中文源字段作为证据，不把翻译后的扩写当作新增事实。
 
@@ -20,7 +20,7 @@
 | `差异化优势` | business_specific | project delivery capability backed by stated manufacturing scale and certifications |
 | `适用边界` | business_specific | excludes buyers seeking only lighting, power supplies, controllers or full architectural AV services |
 
-按 [Attribute × Topic 属性规划](attribute-planning.md) 先合并同义候选，再为每个 Topic 单独分级：P1 为 3–5 个入围属性，P2 建议 5–10 个比较属性，P3 为 0–10 个补充属性。低信息量目录事实和需要独立真值的精确参数分别放入 `exclude` 或 `accuracy_only`，不能降级塞入 P3。同一属性在不同 Topic 中可有不同优先级；同一 `source_field` 可被多个 Topic 复用。不生成 `attribute_pool / attribute_id / priority_attribute_ids / observed_associations` 或单独的逐题 `attributes`。
+按 [Attribute × Topic 属性规划](attribute-planning.md) 先合并同义候选，再为每个 Topic 单独划分属性优先级：P1 为 3–5 个最高优先级属性，P2 建议 5–10 个中优先级属性，P3 为 0–10 个低优先级属性。P1 / P2 / P3 不是属性类型。低信息量目录事实和需要独立真值的精确参数分别放入 `exclude` 或 `accuracy_only`，不能降级塞入 P3。同一属性在不同 Topic 中可有不同优先级；同一 `source_field` 可被多个 Topic 复用。不生成 `attribute_pool / attribute_id / priority_attribute_ids / observed_associations` 或单独的逐题 `attributes`。
 
 ## 3. 建立统一 Tags
 
@@ -32,15 +32,21 @@
 
 允许增加 `Lifecycle: …`、`Region: …` 等自由 Tags。常用 Intent 标签用于 Builder 的实际数量汇总与模板质检，但不携带固定配额；`tags` 字段本身没有封闭枚举，自定义 Tags 不改变 `analysis_type` 或 `formal_visibility_eligible`。
 
-## 4. 按 Attribute 信息量弹性规划题量
+## 4. 按适用竞品数执行固定配额
 
-不预设统一的每 Topic 题量或六类 Intent 精确比例，但 Discovery 必须是每个 Topic 的严格多数：`Discovery > Competitor + Verification + Accuracy + Evaluation + Category Awareness`。先按补充内容确定当前 Topic 的适用竞品，再以该 Topic 的 P1/P2/P3 和实际购买问题数量规划 Discovery。每 Topic 10–25 题只作为常见规划区间，不是确定性硬门；不同 Topic 可以多或少，信息不足时不得为了达到多数或 10 题而补写泛化、重复或无购买价值的问题，应停止并报告输入不足。
+先按补充内容确定当前 Topic 的适用竞品数 `n`，`n` 只能为 1–3。每 Topic 固定 25 题，六类 Intent 配额为：
 
-每个 Topic 保留以下核心诊断单元：每个适用竞品各一条 Competitor、一条批量 Verification、一条目标品牌 Evaluation、一条 Category Awareness，Accuracy 保持为 0。售前不生成竞品 Evaluation；竞品情绪矩阵留给售后生词。Discovery 数量由有效 Attribute 覆盖决定，并至少比这些非 Discovery 单元的总数多 1。当前 Topic 有 1/2/3 个适用竞品时，非 Discovery 分别为 4/5/6 条，因此 Discovery 至少为 5/6/7 条。先汇总全部 Topic 的候选题；若整批超过 60，仍须保留各 Topic 的核心单元、全部 P1 覆盖和 Discovery 严格多数，再跨 Topic 按增量诊断价值选择 P2，最后才考虑 P3。不得平均砍题，不得把某 Topic 缺少的竞品名额机械转成 Discovery，也不得用伪重复维持多数。
+| 适用竞品数 `n` | Discovery | Competitor | Verification | Accuracy | Evaluation | Category Awareness | 合计 |
+|-|-:|-:|-:|-:|-:|-:|-:|
+| 1 | 21 | 1 | 0 | 0 | 2 | 1 | 25 |
+| 2 | 19 | 2 | 0 | 0 | 3 | 1 | 25 |
+| 3 | 17 | 3 | 0 | 0 | 4 | 1 | 25 |
+
+通用公式为 Discovery `23 - 2n`、Competitor `n`、Verification `0`、Accuracy `0`、Evaluation `1 + n`、Category Awareness `1`。Competitor 为每个适用竞品各一条；Evaluation 为目标品牌一条，再为每个适用竞品各一条。Discovery 先覆盖全部 P1，再按增量购买价值选择 P2/P3 补足到配额。信息不足以产生相互独立的 Discovery 时停止并报告输入不足，不得写泛化、重复或无购买价值的问题。1–3 个 Topic 的整批题量分别为 25/50/75。
 
 把生成前规划出的实际数量写入 `quotas`。`per_topic` 是未单列 Topic 共用的实际基线，不是系统默认值；题量不同的 Topic 写入 `topic_overrides`。聚合配额必须等于各 Topic 实际配额之和，并与最终问题数一致。
 
-### Discovery × 弹性数量
+### Discovery × `23 - 2n`
 
 全部要求具体品牌、制造商、供应商、平台或产品候选，且不得出现目标品牌或正式竞品名称。题面必须包含候选触发名词（provider、manufacturer、supplier、tool、platform、solution、brand 等品类对应词）；缺少触发词的问句会得到操作建议而不是品牌清单，属于格式错误而非语义偏好。
 
@@ -63,21 +69,21 @@ Discovery 的规划顺序：
 
 固定一个中性的一对一比较模板，优先选择双方都能合理比较的 P1 和高优先 P2 维度，只代入当前 Topic 的适用竞品。模板必须同时具备三要素：具体使用场景或买家条件、两个具名品牌、明确要求给出选择或推荐结论；只写 `Compare X and Y` 而不要求结论的软比较会得到"各有所长"式回避，无法形成决胜回答，视为格式错误。每个适用竞品恰好一题；不得跨 Topic 使用竞品，也不得重复同一竞品补足三题。当前 Topic 有两条以上 Competitor 题时，除竞品名称外，英文 `user_question` 与 Attribute Tags 必须完全同构；不能为不同竞品增删条件、改维度或预设胜者。每条只出现目标品牌和一个竞品，且该竞品必须有官网域名。
 
-### Verification × 1
+### Verification × 0
 
-只出现目标品牌，一次批量验证当前 Topic 的全部 P1。`validation_items` 的顺序、溯源字段和英文陈述必须与 `attribute_plan` 的 P1 完全一致，Attribute Tags 也按同一顺序写入全部 P1；不得在生题时另外挑选 P2/P3 或低价值事实。每个 `validation_items` 写入原始 `source_field / source_value` 和 P1 的 `verification_statement`。固定任务结构：`For {brand_name}, determine whether each statement is true. Answer Yes / No / Unknown for each item and explain the basis for your judgment: {numbered_validation_items}`。中文翻译必须保留同一任务，并按相同顺序逐项翻译全部 `validation_items`；不得用“判断以上若干项”一类概括句替代具体陈述。
+默认不生成 Verification 题。保留 Verification 作为意图定义：批量验证 AI 是否正确认知目标品牌与当前 Topic 下多个关键 Attribute 的关联，逐项输出 `Yes / No / Unknown + 判断依据`，适用阶段为第二轮售前（高意向/定向验证）和售后。P1 的属性级正确性核查并入 Accuracy 合同。只有用户明确要求时，才在独立合同下单独确认产物，不得从 Case 或模型记忆临时补真值，也不在默认售前题库中生成 `validation_items`。
 
 ### Accuracy × 0
 
 默认不生成 Accuracy 问题，不读取或要求 `fact_value / official_source_url / fact_checked_at`。如用户明确要求 Accuracy，先停止默认生题流程并确认独立的事实核验输入与产物合同；不得从 Case 声明、模型记忆或第三方页面临时补值。
 
-### Evaluation × 1
+### Evaluation × `1 + n`
 
-只对目标品牌使用固定模板：
+对目标品牌和每个适用竞品使用同一固定模板：
 
 `Evaluate the {category_label} {company|product} {brand_name} on {evaluation_scope}`
 
-`company|product` 由 `brand_object_type` 决定。`evaluation_scope` 由当前 Topic 转写而来，只表达具体业务范围或场景，不把 Topic 当成英文 Prompt 词汇。只替换品类、对象类型、目标品牌与评价范围，不加标点、追问、竞品或额外评价维度。英文 `user_question / monitoring_prompt / query` 不得出现独立单词 `topic`；中文翻译和元数据不受此规则限制。
+`company|product` 由 `brand_object_type` 决定。`evaluation_scope` 由当前 Topic 转写而来，只表达具体业务范围或场景，不把 Topic 当成英文 Prompt 词汇。目标品牌和当前 Topic 的每个适用竞品各生成一题；每题只替换品类、对象类型、当前被评价品牌与评价范围，只出现一个品牌，不加标点、追问或额外评价维度。英文 `user_question / monitoring_prompt / query` 不得出现独立单词 `topic`；中文翻译和元数据不受此规则限制。
 
 ### Category Awareness × 1
 
@@ -98,4 +104,4 @@ Discovery 的规划顺序：
 
 ## 6. 二遍 review
 
-第一遍先检查 `attribute_plan`：每 Topic 的优先级是否有决策依据、P1 是否真正决定入围、P3 是否混入应排除事实、每项是否精确溯源。第二遍逐题检查自然、独立、可回答、单意图、Topic 对齐、品牌边界、中性前提、意图与格式匹配、无引导、无歧义缩写、中英文等义和 Tags；整批检查 1–3 Topic、每个 Topic 的 Discovery 是否严格超过 50%、实际配额与最终题数一致、总量不超过 60、Topic 间题量差异有 Attribute 依据、P1 与 Verification 一一一致、Discovery 的 Attribute Tags 覆盖 P1 并优先覆盖 P2、品类称呼变体是否都来自 Case 字段、品牌范围 Tag 与题面一致、适用竞品逐一覆盖、Competitor 三要素齐备且控制变量、每 Topic 一条目标品牌 Evaluation、固定模板和无伪重复。Topic 低于 10 或高于 25 时给出语义警告和原因，但不得只为进入参考区间而增删题。
+第一遍先检查 `attribute_plan`：每 Topic 的优先级是否有决策依据、P1 是否真正决定入围、P3 是否混入应排除事实、每项是否精确溯源。第二遍逐题检查自然、独立、可回答、单意图、Topic 对齐、品牌边界、中性前提、意图与格式匹配、无引导、无歧义缩写、中英文等义和 Tags；整批检查 1–3 Topic、每 Topic 是否恰好 25 题、是否按 `23-2n / n / 0 / 0 / 1+n / 1` 配额、配额与最终题数一致、P1 在 Discovery 中的覆盖、品类称呼变体是否都来自 Case 字段、品牌范围 Tag 与题面一致、适用竞品逐一覆盖、Competitor 三要素齐备且控制变量、Evaluation 是否对目标品牌与每个适用竞品各一条、固定模板和无伪重复。

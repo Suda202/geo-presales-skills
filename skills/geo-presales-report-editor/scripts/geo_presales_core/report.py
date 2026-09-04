@@ -6,6 +6,7 @@ from pathlib import Path
 from .store import record_event, save_manifest
 from .tasks import create_task
 from .util import ContractError, format_display, get_path, now_iso, read_json, sha256_file, sha256_obj, write_json
+from .metrics import _is_sentiment_answer
 
 
 MODULE_TITLES = {
@@ -32,6 +33,8 @@ def _sentiment_evidence(answers_doc: dict) -> dict:
     for answer in answers_doc["answers"]:
         if not answer["selected_for_report"] or answer["validity"] != "valid":
             continue
+        if not _is_sentiment_answer(answer):
+            continue
         target = next(item for item in answer["objects"] if item["role"] == "target")
         if target.get("sentiment_status") != "accepted":
             continue
@@ -50,7 +53,7 @@ def _sentiment_evidence(answers_doc: dict) -> dict:
 def _module_instruction(module_id: str) -> str:
     instructions = {
         "M01": "用中文解释确定性数据总览和采集覆盖情况。不要把限定范围的结果外推为整体市场结论。",
-        "M02": "用中文解释监测对象与竞品的提及率、声量占比和平均提及排名。禁止把平均提及排名称为语义推荐排名。",
+        "M02": "用中文解释监测对象与竞品的提及率、声量占比和平均提及位置。禁止把平均提及位置称为语义推荐排名。",
         "M03": "用中文解释来源结构和实际被引用的官网页面。禁止从未观察到引用推断某类页面不存在。",
         "M04": "用中文解释已经校验的正向、中性和负向表达证据。禁止虚构主题或把未提及当成中性。",
         "M05": "只用中文解释脚本已经完成的机会分档。禁止重新分类问题或向客户暴露内部枚举。",
@@ -338,7 +341,7 @@ def finalize_report(root: Path, manifest: dict, config: dict, question_bank: dic
             for task_id, meta in manifest.get("tasks", {}).items()
         },
         "known_limitations": [
-            "report_rank 表示已配置对象的平均提及排名依据（正文首次提及顺序），不是语义推荐排名",
+            "report_rank 表示已配置对象的平均提及位置依据（正文首次提及顺序），不是语义推荐排名",
             "可注册域名聚合使用内置常见多级后缀表，而不是完整 Public Suffix List",
             "未知来源分类可能降级为 other；官网域名匹配始终由确定性规则完成",
         ],

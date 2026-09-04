@@ -27,6 +27,8 @@
 
 数组按实际结论数量动态展开。行动字段顺序固定为 `source_module`、`title`、`evidence`、`action`、`expected_impact`。
 
+所有客户可见 `value` 统一使用“平均提及位置”和“引用份额”。“平均提及排名”“引用占比”“官网引用占比”视为废弃字段名或文案，上传前必须改正；内部兼容键可保留，不得原样显示给客户。
+
 当前后台上传契约没有独立的跨平台和购买框架模块字段。M07、M08 先以内部结构化模块保存；其结论会在改变诊断可信度、范围、差异化判断或优先级时由 M01 写入 `summary_overview.points[]`，从而进入正式上传 CSV。不得擅自新增 `summary_platform_consistency` 或 `summary_market_perception` 上传行；后台契约扩展后再增加独立展示。
 
 M02 的决胜回答胜率和正面对比优劣势仍写入现有 `summary_competitor_performance.items[].text`，不新增数值列。客户文案只把决胜回答胜率称为“竞品胜率”，不得写总体胜率。

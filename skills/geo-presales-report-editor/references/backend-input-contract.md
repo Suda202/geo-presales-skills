@@ -19,7 +19,7 @@
 | `market / language / task_id` | string | 是 | 市场、语言和任务 ID。 |
 | `batch_id` | string | 否 | 未提供时使用 `task_id`。 |
 | `overview` | object/JSON string | 是 | 后端已算好的总览。 |
-| `competitor` | object/JSON string | 是 | Discovery 范围内的提及、声量与平均提及排名。 |
+| `competitor` | object/JSON string | 是 | Discovery 范围内的提及、声量与平均提及位置。 |
 | `citation` | object/JSON string | 是 | 引用聚合；必须含 Discovery 主样本范围。 |
 | `brand_expression` | array/JSON string | 是 | Sentiment 回答中的目标品牌表达证据。 |
 | `category_actions` | object/JSON string | 是 | 后端已经分档的问题。 |
@@ -46,9 +46,11 @@
 }
 ```
 
-`average_first_position` 是后端内部兼容字段；客户文案、CSV 字段说明和校验统一显示为“平均提及排名”。
+`average_first_position` / `average_rank` 是后端内部兼容字段；客户文案、CSV 字段说明和校验统一显示为“平均提及位置”。`mention_ranking` 若表示按提及率比较的品牌名次，客户文案称“提及率排名”，不得称为平均提及位置。
 
 主要引用生态必须用 Discovery。其他意图的引用如需展示，另建有明确 label 的分组，不能混进主要百分比。
+
+正式可见度与情绪使用两个独立筛选条件：非 Discovery 记录一律不得进入提及率、提及率排名、指定竞品内声量、平均提及位置、问题机会和主要引用生态；已被后端确认适用于 Sentiment 的记录不得因不是 Discovery 或同时属于其他诊断意图而从 `brand_expression` 删除。
 
 ### Attribute 诊断
 
@@ -276,4 +278,4 @@
 
 ## 后端归属
 
-后端在传入前完成：有效样本筛选、六类意图分流、实体与平均提及排名、Visibility、逐竞品决胜回答胜率与正面对比主题、主题/Tag 承载的 Attribute 关联、Market Perception 对齐状态、Accuracy、Sentiment、引用样本范围、问题分档、匹配 Discovery Prompt 的整体/主题跨平台一致性状态、主题/Tag 范围内的官网页面机会，以及有证据的行动路由。编辑器不重算这些内容。
+后端在传入前完成：有效样本筛选、六类意图分流、实体与平均提及位置、Visibility、逐竞品决胜回答胜率与正面对比主题、主题/Tag 承载的 Attribute 关联、Market Perception 对齐状态、Accuracy、Sentiment、引用样本范围、问题分档、匹配 Discovery Prompt 的整体/主题跨平台一致性状态、主题/Tag 范围内的官网页面机会，以及有证据的行动路由。编辑器不重算这些内容。

@@ -7,21 +7,19 @@
 | `Intent: Discovery` | `Which LED display manufacturers are strong options for commercial AV integrators that need both display products and project support?` | `Brand Scope: Non-Branded`；按实际条件挂 `Attribute: Project Support` 等 Tag；不出现 Edgelight 或竞品。 |
 | `Intent: Competitor` | `How do Edgelight and SANSI LED compare as providers of LED display and commercial display solutions in terms of product range, display performance, structural customization, and project support?` | `Brand Scope: Branded`；只出现目标品牌与竞品 1；Attribute Tags 对应比较维度。 |
 | `Intent: Competitor` | `How do Edgelight and Unilumin compare as providers of LED display and commercial display solutions in terms of product range, display performance, structural customization, and project support?` | 除竞品名外与上一题的题面和 Attribute Tags 完全同构。 |
-| `Intent: Verification` | `For Edgelight, determine whether each statement is true. Answer Yes / No / Unknown for each item and explain the basis for your judgment: 1. It offers indoor, outdoor, fixed, rental and creative LED display products. 2. It provides pixel-pitch, brightness, refresh-rate, color and image-quality capabilities. 3. It provides project design, installation, documentation, certification and after-sales support.` | `Brand Scope: Branded`；一题按顺序覆盖 Topic 1 全部 P1；`validation_items` 和 Attribute Tags 均与 P1 完全一致。 |
 | `Intent: Evaluation` | `Evaluate the LED display manufacturer and commercial display solution provider company Edgelight on LED display manufacturers and commercial display solution providers` | `Brand Scope: Branded`；固定模板，不出现独立单词 `topic`。 |
 | `Intent: Category Awareness` | `What is a LED display manufacturer and commercial display solution provider, and how should I evaluate one for LED display manufacturers and commercial display solution providers?` | `Brand Scope: Non-Branded`；固定品类优先模板，不出现任何品牌。 |
 
 第三条 Competitor 只把上述模板中的 `SANSI LED` 替换为 `LianTronics`。不要为了“更贴合竞品”改变任务、条件、比较维度、词序或标点。
 
-Topic 局部竞品例子：Botslab 的“智能行车记录仪”只与 70mai 比较；“家庭安防摄像头”只与 Reolink 和 aosu 比较。前者生成 1 条 Competitor，后者生成 2 条 Competitor；各自 Discovery 数量由当前 Topic 的有效 Attribute 决定，不因竞品较少而自动补题。不得让 70mai 出现在家庭安防比较题，也不得让 Reolink 或 aosu 出现在行车记录仪比较题。
+Topic 局部竞品例子：Botslab 的“智能行车记录仪”只与 70mai 比较；“家庭安防摄像头”只与 Reolink 和 aosu 比较。前者生成 1 条 Competitor，后者生成 2 条 Competitor；各自 Discovery 数量按当前 Topic 的适用竞品数 `n` 分别取 `23-2×1=21` 和 `23-2×2=19`，Verification 均为 0。不得让 70mai 出现在家庭安防比较题，也不得让 Reolink 或 aosu 出现在行车记录仪比较题。
 
 反例：
 
 - `What should buyers look for in an LED display?`：若标为 Discovery，只给标准清单，不要求具体候选；应使用品类优先 Category Awareness 模板，或改问制造商候选。
-- `Is Edgelight associated with LED displays?`：Verification 太抽象，未批量验证当前 Topic 选中的 3–5 条 Case 信息，也未要求 `Yes / No / Unknown + 依据`。
 - `Its product portfolio includes LED displays as a separate product category.`：只验证官网目录分类，不改变采购入围或选型判断。
 - `A listed product specifies 12 V, 8 A, and 96 W output.`：宽泛 LED 驱动电源 Topic 下不应以单款 SKU 的孤立精确参数代替品类级选型能力；精确值核对属于具体型号或 Accuracy 合同。
-- 默认不生成 Accuracy 题，也不要求上游事实包；如用户明确要求 Accuracy，先单独确认事实核验合同。
+- 默认不生成 Verification 与 Accuracy 题，也不要求上游事实包；如用户明确要求，先单独确认合同。
 - 售前不为 Unilumin 等竞品生成 Evaluation；竞品情绪矩阵留给售后生词，避免挤压 Discovery。
 - `Why is Edgelight better than Unilumin?`：预设胜者。
 - `How do Edgelight, Unilumin and LianTronics compare?`：破坏一对一控制变量。

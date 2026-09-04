@@ -1,7 +1,105 @@
 {
-  "version": 1,
+  "version": 2,
   "purpose": "跨品牌客户结论语义回归；事实与品牌名均为通用占位，不用于重算指标。",
   "cases": [
+    {
+      "id": "task190_visibility_discovery_only",
+      "facts": {
+        "discovery": "10 条 Discovery 中目标品牌被提及 2 条",
+        "non_discovery": "6 条 Competitor、Validation、Evaluation 或 Market Perception 中目标品牌被提及 6 条",
+        "backend_scope": "正式可见度只使用 Discovery"
+      },
+      "must_conclude": [
+        "正式可见度只使用 10 条 Discovery 样本，目标品牌提及率为 20%",
+        "非 Discovery 的 6 条提及不进入正式可见度"
+      ],
+      "must_not_conclude": [
+        "把全部 16 条回答作为可见度分母或把 8 条提及作为可见度分子",
+        "因为非 Discovery 记录带 visibility 处理标记就纳入正式可见度"
+      ]
+    },
+    {
+      "id": "task190_sentiment_scope_is_independent",
+      "facts": {
+        "record_scope": "记录 analysis_type=sentiment，且 diagnostic_intent 不是 Evaluation",
+        "sentiment": "对目标品牌的全文主导评价为 neutral",
+        "other_intent": "记录同时带有 Evaluation 之外的诊断意图"
+      },
+      "must_conclude": [
+        "保留该记录的 neutral 情绪结果",
+        "所有 analysis_type=sentiment 数据完整进入情绪统计，不再按诊断意图筛选"
+      ],
+      "must_not_conclude": [
+        "因为记录不是 Discovery 而删除情绪样本",
+        "只保留 Evaluation 诊断意图下的情绪样本"
+      ]
+    },
+    {
+      "id": "task190_sentiment_caveat_is_not_automatically_negative",
+      "facts": {
+        "target_assessment": "回答肯定目标品牌的核心能力",
+        "caveat": "同时说竞品在一个维度更强，并提醒独立证据仍需核验",
+        "dominant_tone": "全文对目标品牌总体为审慎肯定"
+      },
+      "must_conclude": [
+        "不能仅凭竞品优势、核验提醒或证据不足把目标品牌判为负向",
+        "按全文对目标品牌的主导评价保留正向或中性"
+      ],
+      "must_not_conclude": [
+        "出现任何限制、竞品优势或核验提醒就判目标品牌负向"
+      ]
+    },
+    {
+      "id": "mention_rate_rank_vs_average_mention_position",
+      "facts": {
+        "brand_a": "Discovery 提及率 60%，提及率排名第 1，平均首次合格出现位置 3.2",
+        "brand_b": "Discovery 提及率 40%，提及率排名第 2，平均首次合格出现位置 1.4"
+      },
+      "must_conclude": [
+        "品牌 A 的提及率排名第 1，但平均提及位置为 3.2",
+        "品牌 B 的提及率排名第 2，但平均提及位置更靠前，为 1.4"
+      ],
+      "must_not_conclude": [
+        "提及率排名就是平均提及位置",
+        "品牌 A 因提及率排名领先所以平均提及位置也领先"
+      ]
+    },
+    {
+      "id": "mention_rate_rank_in_core_and_visibility_summary",
+      "facts": {
+        "discovery": "目标品牌提及率 1.6%，提及率排名第49/125",
+        "average_mention_position": "仅一次被提及时平均提及位置为8",
+        "competitors": "主要竞品明显领先"
+      },
+      "must_conclude": [
+        "核心结论写明提及率排名第49/125，相比主要竞品明显靠后",
+        "可见度总结也写明提及率排名，并将平均提及位置8作为另一指标单独解释"
+      ],
+      "must_not_conclude": [
+        "用平均提及位置8替代提及率排名第49/125",
+        "把平均提及位置解释成品牌竞争名次或推荐强弱"
+      ]
+    },
+    {
+      "id": "customer_metric_terms_are_current",
+      "facts": {
+        "average_first_position": "2.3",
+        "official_citation_share": "18%"
+      },
+      "must_conclude": [
+        "客户文案写平均提及位置 2.3",
+        "客户文案写官网引用份额 18%"
+      ],
+      "must_not_conclude": [
+        "使用平均提及排名、引用占比或官网引用占比"
+      ]
+    },
+    {
+      "id": "delete_metric_meta_explanations",
+      "facts": {"draft": "平均提及位置为8，该指标表示正文首次出现顺序，不能视为推荐强弱。"},
+      "must_conclude": ["删除指标定义和误读限制；只保留能改变客户判断的发现或竞争位置结论"],
+      "must_not_conclude": ["该指标表示正文首次出现顺序", "不能视为推荐强弱", "引用份额不等于可见度", "据此不能判断"]
+    },
     {
       "id": "visibility_vs_sentiment",
       "facts": {
@@ -179,11 +277,11 @@
       "facts": {
         "sample_scope": "同市场、同语言、同采集窗口的匹配 Discovery Prompt",
         "mention_consistency": "ChatGPT 和 Gemini 有提及，Perplexity 未提及",
-        "position_consistency": "获得提及时，平均提及排名也存在差异"
+        "position_consistency": "获得提及时，平均提及位置也存在差异"
       },
       "must_conclude": [
         "可比平台的品牌进入结果存在差异，尚未形成稳定共识",
-        "提及一致性与平均提及排名一致性分别表达"
+        "提及一致性与平均提及位置一致性分别表达"
       ],
       "must_not_conclude": [
         "全网尚未形成共识",
@@ -200,7 +298,7 @@
       },
       "must_conclude": [
         "可比平台均未提及品牌，缺席并非单一平台现象",
-        "无提及时不讨论平均提及排名"
+        "无提及时不讨论平均提及位置"
       ],
       "must_not_conclude": [
         "品牌在全网缺席",
@@ -263,7 +361,7 @@
         "position_consistency": "consistent"
       },
       "must_conclude": [
-        "可比平台对覆盖主题的品牌进入和平均提及排名判断相对稳定"
+        "可比平台对覆盖主题的品牌进入和平均提及位置判断相对稳定"
       ],
       "must_not_conclude": [
         "把三个平台写成三次独立胜利，或给相关 Attribute 新增独立共识状态"
@@ -278,7 +376,7 @@
         "position_consistency": "mixed"
       },
       "must_conclude": [
-        "覆盖主题的跨平台判断尚未稳定，并分别说明品牌进入与平均提及排名差异"
+        "覆盖主题的跨平台判断尚未稳定，并分别说明品牌进入与平均提及位置差异"
       ],
       "must_not_conclude": [
         "给 Attribute 新增 unsettled 或排名—可见度状态，自行推断来源权重，或直接提出只优化某个平台"
@@ -379,7 +477,7 @@
       "facts": {
         "intent": "竞品类问题",
         "question": "题面已写出目标品牌与竞品",
-        "mention": "目标品牌 100% 提及且平均提及排名第 1"
+        "mention": "目标品牌 100% 提及且平均提及位置第 1"
       },
       "must_conclude": [
         "直接删除题面驱动的提及和排名，不写提问方式或指标过滤解释",

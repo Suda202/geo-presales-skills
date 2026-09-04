@@ -407,7 +407,7 @@ def content_for(module_id):
         "M02": [
             "本品提及率为35%，进入回答的频率低于Leader。",
             "本品声量占比为28%，当前仍低于Leader。",
-            "本品平均提及排名为2.8，进入回答后的顺位仍有差距。",
+            "本品平均提及位置为2.8，进入回答后的顺位仍有差距。",
         ],
         "M03": [
             "媒体评测占比40%，是当前最主要的引用来源。",
@@ -452,7 +452,7 @@ def content_for(module_id):
         },
         "M07": [
             "可比平台的品牌提及结果存在差异，尚未形成稳定共识。",
-            "品牌获得提及时，平均提及排名在不同平台之间也存在差异。",
+            "品牌获得提及时，平均提及位置在不同平台之间也存在差异。",
         ],
         "M08": [
             "当前品类购买标准集中在报告与价格，尚未包含品牌预设的多平台覆盖差异点。",
@@ -853,7 +853,7 @@ class BackendReportTests(unittest.TestCase):
                     elif task["module_id"] == "M07":
                         content = [
                             "覆盖主题在不同平台的品牌提及结果存在差异，该主题的跨平台判断尚未稳定。",
-                            "品牌获得提及时，覆盖主题的平均提及排名在平台之间也存在差异。",
+                            "品牌获得提及时，覆盖主题的平均提及位置在平台之间也存在差异。",
                         ]
                         refs = {
                             "/0": ["fact:/findings/0/mention_consistency"],
@@ -863,7 +863,7 @@ class BackendReportTests(unittest.TestCase):
                         content = json.loads(json.dumps(content, ensure_ascii=False))
                         refs = json.loads(json.dumps(refs, ensure_ascii=False))
                         content["points"].extend([
-                            "覆盖主题的品牌进入与平均提及排名存在平台差异，该主题的跨平台判断尚未稳定。",
+                            "覆盖主题的品牌进入与平均提及位置存在平台差异，该主题的跨平台判断尚未稳定。",
                             "当前购买框架尚未包含品牌预设的多平台覆盖差异点。",
                         ])
                         refs["/points/3"] = ["module:M07:/0"]
@@ -1024,7 +1024,7 @@ class BackendReportTests(unittest.TestCase):
         normalized = MODULE.normalize_payload(payload())
         cases = (
             (0, "通用问题中的品牌提及率为35%。"),
-            (2, "品牌平均提及排名为0，当前没有进入回答。"),
+            (2, "品牌平均提及位置为0，当前没有进入回答。"),
         )
         for index, text in cases:
             with self.subTest(text=text):
@@ -1032,6 +1032,19 @@ class BackendReportTests(unittest.TestCase):
                 invalid[index] = text
                 with self.assertRaisesRegex(MODULE.ContractError, "禁止表达或内部编码"):
                     MODULE.validate_content("M02", invalid, normalized)
+
+    def test_customer_copy_rejects_deprecated_metric_terms(self):
+        normalized = MODULE.normalize_payload(payload())
+        cases = (
+            ("M02", 0, "本品平均提及排名为2.8，进入回答后的顺位仍有差距。"),
+            ("M03", 0, "品牌官网引用占比为12%。"),
+        )
+        for module_id, index, text in cases:
+            with self.subTest(text=text):
+                invalid = content_for(module_id)
+                invalid[index] = text
+                with self.assertRaisesRegex(MODULE.ContractError, "禁止表达或内部编码"):
+                    MODULE.validate_content(module_id, invalid, normalized)
 
     def test_customer_copy_rejects_procurement_overclaim_and_editor_jargon(self):
         normalized = MODULE.normalize_payload(payload())
@@ -1064,6 +1077,10 @@ class BackendReportTests(unittest.TestCase):
             self.assertIn("发现、竞品、验证、准确性、评价和品类认知", global_rules)
             self.assertIn("不得混用", global_rules)
             self.assertIn("主要引用生态只使用 Discovery", global_rules)
+            self.assertIn("情绪直接使用完整 analysis_type=sentiment 结果", global_rules)
+            self.assertIn("不再按 diagnostic_intent", global_rules)
+            self.assertIn("提及率排名按 Discovery 提及率比较品牌名次", global_rules)
+            self.assertIn("客户指标统一写平均提及位置和引用份额", global_rules)
             self.assertIn("问题本身可能提及目标品牌", global_rules)
             self.assertIn("不能证明品牌在用户未指定时进入回答", global_rules)
 
@@ -1071,6 +1088,36 @@ class BackendReportTests(unittest.TestCase):
             self.assertIn("客户提供的竞品", competitor_rules)
             self.assertIn("不要据此判断竞品选择有误", competitor_rules)
             self.assertIn("不得建议替换", competitor_rules)
+
+    def test_task190_regression_contract_covers_scope_and_copy_terms(self):
+        cases_path = SCRIPT.parents[1] / "evals" / "task_190_regression_cases.json"
+        regression = json.loads(cases_path.read_text(encoding="utf-8"))
+        cases = {item["id"]: item for item in regression["cases"]}
+
+        self.assertFalse(
+            cases["visibility_excludes_non_discovery"]["expected"]["include_in_formal_visibility"]
+        )
+        self.assertTrue(
+            cases["discovery_included_in_visibility"]["expected"]["include_in_formal_visibility"]
+        )
+        self.assertTrue(
+            cases["sentiment_retained_without_discovery"]["expected"]["include_in_sentiment"]
+        )
+        self.assertTrue(
+            cases["sentiment_retained_with_overlapping_intents"]["expected"]["include_in_sentiment"]
+        )
+        self.assertTrue(
+            cases["sentiment_caveat_not_automatically_negative"]["expected"]["forbid_automatic_negative"]
+        )
+
+        rank_terms = cases["rank_metrics_remain_distinct"]["expected_customer_terms"]
+        self.assertEqual(rank_terms["mention_rate_rank"], "提及率排名")
+        self.assertEqual(rank_terms["average_first_position"], "平均提及位置")
+
+        deprecated = cases["deprecated_copy_terms_rejected"]["forbidden_customer_terms"]
+        for term in deprecated:
+            with self.subTest(term=term):
+                self.assertIsNotNone(MODULE.CUSTOMER_BANNED.search(term))
 
     def test_customer_modules_allow_fewer_non_redundant_conclusions(self):
         normalized = MODULE.normalize_payload(payload())

@@ -1,8 +1,8 @@
 {
   "name": "geo-presales-eval-case-builder",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "owner": "海外 GEO 项目",
-  "updated_at": "2026-08-28",
+  "updated_at": "2026-09-02",
   "status": "active",
   "maturity_tier": "production",
   "lifecycle_stage": "production",

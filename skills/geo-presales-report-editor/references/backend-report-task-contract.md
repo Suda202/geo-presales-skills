@@ -12,7 +12,7 @@
 | M03 | 判断来源主导权、官网可发现性、主题/Tag 范围内的页面机会和第三方承接 | `citation`、`page_opportunities` |
 | M04 | 判断已被识别的差异点、购买顾虑和信任风险 | `brand_expression` |
 | M05 | 判断已分档缺口覆盖的需求与决策阶段 | `category_actions` |
-| M07 | 判断整体与主题的品牌提及、平均提及排名是否形成跨平台一致性 | `platform_consistency` |
+| M07 | 判断整体与主题的品牌提及、平均提及位置是否形成跨平台一致性 | `platform_consistency` |
 | M08 | 判断品类认知类问题形成的市场选择标准是否覆盖问题关键属性、是否与品牌预设关键差异点契合、遗漏或冲突 | `market_perception_diagnostics` |
 | M01 | 综合主诊断、跨模块关系和优先级 | `overview`、M02–M05、M07–M08 |
 | M06 | 后端已确定行动路由的客户化表达，包含目标载体、我方/客户责任与复测信号 | `action_context`、M02–M05、M07–M08 |

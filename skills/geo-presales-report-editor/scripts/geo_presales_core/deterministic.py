@@ -189,6 +189,7 @@ def prepare_answers(run_root: Path, config: dict, question_bank: dict, crawl: di
             "question_type": question["question_type"],
             "funnel_intent": question["funnel_intent"],
             "diagnostic_intent": question.get("diagnostic_intent"),
+            "analysis_type": question.get("analysis_type"),
             "metric_scopes": question.get("metric_scopes"),
             "topic_id": question.get("topic_id"),
             "attribute_ids": question.get("attribute_ids") or [],

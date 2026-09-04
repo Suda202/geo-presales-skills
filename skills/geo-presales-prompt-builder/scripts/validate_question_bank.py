@@ -21,8 +21,7 @@ V7_SCHEMA_VERSION = "overseas-geo-question-bank/v7"
 V8_SCHEMA_VERSION = "overseas-geo-question-bank/v8"
 DEFAULT_GENERATION_SCHEMA_VERSION = V8_SCHEMA_VERSION
 V6_MAX_TOTAL = 60
-V8_TOPIC_PROMPT_GUIDE_MIN = 10
-V8_TOPIC_PROMPT_GUIDE_MAX = 25
+V8_MAX_TOTAL = 75
 V6_PER_TOPIC_QUOTAS = {
     "discovery": 14,
     "competitor": 3,
@@ -32,12 +31,12 @@ V6_PER_TOPIC_QUOTAS = {
     "category_awareness": 1,
 }
 V6_ANALYSIS_TYPES = {
-    "discovery": "visibility",
-    "competitor": "visibility",
-    "verification": "visibility",
+    "discovery": "visibility,sentiment",
+    "competitor": "sentiment",
+    "verification": "accuracy",
     "accuracy": "accuracy",
     "evaluation": "sentiment",
-    "category_awareness": "visibility",
+    "category_awareness": None,
 }
 V8_INTENT_TAGS = {
     "discovery": "Intent: Discovery",
@@ -144,12 +143,22 @@ V8_CSV_HEADERS = [
     "query",
     "question_zh",
     "topic",
+    "diagnosis_intent",
     "tags",
     "question_types",
     "purchase_intent",
     "persona_name",
     "scene_name",
 ]
+V8_CSV_TAGS_MAX_LENGTH = 200
+V8_CSV_QUESTION_TYPES = {
+    "discovery": "visibility,sentiment",
+    "competitor": "sentiment",
+    "verification": "visibility,sentiment",
+    "accuracy": "visibility,sentiment",
+    "evaluation": "sentiment",
+    "category_awareness": "visibility,sentiment",
+}
 V6_EVALUATION_META_TOPIC = re.compile(r"\btopic\b", re.IGNORECASE)
 V5_SCHEMA_VERSION = "overseas-geo-question-bank/v5"
 V5_PER_TOPIC_QUOTAS = {
@@ -475,28 +484,28 @@ def validate_v6_csv_rows(fieldnames: list[str] | None, rows: list[dict]) -> tupl
 
 
 def _parse_v8_csv_tags(value: object) -> list[str]:
-    """Parse semicolon-delimited v8 CSV Tags while preserving free-form tag text."""
-    return [tag.strip() for tag in str(value or "").split(";") if tag.strip()]
+    """Parse upload CSV Tags while preserving free-form tag text."""
+    return [tag.strip() for tag in re.split(r"[，,;\n]+", str(value or "")) if tag.strip()]
 
 
 def validate_v8_csv_rows(fieldnames: list[str] | None, rows: list[dict]) -> tuple[list[str], dict]:
-    """Validate the v8 CSV export with one free, multi-value Tags column."""
+    """Validate the upload CSV adapter for a v8 JSON question bank."""
     errors: list[str] = []
     if fieldnames != V8_CSV_HEADERS:
         errors.append(f"CSV header must exactly equal {V8_CSV_HEADERS}")
     if len(rows) > V6_MAX_TOTAL:
         errors.append(f"CSV batch total must not exceed {V6_MAX_TOTAL}")
 
-    tag_counts: Counter = Counter()
+    diagnostic_intents: Counter = Counter()
     question_types: Counter = Counter()
     topics: Counter = Counter()
-    competitor_attribute_tags: dict[str, list[tuple[str, ...]]] = {}
+    csv_tags: Counter = Counter()
     normalized_queries: Counter = Counter()
     for index, row in enumerate(rows, start=2):
         if not isinstance(row, dict):
             errors.append(f"CSV row {index} must be an object")
             continue
-        for field in ("query", "question_zh", "topic", "tags", "question_types"):
+        for field in ("query", "question_zh", "topic", "diagnosis_intent", "question_types"):
             if not str(row.get(field) or "").strip():
                 errors.append(f"CSV row {index} field {field!r} must be non-empty")
         query = str(row.get("query") or "").strip()
@@ -506,6 +515,14 @@ def validate_v8_csv_rows(fieldnames: list[str] | None, rows: list[dict]) -> tupl
             errors.append(f"CSV row {index} question_zh must not exceed 1000 characters")
         if len(str(row.get("topic") or "")) > 255:
             errors.append(f"CSV row {index} topic must not exceed 255 characters")
+        raw_tags = str(row.get("tags") or "").strip()
+        if len(raw_tags) > V8_CSV_TAGS_MAX_LENGTH:
+            errors.append(
+                f"CSV row {index} tags must not exceed {V8_CSV_TAGS_MAX_LENGTH} characters"
+            )
+        parsed_tags = _parse_v8_csv_tags(raw_tags)
+        if raw_tags and not parsed_tags:
+            errors.append(f"CSV row {index} tags must contain at least one non-empty tag")
         purchase_intent = str(row.get("purchase_intent") or "").strip()
         if purchase_intent not in {"", "0", "1", "2", "3"}:
             errors.append(f"CSV row {index} purchase_intent must be blank or one of 0, 1, 2, 3")
@@ -513,66 +530,34 @@ def validate_v8_csv_rows(fieldnames: list[str] | None, rows: list[dict]) -> tupl
             if len(str(row.get(field) or "")) > 200:
                 errors.append(f"CSV row {index} {field} must not exceed 200 characters")
 
-        tags = _parse_v8_csv_tags(row.get("tags"))
-        normalized_tags = [normalize_human_label(tag) for tag in tags]
-        if len(normalized_tags) != len(set(normalized_tags)):
-            errors.append(f"CSV row {index} tags must be unique after normalization")
-        intent_tags = [tag for tag in tags if tag in V8_TAG_TO_ROLE]
-        if len(intent_tags) != 1:
-            errors.append(f"CSV row {index} must contain exactly one default Intent tag")
-            role = ""
-        else:
-            role = V8_TAG_TO_ROLE[intent_tags[0]]
-        scope_tags = [tag for tag in tags if tag in set(V8_BRAND_SCOPE_TAGS.values())]
-        if len(scope_tags) != 1:
-            errors.append(f"CSV row {index} must contain exactly one Brand Scope tag")
-        expected_scope = V8_BRAND_SCOPE_TAGS[
-            role in {"competitor", "verification", "accuracy", "evaluation"}
-        ]
-        if scope_tags and scope_tags[0] != expected_scope:
-            errors.append(
-                f"CSV row {index} Brand Scope must equal {expected_scope!r} for {role or 'unknown'}"
-            )
-        attribute_tags = [tag for tag in tags if tag.startswith(V8_ATTRIBUTE_TAG_PREFIX)]
-        if any(re.fullmatch(r"Attribute:\s*", tag) for tag in tags):
-            errors.append(f"CSV row {index} Attribute labels must be non-empty")
-        attribute_names = [
-            tag[len(V8_ATTRIBUTE_TAG_PREFIX):].strip() for tag in attribute_tags
-        ]
+        role = str(row.get("diagnosis_intent") or "").strip()
         topic = str(row.get("topic") or "").strip()
-        if role == "competitor":
-            if not attribute_names:
-                errors.append(f"CSV row {index} Competitor must include at least one Attribute tag")
-            competitor_attribute_tags.setdefault(topic, []).append(
-                tuple(normalize_human_label(name) for name in attribute_names)
-            )
         question_type = str(row.get("question_types") or "").strip()
-        expected_type = V6_CSV_QUESTION_TYPES.get(role)
-        if expected_type and question_type != expected_type:
+        expected_type = V8_CSV_QUESTION_TYPES.get(role)
+        if expected_type is None:
+            errors.append(f"CSV row {index} has unsupported diagnosis_intent {role!r}")
+        elif question_type != expected_type:
             errors.append(
-                f"CSV row {index} Intent tag {intent_tags[0]!r} requires "
+                f"CSV row {index} diagnosis_intent {role!r} requires "
                 f"question_types {expected_type!r}"
             )
         if role == "evaluation" and V6_EVALUATION_META_TOPIC.search(query):
             errors.append(f"CSV row {index} evaluation query must not contain the meta word 'topic'")
-        tag_counts.update(tags)
+        diagnostic_intents[role] += 1
         question_types[question_type] += 1
         topics[topic] += 1
         normalized_queries[normalize(query)] += 1
+        csv_tags.update(parsed_tags)
 
-    for topic, tag_sets in competitor_attribute_tags.items():
-        if len(tag_sets) >= 2 and len(set(tag_sets)) != 1:
-            errors.append(
-                f"CSV topic {topic!r} Competitor Attribute tags must keep the same dimensions"
-            )
     duplicates = sorted(query for query, count in normalized_queries.items() if query and count > 1)
     if duplicates:
         errors.append(f"CSV normalized query values must be unique {duplicates}")
     return errors, {
         "total": len(rows),
-        "tags": dict(tag_counts),
+        "diagnosis_intent": dict(diagnostic_intents),
         "question_types": dict(question_types),
         "topic": dict(topics),
+        "tags": dict(csv_tags),
     }
 
 
@@ -832,13 +817,13 @@ def _validate_v7_attribute_plan(
                 errors.append(f"{entry_prefix} must contain 3 to 5 shortlist attributes")
             if priority == "P2":
                 if len(entries) > 10:
-                    errors.append(f"{entry_prefix} must not exceed 10 comparison attributes")
+                    errors.append(f"{entry_prefix} must not exceed 10 P2 attributes")
                 elif len(entries) < 5:
                     warnings.append(
-                        f"{entry_prefix} contains fewer than the recommended 5 comparison attributes"
+                        f"{entry_prefix} contains fewer than the recommended 5 P2 attributes"
                     )
             if priority == "P3" and len(entries) > 10:
-                errors.append(f"{entry_prefix} must not exceed 10 supplementary attributes")
+                errors.append(f"{entry_prefix} must not exceed 10 P3 attributes")
 
             validated_entries: list[dict] = []
             for entry_index, entry in enumerate(entries):
@@ -1092,6 +1077,8 @@ def validate_v8(data: dict) -> tuple[list[str], list[str], dict]:
         else:
             role = V8_TAG_TO_ROLE[intent_tags[0]]
             adapted_row["diagnosis_intent"] = role
+            if role == "category_awareness":
+                adapted_row.pop("analysis_type", None)
         scope_tags = [tag for tag in clean_tags if tag in set(V8_BRAND_SCOPE_TAGS.values())]
         if len(scope_tags) != 1:
             errors.append(f"{prefix}.tags must contain exactly one Brand Scope tag")
@@ -1145,6 +1132,7 @@ def validate_v8(data: dict) -> tuple[list[str], list[str], dict]:
         adapted,
         require_attribute_plan=True,
         flexible_topic_quotas=True,
+        fixed_v8_presales_quotas=True,
     )
     errors.extend(
         error.replace(" in v6", " in v8").replace(" v6 ", " v8 ").replace(" in v7", " in v8")
@@ -1191,6 +1179,7 @@ def validate_v6(
     *,
     require_attribute_plan: bool = False,
     flexible_topic_quotas: bool = False,
+    fixed_v8_presales_quotas: bool = False,
 ) -> tuple[list[str], list[str], dict]:
     """Validate the variable-topic, Edgelight-Case-field-driven question bank."""
 
@@ -1399,16 +1388,25 @@ def validate_v6(
         else:
             if topic_quota["discovery"] < 1:
                 errors.append(f"{quota_path}.discovery must be at least 1")
-            for intent, fixed_count in {
+            fixed_counts = {
                 "competitor": applicable_competitor_count,
-                "verification": 1,
+                "verification": (
+                    0 if fixed_v8_presales_quotas else topic_quota.get("verification", 1)
+                ),
                 "accuracy": 0,
-                "evaluation": 1,
+                "evaluation": (
+                    1 + applicable_competitor_count
+                    if fixed_v8_presales_quotas
+                    else 1
+                ),
                 "category_awareness": 1,
-            }.items():
+            }
+            if fixed_v8_presales_quotas:
+                fixed_counts["discovery"] = 23 - 2 * applicable_competitor_count
+            for intent, fixed_count in fixed_counts.items():
                 if topic_quota[intent] != fixed_count:
                     errors.append(f"{quota_path}.{intent} must remain {fixed_count}")
-            if flexible_topic_quotas:
+            if flexible_topic_quotas and not fixed_v8_presales_quotas:
                 non_discovery_total = sum(
                     count
                     for intent, count in topic_quota.items()
@@ -1421,14 +1419,8 @@ def validate_v6(
                         "non-Discovery Prompts"
                     )
         expected_topic_quotas[topic_id] = dict(topic_quota)
-        if flexible_topic_quotas:
-            topic_total = sum(topic_quota.values())
-            if not V8_TOPIC_PROMPT_GUIDE_MIN <= topic_total <= V8_TOPIC_PROMPT_GUIDE_MAX:
-                warnings.append(
-                    f"CONFIG topic.{topic_id} has {topic_total} Prompts, outside the recommended "
-                    f"{V8_TOPIC_PROMPT_GUIDE_MIN}-{V8_TOPIC_PROMPT_GUIDE_MAX} range; "
-                    "keep the count if Attribute coverage justifies it rather than padding"
-                )
+        if fixed_v8_presales_quotas and sum(topic_quota.values()) != 25:
+            errors.append(f"{quota_path} must total exactly 25 Prompts for {topic_id}")
 
     expected_intent_counter: Counter = Counter()
     for topic_quota in expected_topic_quotas.values():
@@ -1437,8 +1429,9 @@ def validate_v6(
     expected_total = sum(expected_intent_counter.values())
     if config.get("expected_total") != expected_total:
         errors.append(f"CONFIG expected_total must equal the active Topic quotas ({expected_total})")
-    if expected_total > V6_MAX_TOTAL:
-        errors.append(f"CONFIG batch total must not exceed {V6_MAX_TOTAL}")
+    max_total = V8_MAX_TOTAL if fixed_v8_presales_quotas else V6_MAX_TOTAL
+    if expected_total > max_total:
+        errors.append(f"CONFIG batch total must not exceed {max_total}")
     if quotas.get("diagnosis_intent") != expected_intent_quotas:
         errors.append("CONFIG quotas.diagnosis_intent must equal the sum of active Topic quotas")
 
@@ -1446,7 +1439,6 @@ def validate_v6(
         "question_id",
         "topic_id",
         "diagnosis_intent",
-        "analysis_type",
         "formal_visibility_eligible",
         "intent_key",
         "user_question",
@@ -1459,6 +1451,7 @@ def validate_v6(
     diagnostic_counts: Counter = Counter()
     topic_counts: dict[str, Counter] = {topic_id: Counter() for topic_id in topics}
     competitor_coverage: dict[str, Counter] = {topic_id: Counter() for topic_id in topics}
+    evaluation_coverage: dict[str, Counter] = {topic_id: Counter() for topic_id in topics}
     competitor_templates: dict[str, list[str]] = {topic_id: [] for topic_id in topics}
     normalized_questions: Counter = Counter()
     validation_item_total = 0
@@ -1494,11 +1487,18 @@ def validate_v6(
             if topic_id in topic_counts:
                 topic_counts[topic_id][intent] += 1
             expected_analysis = V6_ANALYSIS_TYPES[intent]
-            if row.get("analysis_type") != expected_analysis:
+            if expected_analysis is None:
+                if "analysis_type" in row and row["analysis_type"] not in (None, ""):
+                    errors.append(
+                        f"{prefix} {question_id}: analysis_type must be empty or omitted for {intent}"
+                    )
+            elif "analysis_type" not in row:
+                errors.append(f"{prefix} {question_id}: missing fields ['analysis_type']")
+            elif row.get("analysis_type") != expected_analysis:
                 errors.append(
                     f"{prefix} {question_id}: analysis_type must equal {expected_analysis} for {intent}"
                 )
-            expected_eligible = intent in {"discovery", "competitor", "category_awareness"}
+            expected_eligible = intent in {"discovery", "category_awareness"}
             if row.get("formal_visibility_eligible") is not expected_eligible:
                 errors.append(
                     f"{prefix} {question_id}: formal_visibility_eligible must equal {expected_eligible} for {intent}"
@@ -1544,9 +1544,27 @@ def validate_v6(
                     competitor_coverage[topic_id][mentioned[0]] += 1
                     controlled = _replace_v6_entity(text, mentioned[0], "<COMPETITOR>")
                     competitor_templates[topic_id].append(controlled)
-        elif intent in {"verification", "accuracy", "evaluation"}:
+        elif intent in {"verification", "accuracy"}:
             if not has_target or mentioned:
                 errors.append(f"{prefix} {question_id}: {intent} must name only the target brand")
+        elif intent == "evaluation":
+            if fixed_v8_presales_quotas:
+                applicable = expected_competitors_by_topic.get(topic_id, [])
+                named_brands = ([brand] if has_target else []) + mentioned
+                if len(named_brands) != 1:
+                    errors.append(
+                        f"{prefix} {question_id}: evaluation must name exactly one target or "
+                        "applicable competitor brand"
+                    )
+                elif named_brands[0] != brand and named_brands[0] not in applicable:
+                    errors.append(
+                        f"{prefix} {question_id}: evaluation brand {named_brands[0]!r} "
+                        f"is not applicable to {topic_id}"
+                    )
+                elif topic_id in evaluation_coverage:
+                    evaluation_coverage[topic_id][named_brands[0]] += 1
+            elif not has_target or mentioned:
+                errors.append(f"{prefix} {question_id}: evaluation must name only the target brand")
 
         topic_text = str(topics.get(topic_id, {}).get("topic") or "")
         if intent == "verification":
@@ -1620,8 +1638,13 @@ def validate_v6(
                         "the ordered P1 attribute plan for its Topic"
                     )
         if intent == "evaluation" and topic_id in topics:
+            evaluation_brand = brand
+            if fixed_v8_presales_quotas:
+                named_brands = ([brand] if has_target else []) + mentioned
+                if len(named_brands) == 1:
+                    evaluation_brand = named_brands[0]
             expected = build_v6_sentiment_prompt(
-                category, object_type, brand, topic_text
+                category, object_type, evaluation_brand, topic_text
             )
             if text != expected:
                 errors.append(f"{prefix} {question_id}: must equal the fixed sentiment template")
@@ -1634,8 +1657,8 @@ def validate_v6(
 
     if len(questions) != expected_total:
         errors.append(f"COUNT expected {expected_total}, got {len(questions)}")
-    if len(questions) > V6_MAX_TOTAL:
-        errors.append(f"COUNT batch total must not exceed {V6_MAX_TOTAL}")
+    if len(questions) > max_total:
+        errors.append(f"COUNT batch total must not exceed {max_total}")
     duplicate_texts = sorted(text for text, count in normalized_questions.items() if text and count > 1)
     if duplicate_texts:
         errors.append(f"DUPLICATE normalized user_question values must be unique {duplicate_texts}")
@@ -1649,6 +1672,16 @@ def validate_v6(
             errors.append(
                 f"COVERAGE topic.{topic_id}.competitors must cover each applicable competitor exactly once"
             )
+        if fixed_v8_presales_quotas:
+            expected_evaluation_coverage = Counter({
+                name: 1
+                for name in [brand, *expected_competitors_by_topic.get(topic_id, [])]
+            })
+            if evaluation_coverage[topic_id] != expected_evaluation_coverage:
+                errors.append(
+                    f"COVERAGE topic.{topic_id}.evaluations must cover the target and each "
+                    "applicable competitor exactly once"
+                )
         templates = competitor_templates[topic_id]
         if len(templates) >= 2 and len(set(templates)) != 1:
             errors.append(f"QUESTION topic.{topic_id}: competitor questions must keep the same wording")
@@ -1667,7 +1700,16 @@ def validate_v6(
         },
         "validation_item_count": validation_item_total,
         "visibility_module_total": sum(
-            1 for row in questions if isinstance(row, dict) and row.get("analysis_type") == "visibility"
+            1 for row in questions
+            if isinstance(row, dict)
+            and (
+                row.get("analysis_type") == "visibility"
+                or row.get("analysis_type") == "visibility,sentiment"
+                or (
+                    row.get("analysis_type") is None
+                    and row.get("formal_visibility_eligible") is True
+                )
+            )
         ),
         "formal_visibility_total": sum(
             1 for row in questions
@@ -1675,6 +1717,9 @@ def validate_v6(
         ),
         "topic_competitor_coverage": {
             topic_id: dict(coverage) for topic_id, coverage in competitor_coverage.items()
+        },
+        "topic_evaluation_coverage": {
+            topic_id: dict(coverage) for topic_id, coverage in evaluation_coverage.items()
         },
     }
     if require_attribute_plan:

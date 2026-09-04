@@ -37,6 +37,44 @@ def _object(answer: dict, object_id: str) -> dict:
     return next(item for item in answer["objects"] if item["object_id"] == object_id)
 
 
+def _diagnostic_intents(answer: dict) -> set[str]:
+    values = answer.get("diagnostic_intents")
+    if isinstance(values, list):
+        return {str(value).strip() for value in values if str(value).strip()}
+    value = str(answer.get("diagnostic_intent") or "").strip()
+    return {value} if value else set()
+
+
+def _metric_scopes(answer: dict) -> set[str]:
+    values = answer.get("metric_scopes")
+    if isinstance(values, list):
+        return {str(value).strip() for value in values if str(value).strip()}
+    value = str(values or "").strip()
+    return {value} if value else set()
+
+
+def _is_formal_visibility_answer(answer: dict) -> bool:
+    intents = _diagnostic_intents(answer)
+    if intents:
+        return "discovery" in intents
+    return answer.get("question_type") == "generic"
+
+
+def _is_sentiment_answer(answer: dict) -> bool:
+    analysis_type = str(answer.get("analysis_type") or "").strip().casefold()
+    if analysis_type:
+        return analysis_type == "sentiment"
+    # Legacy payloads did not carry analysis_type. Explicit sentiment scope
+    # markers remain a compatibility fallback only when that field is absent.
+    scopes = _metric_scopes(answer)
+    if "sentiment" in scopes:
+        return True
+    intents = _diagnostic_intents(answer)
+    if "sentiment" in intents:
+        return True
+    return not intents and not scopes and answer.get("question_type") == "branded"
+
+
 def _benchmark(objects: list[dict], values: dict[str, dict], higher_is_better: bool) -> dict:
     competitors = [obj for obj in objects if obj["role"] == "competitor" and values[obj["object_id"]]["raw"] is not None]
     if not competitors:
@@ -66,16 +104,8 @@ def _opportunity_sort_key(item: dict):
 
 def compute_metrics(config: dict, question_bank: dict, answers_doc: dict) -> dict:
     selected_valid = _selected_valid(answers_doc)
-    discovery = [
-        item for item in selected_valid
-        if item.get("diagnostic_intent") == "discovery"
-        or (not item.get("diagnostic_intent") and item.get("question_type") == "generic")
-    ]
-    sentiment_answers = [
-        item for item in selected_valid
-        if item.get("diagnostic_intent") == "sentiment"
-        or (not item.get("diagnostic_intent") and item.get("question_type") == "branded")
-    ]
+    discovery = [item for item in selected_valid if _is_formal_visibility_answer(item)]
+    sentiment_answers = [item for item in selected_valid if _is_sentiment_answer(item)]
     target_id = config["target_object_id"]
 
     object_metrics = {}
@@ -312,9 +342,9 @@ def compute_metrics(config: dict, question_bank: dict, answers_doc: dict) -> dic
         "methodology": {
             "sample_policy": config["sample_policy"],
             "rank_policy": config["rank_policy"],
-            "visibility_scope": "diagnostic_intent=discovery",
+            "visibility_scope": "diagnostic_intents contains discovery; non-Discovery excluded even when another visibility-processing flag exists",
             "share_of_voice_denominator": "有效 Discovery 回答中各已配置对象提及次数之和",
-            "sentiment_scope": "diagnostic_intent=sentiment",
+            "sentiment_scope": "all analysis_type=sentiment records; no diagnostic_intent filter (legacy explicit sentiment scopes only when analysis_type is absent)",
             "positive_sentiment_denominator": "有效 Sentiment 回答中已完成判断的目标品牌正向与负向评价之和；排除中性",
             "citation_scope": "diagnostic_intent=discovery",
             "official_citation_denominator": "有效 Discovery 回答产生的原始引用记录",

@@ -14,6 +14,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from geo_presales_core.config import normalize_config
 from geo_presales_core.crawler import answer_validity, import_crawl
+from geo_presales_core.metrics import _is_formal_visibility_answer, _is_sentiment_answer
 from geo_presales_core.questions import normalize_question_bank
 from geo_presales_core.util import ContractError, domain_matches, find_alias_spans, normalize_url, read_json, write_json
 
@@ -68,6 +69,45 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(answer_validity(""), (False, "EMPTY_ANSWER"))
         self.assertEqual(answer_validity("Something went wrong. Try again later."), (False, "ERROR_PAGE"))
         self.assertEqual(answer_validity("Acme is a valid option."), (True, None))
+
+    def test_task190_metric_scopes_are_independent(self):
+        non_discovery_visibility = {
+            "diagnostic_intents": ["competitor"],
+            "metric_scopes": ["visibility"],
+            "question_type": "branded",
+        }
+        overlapping_sentiment = {
+            "diagnostic_intents": ["competitor", "sentiment"],
+            "metric_scopes": ["visibility", "sentiment"],
+            "question_type": "branded",
+        }
+        discovery = {
+            "diagnostic_intents": ["discovery"],
+            "metric_scopes": ["visibility", "citation"],
+            "question_type": "generic",
+        }
+
+        self.assertFalse(_is_formal_visibility_answer(non_discovery_visibility))
+        self.assertFalse(_is_sentiment_answer(non_discovery_visibility))
+        self.assertFalse(_is_formal_visibility_answer(overlapping_sentiment))
+        self.assertTrue(_is_sentiment_answer(overlapping_sentiment))
+        self.assertTrue(_is_formal_visibility_answer(discovery))
+        self.assertFalse(_is_sentiment_answer(discovery))
+
+    def test_task190_sentiment_uses_analysis_type_without_intent_filter(self):
+        for diagnostic_intent in ("competitor", "validation", "sentiment", "market_perception"):
+            self.assertTrue(_is_sentiment_answer({
+                "analysis_type": "sentiment",
+                "diagnostic_intent": diagnostic_intent,
+                "metric_scopes": ["visibility"],
+                "question_type": "generic",
+            }))
+        self.assertFalse(_is_sentiment_answer({
+            "analysis_type": "visibility",
+            "diagnostic_intent": "sentiment",
+            "metric_scopes": ["sentiment"],
+            "question_type": "branded",
+        }))
 
     def test_question_contract(self):
         config = self.small_config()

@@ -117,14 +117,15 @@ def valid_v6_bank(topic_count: int = 1) -> dict:
 
     def append(topic: dict, intent: str, suffix: str, text: str, **extra) -> None:
         question_id = f"Q-{topic['topic_id']}-{suffix}"
+        analysis_type = MODULE.V6_ANALYSIS_TYPES[intent]
         questions.append(
             {
                 "question_id": question_id,
                 "topic_id": topic["topic_id"],
                 "diagnosis_intent": intent,
-                "analysis_type": MODULE.V6_ANALYSIS_TYPES[intent],
+                "analysis_type": analysis_type,
                 "formal_visibility_eligible": intent
-                in {"discovery", "competitor", "category_awareness"},
+                in {"discovery", "category_awareness"},
                 "intent_key": f"{topic['topic_id']}-{intent}-{suffix}",
                 "user_question": text,
                 "zh_translation": f"这是 {topic['topic_id']} 下的{intent}测试问题。",
@@ -133,6 +134,8 @@ def valid_v6_bank(topic_count: int = 1) -> dict:
                 **extra,
             }
         )
+        if analysis_type is None:
+            del questions[-1]["analysis_type"]
 
     competitors = [
         item["name"].split(" (")[0]
@@ -235,8 +238,10 @@ class V6ContractTests(unittest.TestCase):
                 self.assertEqual([], errors)
                 self.assertEqual([], warnings)
                 self.assertEqual(expected_total, summary["total"])
-                self.assertEqual(19 * topic_count, summary["visibility_module_total"])
-                self.assertEqual(18 * topic_count, summary["formal_visibility_total"])
+                # Discovery (14) + Category Awareness (1) per topic; Competitor
+                # now routes to sentiment only.
+                self.assertEqual(15 * topic_count, summary["visibility_module_total"])
+                self.assertEqual(15 * topic_count, summary["formal_visibility_total"])
 
     def test_v6_consumes_case_fields_without_legacy_target_attributes_or_topic_type(self) -> None:
         data = valid_v6_bank()
@@ -337,7 +342,7 @@ class V6ContractTests(unittest.TestCase):
     def test_v6_enforces_analysis_mapping_sentiment_template_and_market_perception_template(self) -> None:
         data = valid_v6_bank()
         competitor = next(q for q in data["questions"] if q["diagnosis_intent"] == "competitor")
-        competitor["analysis_type"] = "sentiment"
+        competitor["analysis_type"] = "visibility"
         sentiment = next(q for q in data["questions"] if q["diagnosis_intent"] == "evaluation")
         sentiment["user_question"] += " and give pros and cons"
         sentiment["monitoring_prompt"] = sentiment["user_question"]
@@ -346,7 +351,7 @@ class V6ContractTests(unittest.TestCase):
         perception["monitoring_prompt"] = perception["user_question"]
         errors, _, _ = MODULE.validate(data)
         joined = "\n".join(errors)
-        self.assertIn("analysis_type must equal visibility", joined)
+        self.assertIn("analysis_type must equal sentiment", joined)
         self.assertIn("must equal the fixed sentiment template", joined)
         self.assertIn("must equal the category-first market perception template", joined)
 

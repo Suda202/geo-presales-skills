@@ -1,9 +1,9 @@
 ---
 name: geo-presales-report-editor
-description: Use when correcting brand mention recognition or sentiment classification results in a GEO presales diagnostic report, and submitting bad cases to the project documentation. Delivers an upload-ready CSV from confirmed metrics. Does not recompute source data or modify the report webpage.
+description: This skill should be used when editing or generating an upload-ready GEO presales report CSV with customer-facing conclusions from confirmed metrics and evidence, without recomputing facts or modifying the report webpage.
 metadata:
   author: Overseas GEO Project
-  version: "2.4.3"
+  version: "2.5.0"
 ---
 
 # GEO 售前报告编辑
@@ -20,7 +20,8 @@ metadata:
 
 1. [结论综合规则](references/conclusion-synthesis-guide.md)
 2. [上传 CSV 契约](references/report-upload-csv-contract.md)
-3. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)：模块代码（M01–M08）、意图词表与 `target_attributes` 派生说明。
+3. [统计范围与客户指标命名契约](references/metric-scope-and-copy-contract.md)
+4. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)：模块代码（M01–M08）、意图词表与 `target_attributes` 派生说明。
 
 只有从 v2 后端统计包新生成 CSV 时，再完整读取 [后端输入契约](references/backend-input-contract.md) 和 [报告任务契约](references/backend-report-task-contract.md)。命令和异常恢复见 [使用说明](references/usage.md)。
 
@@ -51,10 +52,12 @@ metadata:
 
 > 模块代码：M05 = 评价/情绪，M06 = 行动建议，M07 = 平台差异，M08 = 品类认知（Market Perception）。完整映射见 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)。
 
-- 指标、分母、分档、行动路由和优先级只使用后端结果；不从明细重算。Visibility 与主要引用生态只用 Discovery，其他诊断各守范围。
+- 指标、分母、分档、行动路由和优先级只使用后端结果；不从明细重算。正式可见度与主要引用生态只用 `diagnostic_intent=discovery`；情绪直接使用完整 `analysis_type=sentiment` 结果，不再按 `diagnostic_intent`、Discovery/Evaluation、通用题/品牌题或其他意图二次筛选。
 - 客户文案中的六类诊断标签固定为“发现、竞品、验证、准确性、评价、品类认知”；标签单独展示时使用这些名称，在结论句中统一写成“发现类问题、竞品类问题、验证类问题、准确性类问题、评价类问题、品类认知类问题”。不得混用“发现型、纯发现型、竞品比较、功能核实、准确性诊断、品牌评价”等别名。
-- 竞品、验证或评价问题若题面已经出现品牌，品牌被提及及平均提及排名不进入客户文案；不得写成优势、稳定表现或维护项，也不得补写提问方式、题型机制或指标过滤解释。需要说明整体与发现的统计范围时，只写各范围的有效样本和结果。
-- “平均提及排名”按品牌在正文中的首次提及顺序记录；无提及时写 `-`，不写第 0 名或推断推荐强弱。客户文案、字段说明和校验统一使用“平均提及排名”，不得改用旧称。
+- 竞品、验证或评价问题若题面已经出现品牌，品牌被提及及平均提及位置不进入客户文案；不得写成优势、稳定表现或维护项，也不得补写提问方式、题型机制或指标过滤解释。需要说明整体与发现的统计范围时，只写各范围的有效样本和结果。
+- 严格区分“提及率排名”和“平均提及位置”：前者按 Discovery 提及率比较品牌名次，后者按品牌在被提及的 Discovery 回答正文中的首次合格出现位置取平均。无提及时平均提及位置写 `-`，不写第 0 位；两者都不得推断推荐强弱。
+- 客户文案、CSV、任务说明、字段说明和校验统一使用“平均提及位置”和“引用份额”；不得输出废弃名称“平均提及排名”“引用占比”“官网引用占比”。
+- 客户文案只写会改变判断或行动的事实与结论；删除“该指标表示……”“只表示……”“不能视为……”“不代表……”“不等于……”“据此不能……”等指标释义、解读限制、筛选机制和题型说明。此类边界只保留在内部规则、证据校验或用户明确要求的口径说明中。
 - 竞品只保留决胜回答胜率；无决胜回答为 `null`，不另写总体胜率。优劣势只取有样本和引用的正面对比证据；指定竞品声量不等于全市场份额。
 - Attribute 由内部主题或 Tag 承载，不生成独立客户模块、上传字段或跨平台状态。页面机会必须来自主题/Tag 官网候选扫描，并分开判断相关性与 Citation；内部 Attribute/Prompt Gap 对外改写为具体能力、Claim 或问题缺口。客户文案一律使用“主题”，不得出现 `Topic/topic`。
 - 客户竞品全零时只写当前无法比较；不判断竞品选错。少量证据不写成高频或共识，并存不写成因果，回答不写成真实询价、供应商名单或采购结果。
@@ -77,7 +80,7 @@ metadata:
 
 ## 完成门禁
 
-按结论综合规则自检：整体指标与发现表现已拆开；诊断标签及“类问题”句式统一；客户文案只使用“主题”和“平均提及排名”；仅覆盖后端有证据的诊断维度；题面含品牌造成的必然提及及其元解释均未进入客户文案；品类认知没有被误写成品牌提及分析；整体、主题、平台、引用与跨维度关系已按证据覆盖；范围与胜率分母正确；不把回答写成真实采购结果；行动有后端依据且不重复。最后删除需二次翻译、不改变判断或只解释题型机制的句子。
+按结论综合规则自检：正式可见度和主要引用生态只含 Discovery；情绪已完整保留所有 `analysis_type=sentiment` 结果，没有再按诊断意图筛选；整体指标与发现表现已拆开；提及率排名与平均提及位置没有混淆；诊断标签及“类问题”句式统一；客户文案只使用“主题”“平均提及位置”和“引用份额”；仅覆盖后端有证据的诊断维度；题面含品牌造成的必然提及及其元解释均未进入客户文案；品类认知没有被误写成品牌提及分析；整体、主题、平台、引用与跨维度关系已按证据覆盖；范围与胜率分母正确；不把回答写成真实采购结果；行动有后端依据且不重复。最后删除需二次翻译、不改变判断或只解释题型机制的句子。
 
 修改 Skill 的触发范围或职责边界后，运行 [路由回归用例](evals/trigger_cases.json)，确认结论编辑不会与指标审计、Prompt 生成、回答采集或报告渲染混淆。
 
