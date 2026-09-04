@@ -29,7 +29,7 @@ except ImportError as exc:  # pragma: no cover - environment-specific failure
 
 
 ALLOWED_SENTIMENTS = {"positive", "neutral", "negative"}
-ALLOWED_PATCH_FIELDS = {"wordid", "platform", "brand_rankings", "sentiment"}
+ALLOWED_PATCH_FIELDS = {"wordid", "platform", "brand_rankings"}
 REQUIRED_ROW_FIELDS = {"wordid", "platform", "sentiment", "brand_rankings"}
 ALLOWED_QUESTION_TYPES = {"visibility", "sentiment"}
 QUESTION_TYPE_METRIC_SCOPES = {
@@ -325,7 +325,7 @@ def validate_payload(
             )
         if require_question_types and not question_types:
             raise AuditValidationError(
-                f"wordid {wordid} 缺少问题类型；请提供 question_type(s) 或 --sentiment-wordids"
+                f"wordid {wordid} 缺少问题类型；请提供 question_type(s)"
             )
         diagnostic_intents = diagnostic_intents_from_row(row)
         metric_scopes = row.get("metric_scopes")
@@ -340,12 +340,8 @@ def validate_payload(
     return rows
 
 
-def build_review_bundle(
-    payload: dict[str, Any], sentiment_wordids: set[int] | None, target_brand: str | None
-) -> dict[str, Any]:
-    rows = validate_payload(
-        payload, sentiment_wordids=sentiment_wordids, require_question_types=True
-    )
+def build_review_bundle(payload: dict[str, Any], target_brand: str | None) -> dict[str, Any]:
+    rows = validate_payload(payload)
     review_rows = []
     for row in rows:
         answer_text = row.get("answer_text")
@@ -357,19 +353,14 @@ def build_review_bundle(
                 "platform": row["platform"],
                 "diagnostic_intents": list(diagnostic_intents_from_row(row)),
                 "metric_scopes": row.get("metric_scopes"),
-                "question_types": list(
-                    question_types_from_row(row)
-                    or (("sentiment",) if row["wordid"] in (sentiment_wordids or set()) else ("visibility",))
-                ),
+                "question_types": list(question_types_from_row(row)),
                 "semantic_review_available": has_answer_text,
                 "cleaned_text": cleaned_text,
                 "removed_link_texts": removed_link_texts,
                 "current_brand_rankings": copy.deepcopy(row["brand_rankings"]),
-                "current_sentiment": row["sentiment"],
                 "review": {
                     "candidate_entities": [],
                     "proposed_brand_rankings": None,
-                    "proposed_sentiment": None,
                     "included_entities": [],
                     "excluded_entities": [],
                     "uncertainties": [],
@@ -387,8 +378,6 @@ def build_review_bundle(
             "comparison": "diagnostic_intents_contains_competitor",
             "attribute_validation": "diagnostic_intents_contains_validation",
             "accuracy": "official_truth_vs_answer_claim",
-            "sentiment": "question_types_contains_sentiment",
-            "overlap": "visibility_and_sentiment_may_both_apply",
             "diagnostic_intents": "open_multi_value_tags_with_six_legacy_values",
         },
         "rows": review_rows,
@@ -417,9 +406,9 @@ def compare_payloads(before: dict[str, Any], after: dict[str, Any]) -> list[dict
         if set(old) != set(new):
             raise AuditValidationError(f"wordid {wordid} 的字段集合发生变化")
         for key in old:
-            if key not in {"brand_rankings", "sentiment"} and old[key] != new[key]:
+            if key != "brand_rankings" and old[key] != new[key]:
                 raise AuditValidationError(f"wordid {wordid} 的非目标字段发生变化：{key}")
-        for field in ("brand_rankings", "sentiment"):
+        for field in ("brand_rankings",):
             if old[field] != new[field]:
                 changes.append(
                     {
@@ -450,10 +439,10 @@ def apply_reviewed_patch(
         if not isinstance(item, dict):
             raise AuditValidationError("补丁 rows 中每项必须是对象")
         extra = set(item) - ALLOWED_PATCH_FIELDS
-        target_fields = set(item) & {"brand_rankings", "sentiment"}
+        target_fields = set(item) & {"brand_rankings"}
         if extra or "wordid" not in item or not target_fields:
             raise AuditValidationError(
-                f"补丁项只允许 platform/wordid/brand_rankings/sentiment，且至少修改一个目标字段：{item}"
+                f"补丁项只允许 platform/wordid/brand_rankings，且必须修改 brand_rankings：{item}"
             )
         wordid = item["wordid"]
         platform = item.get("platform")
@@ -473,13 +462,6 @@ def apply_reviewed_patch(
         if "brand_rankings" in item:
             validate_brand_rankings(wordid, item["brand_rankings"])
             result_by_key[identity]["brand_rankings"] = copy.deepcopy(item["brand_rankings"])
-        if "sentiment" in item:
-            if item["sentiment"] not in ALLOWED_SENTIMENTS:
-                raise AuditValidationError(
-                    f"补丁 wordid {wordid} 的 sentiment 非法：{item['sentiment']!r}"
-                )
-            result_by_key[identity]["sentiment"] = item["sentiment"]
-
     validate_payload(result)
     return result, compare_payloads(payload, result)
 
@@ -561,11 +543,10 @@ def print_changes(changes: list[dict[str, Any]]) -> None:
 
 def command_prepare(args: argparse.Namespace) -> None:
     payload = read_json(Path(args.input))
-    sentiment_wordids = parse_wordids(args.sentiment_wordids)
     target_brand = args.target_brand.strip() if args.target_brand else None
     if args.target_brand and not target_brand:
         raise AuditValidationError("--target-brand 不能为空")
-    bundle = build_review_bundle(payload, sentiment_wordids, target_brand)
+    bundle = build_review_bundle(payload, target_brand)
     write_json_atomic(Path(args.output), bundle)
     print(f"prepared_rows={len(bundle['rows'])}")
     print(f"output={Path(args.output).resolve()}")
@@ -573,12 +554,7 @@ def command_prepare(args: argparse.Namespace) -> None:
 
 def command_validate(args: argparse.Namespace) -> None:
     payload = read_json(Path(args.input))
-    sentiment_wordids = parse_wordids(args.sentiment_wordids)
-    rows = validate_payload(
-        payload,
-        sentiment_wordids=sentiment_wordids,
-        require_question_types=bool(args.sentiment_wordids),
-    )
+    rows = validate_payload(payload)
     print(f"valid_rows={len(rows)}")
     if args.before:
         before = read_json(Path(args.before))
@@ -592,12 +568,7 @@ def command_apply(args: argparse.Namespace) -> None:
     payload = read_json(input_path)
     patch_payload = read_json(Path(args.patch))
     result, changes = apply_reviewed_patch(payload, patch_payload)
-    sentiment_wordids = parse_wordids(args.sentiment_wordids)
-    validate_payload(
-        result,
-        sentiment_wordids=sentiment_wordids,
-        require_question_types=bool(args.sentiment_wordids),
-    )
+    validate_payload(result)
     if args.backup:
         backup_path = Path(args.backup)
         backup_path.parent.mkdir(parents=True, exist_ok=True)
@@ -616,19 +587,14 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--input", required=True)
     prepare.add_argument("--output", required=True)
     prepare.add_argument(
-        "--sentiment-wordids",
-        help="情绪问题记录号或范围，例如 5341-5350；原 JSON 无问题类型字段时可用于兼容映射",
-    )
-    prepare.add_argument(
         "--target-brand",
-        help="情绪分析的目标品牌；写入审核包，避免靠正文或现有排名猜测",
+        help="品牌审核的目标品牌；写入审核包，避免靠正文或现有排名猜测",
     )
     prepare.set_defaults(handler=command_prepare)
 
     validate = subparsers.add_parser("validate", help="校验 JSON 及可选前后差异")
     validate.add_argument("--input", required=True)
     validate.add_argument("--before")
-    validate.add_argument("--sentiment-wordids")
     validate.set_defaults(handler=command_validate)
 
     apply_parser = subparsers.add_parser("apply", help="安全应用人工审核补丁")
@@ -636,7 +602,6 @@ def build_parser() -> argparse.ArgumentParser:
     apply_parser.add_argument("--patch", required=True)
     apply_parser.add_argument("--output", required=True)
     apply_parser.add_argument("--backup")
-    apply_parser.add_argument("--sentiment-wordids")
     apply_parser.set_defaults(handler=command_apply)
     return parser
 

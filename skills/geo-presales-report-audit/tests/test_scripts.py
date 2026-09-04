@@ -256,16 +256,22 @@ class StructuredResultTests(unittest.TestCase):
                         {"brand_name": "Chatham", "rank_pos": 1},
                         {"brand_name": "Lit by Larry", "rank_pos": 2},
                     ],
-                    "sentiment": "negative",
                 }
             ]
         }
         result, changes = STRUCTURED.apply_reviewed_patch(payload, patch)
-        self.assertEqual({item["field"] for item in changes}, {"brand_rankings", "sentiment"})
+        self.assertEqual({item["field"] for item in changes}, {"brand_rankings"})
         self.assertEqual(result["version"], payload["version"])
         self.assertEqual(result["task_id"], payload["task_id"])
         self.assertEqual(result["rows"][0]["answer_text"], payload["rows"][0]["answer_text"])
+        self.assertEqual(result["rows"][0]["sentiment"], payload["rows"][0]["sentiment"])
         self.assertEqual(result["rows"][1], payload["rows"][1])
+
+    def test_apply_patch_rejects_answer_level_sentiment(self) -> None:
+        with self.assertRaisesRegex(STRUCTURED.AuditValidationError, "brand_rankings"):
+            STRUCTURED.apply_reviewed_patch(
+                self.base_payload(), {"rows": [{"wordid": 1, "sentiment": "negative"}]}
+            )
 
     def test_same_wordid_on_two_platforms_is_valid_and_patch_requires_platform(self) -> None:
         payload = self.base_payload()
@@ -275,7 +281,8 @@ class StructuredResultTests(unittest.TestCase):
         STRUCTURED.validate_payload(payload)
         with self.assertRaisesRegex(STRUCTURED.AuditValidationError, "必须显式提供 platform"):
             STRUCTURED.apply_reviewed_patch(
-                payload, {"rows": [{"wordid": 1, "sentiment": "positive"}]}
+                payload,
+                {"rows": [{"wordid": 1, "brand_rankings": [{"brand_name": "Chatham", "rank_pos": 1}]}]},
             )
         result, changes = STRUCTURED.apply_reviewed_patch(
             payload,
@@ -284,7 +291,7 @@ class StructuredResultTests(unittest.TestCase):
                     {
                         "platform": "second-platform",
                         "wordid": 1,
-                        "sentiment": "positive",
+                        "brand_rankings": [{"brand_name": "Chatham", "rank_pos": 1}],
                     }
                 ]
             },
@@ -299,7 +306,7 @@ class StructuredResultTests(unittest.TestCase):
             for row in result["rows"]
             if row["platform"] == "test" and row["wordid"] == 1
         )
-        self.assertEqual(changed["sentiment"], "positive")
+        self.assertEqual(changed["brand_rankings"], [{"brand_name": "Chatham", "rank_pos": 1}])
         self.assertEqual(untouched["sentiment"], "neutral")
         self.assertEqual(changes[0]["platform"], "second-platform")
 
@@ -323,7 +330,7 @@ class StructuredResultTests(unittest.TestCase):
     def test_null_answer_is_preserved_and_marked_unavailable_for_semantic_review(self) -> None:
         payload = self.base_payload()
         payload["rows"][0]["answer_text"] = None
-        bundle = STRUCTURED.build_review_bundle(payload, {2}, "Lit by Larry")
+        bundle = STRUCTURED.build_review_bundle(payload, "Lit by Larry")
         self.assertFalse(bundle["rows"][0]["semantic_review_available"])
         self.assertEqual(bundle["rows"][0]["cleaned_text"], "")
 
@@ -334,13 +341,11 @@ class StructuredResultTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("structured_result_cases=17", result.stdout)
+        self.assertIn("structured_result_cases=12", result.stdout)
         self.assertIn("failed=0", result.stdout)
 
     def test_prepare_records_explicit_target_brand(self) -> None:
-        bundle = STRUCTURED.build_review_bundle(
-            self.base_payload(), {2}, "Lit by Larry"
-        )
+        bundle = STRUCTURED.build_review_bundle(self.base_payload(), "Lit by Larry")
         self.assertEqual(bundle["target_brand"], "Lit by Larry")
 
 

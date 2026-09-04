@@ -1,9 +1,9 @@
 ---
 name: geo-presales-report-audit
-description: Use when auditing or correcting brand mention recognition, first-appearance rankings, or sentiment classification in GEO presales JSON results. Delivers safe structured corrections and Bad Case evidence; does not edit customer-facing analytical conclusions.
+description: Use when auditing or correcting brand mention recognition and first-appearance rankings in GEO presales JSON results. Delivers safe brand-ranking corrections and Bad Case evidence; does not edit customer-facing analytical conclusions or sentiment.
 metadata:
   author: 海外 GEO 项目
-  version: "2.2.3"
+  version: "2.3.0"
 ---
 
 # GEO 售前报告质量审计
@@ -12,7 +12,8 @@ metadata:
 
 用一手证据回答三件事：历史问题是否修复、当前报告是否新增客户可见问题、每条问题能否直接交给研发修复并用同一样本回归。
 
-- 使用本 Skill 审核并修正 `brand_rankings`、`sentiment` 等底层结构化结果；完成后再使用 `geo-presales-report-editor` 基于已确认的结果修改分析结论并生成上传 CSV。
+- 使用本 Skill 审核并修正 `brand_rankings` 等底层结构化结果；完成后再使用 `geo-presales-report-editor` 基于已确认的结果修改分析结论并生成上传 CSV。
+- 暂不审计、判断或修改 `sentiment`。当前回答级情绪口径已冻结，待句子级情绪方案与验收标准确认后，另行设计并恢复该能力；本轮必须逐值保留原 `sentiment`。
 - 不在本 Skill 修改客户报告的分析结论、客户文案或结论 CSV；底层数据确认后将这些工作交给 `geo-presales-report-editor`。
 - 仅在用户授权维护 Bad Case 时写入飞书；只要求检查、解释或复核时保持只读。
 - 不为凑数量找问题，不把第三方模型的正常推理自动归因成系统错误，不把某个 Task、品牌或品类结论固化为规则。
@@ -24,10 +25,9 @@ metadata:
 
 1. [全面审计流程](references/audit-workflow.md)
 2. [结构化结果审计](references/structured-result-audit.md)
-3. [情绪校准规则](references/sentiment-calibration.md)
-4. [诊断方法口径](references/diagnostic-methodology-audit.md)
-5. [Bad Case 交付契约](references/badcase-output-contract.md)
-6. [回归状态口径](references/regression-status.md)
+3. [诊断方法口径](references/diagnostic-methodology-audit.md)
+4. [Bad Case 交付契约](references/badcase-output-contract.md)
+5. [回归状态口径](references/regression-status.md)
 - 读取 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)；问题类型枚举、诊断意图值与 Visibility 范围以本文件为准。
 
 涉及网页报告时先使用 `web-access`。涉及飞书 Wiki、多维表格或文档时使用 `lark-cli` 和对应的 `lark-wiki`、`lark-base`、`lark-doc` Skill，并先确认可读写的组织、profile、应用和机器人身份。
@@ -37,15 +37,14 @@ metadata:
 1. 固定 Task、目标品牌、报告/JSON 版本、Topic、目标 Attribute、问题类型集合、诊断意图标签、审计时间、历史 Bad Case 表和用户指定重点。
 2. 按 `Case 配置 → Topic/Attribute/问题明细 → 回答全文 → 问题类型与诊断意图标签 → 结构化结果 → 聚合页面` 建立证据链。
 3. 双轨执行：逐条回归适用的历史问题，同时脱离历史清单开放式扫描新增问题。
-4. 找到最早出错环节，区分问题生成、采集、正文清洗、实体或竞品归类、出现顺序排名、情绪、引用、统计聚合和报告展示；品牌排名差异必须继续拆到具体实体和具体误判，不能在交付中只写“品牌实体识别”。
+4. 找到最早出错环节，区分问题生成、采集、正文清洗、实体或竞品归类、出现顺序排名、引用、统计聚合和报告展示；品牌排名差异必须继续拆到具体实体和具体误判，不能在交付中只写“品牌实体识别”。
 5. 先做反证，排除合理限定条件、正常证据保留、第三方模型自然输出、版本混用和当前无样本。
 6. 将可以独立修复、独立回归的样本拆成一条记录，按交付契约撰写并制作标注截图。
 7. 按当前证据更新状态；没有对应验证样本时只能标记“待验证”，不能写“已修复”。
-8. 逐项核对方法口径：问题类型只有 `visibility` 与 `sentiment`，两者分别决定可见度与情绪样本，允许同一问题同时拥有两个类型；不得用诊断意图替代问题类型分流。
-9. 将诊断意图与问题类型分开审计：当前兼容六个既有 `diagnostic_intent` 值，未来按可自由赋值的标签集合处理；未知标签保留并核对配置，不因不在旧枚举中直接判错。
-10. 写入飞书后逐条读回标题、字段、附件、状态和来源报告；未读回不得宣称更新完成。
+8. 将诊断意图与品牌提及范围分开核对：未知标签原样保留并核对配置，不因不在旧枚举中直接判错；不根据问题类型或诊断意图重判情绪。
+9. 写入飞书后逐条读回标题、字段、附件、状态和来源报告；未读回不得宣称更新完成。
 
-审计 JSON 时执行两遍品牌处理：先建立全批次候选实体与标准品牌词典，再按统一词典逐条排除引用和非品牌实体、去重并按正文首次出现顺序排名。正文已经列为候选或比较对象的品牌保持计入，不以审计者对需求符合度的二次判断删选。跨回答统一同一品牌的输出名，但官网大小写只作参考；母品牌、子品牌和产品线不因隶属关系自动互换。问题类型集合包含 `sentiment` 时判断目标品牌正中负并进入品牌情绪；集合包含 `visibility` 时进入可见度。两者可同时成立。诊断意图包含 `competitor` 时另行判断 `target_wins / competitor_wins / tie / unclear` 和强度，竞品胜负不能代替情绪判断。
+审计 JSON 时只执行两遍品牌处理：先建立全批次候选实体与标准品牌词典，再按统一词典逐条排除引用和非品牌实体、去重并按正文首次出现顺序排名。正文已经列为候选或比较对象的品牌保持计入，不以审计者对需求符合度的二次判断删选。跨回答统一同一品牌的输出名，但官网大小写只作参考；母品牌、子品牌和产品线不因隶属关系自动互换。`sentiment` 一律保持输入值；不得根据回答、问题类型、诊断意图或竞品胜负重新判定。
 
 ## 不可降低的交付门槛
 
@@ -58,7 +57,7 @@ metadata:
 
 ## 确定性辅助工具
 
-`structured_result_audit.py` 负责引用清洗、结构校验、诊断范围映射和审核补丁安全写回；`prepare_badcase_draft.py` 负责 Bad Case 草稿格式；`annotate_evidence_screenshot.py` 负责确定性证据标注。参数与语义边界见结构化审计和 Bad Case 交付参考。三者都不替代开放式品牌发现、情绪、竞品胜负或 Attribute 关联判断，也不直接写入飞书。
+`structured_result_audit.py` 负责引用清洗、结构校验和 `brand_rankings` 审核补丁安全写回；`prepare_badcase_draft.py` 负责 Bad Case 草稿格式；`annotate_evidence_screenshot.py` 负责确定性证据标注。参数与语义边界见结构化审计和 Bad Case 交付参考。三者都不替代开放式品牌发现、句子级情绪、竞品胜负或 Attribute 关联判断，也不直接写入飞书。
 
 修改触发描述、审计规则或脚本后，重新运行 `evals/trigger_cases.json`、`evals/execution_cases.json`、`scripts/run_structured_result_evals.py` 和 `tests/test_scripts.py`，并把门禁结果更新到 `reports/`。
 

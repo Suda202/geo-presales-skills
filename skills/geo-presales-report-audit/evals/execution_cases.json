@@ -77,7 +77,7 @@
     },
     {
       "name": "候选品牌随后被指出不满足核心需求",
-      "expected": "品牌提及仍忠实保留该候选并按首次出现位置排名；需求符合度进入回答质量、准确性或情绪审计，不用于删除品牌。",
+      "expected": "品牌提及仍忠实保留该候选并按首次出现位置排名；需求符合度进入回答质量或准确性范围，不用于删除品牌。",
       "checks": [
         "确认回答已将品牌列为候选、备选或比较对象",
         "不替回答重新筛选采购候选",
@@ -129,23 +129,32 @@
       ]
     },
     {
+      "name": "回答级情绪审计暂停",
+      "expected": "不根据整条回答重判正中负，不修改 sentiment；记录句子级情绪方案尚未定义，待新口径和验收标准确认后再恢复。",
+      "checks": [
+        "补丁不包含 sentiment",
+        "输出明确 sentiment 未审计且逐值保持原值",
+        "不把问题类型或诊断意图作为回答级情绪判断依据"
+      ]
+    },
+    {
       "name": "结构化结果金标回归",
-      "expected": "确定性引用清洗、统一品牌词典排名和题型情绪映射全部符合 fixture；任一差异都必须以非零退出码阻断交付。",
+      "expected": "确定性引用清洗和统一品牌词典排名全部符合 fixture；任一差异都必须以非零退出码阻断交付。",
       "runner": "python3 scripts/run_structured_result_evals.py",
       "fixtures": "evals/fixtures/structured_result_cases.json",
       "checks": [
-        "17 个品牌、引用和情绪边界样本全部通过",
+        "12 个品牌、引用和排名边界样本全部通过",
         "失败输出包含样本名、expected 和 actual",
         "failed 大于 0 时退出码非零"
       ]
     },
     {
       "name": "JSON 安全补丁回归",
-      "expected": "补丁只能改变 brand_rankings 和 sentiment；输入输出记录集合及所有其他字段逐值一致。",
+      "expected": "补丁只能改变 brand_rankings；输入输出记录集合及包括 sentiment 在内的所有其他字段逐值一致。",
       "runner": "python3 -m unittest discover -s tests -v",
       "checks": [
-        "visibility 与 sentiment 可同时存在并分别进入两个范围",
-        "未知诊断意图标签保留且不因旧六枚举而失败",
+        "sentiment 在应用 brand_rankings 补丁后逐值保持不变",
+        "未知诊断意图标签原样保留",
         "排名不从 1 连续会校验失败",
         "应用补丁后非目标字段保持不变"
       ]

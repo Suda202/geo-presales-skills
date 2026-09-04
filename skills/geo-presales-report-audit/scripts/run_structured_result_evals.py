@@ -12,7 +12,6 @@ from typing import Any
 from structured_result_audit import (
     rank_from_catalog,
     remove_citations,
-    sentiment_from_review,
 )
 
 
@@ -49,20 +48,12 @@ def run_cases(payload: dict[str, Any]) -> list[str]:
         if failure:
             failures.append(failure)
 
-    for case in payload.get("sentiment_cases", []):
-        actual = sentiment_from_review(
-            case["question_types"], case["dominant_polarity"]
-        )
-        failure = check_equal(case["name"], actual, case["expected"])
-        if failure:
-            failures.append(failure)
-
     return failures
 
 
 def count_cases(payload: dict[str, Any]) -> int:
     return sum(len(payload.get(key, [])) for key in (
-        "citation_cases", "ranking_cases", "sentiment_cases"
+        "citation_cases", "ranking_cases"
     ))
 
 

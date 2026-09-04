@@ -18,11 +18,11 @@
       "family": "badcase_delivery"
     },
     {
-      "text": "核对报告里的竞品归类、正文首次出现顺序排名、情绪问题的正中负和引用解析是否与回答原文一致。",
+      "text": "核对报告里的竞品归类、正文首次出现顺序排名和引用解析是否与回答原文一致。",
       "family": "structured_result_audit"
     },
     {
-      "text": "检查这个售前 JSON 的品牌提及、首次出现顺序排名和情绪问题结果，并直接生成纠正版。",
+      "text": "检查这个售前 JSON 的品牌提及与首次出现顺序排名，并直接生成纠正版。",
       "family": "structured_json_correction"
     },
     {
@@ -30,15 +30,19 @@
       "family": "aggregation_audit"
     },
     {
-      "text": "审计报告是否把 visibility 和 sentiment 强制二选一；同一道问题同时属于两类时要分别进入两个指标。",
-      "family": "overlapping_question_types"
-    },
-    {
       "text": "检查诊断意图是否仍写死六个枚举，并验证未来自由多标签不会被拒绝或误算。",
       "family": "diagnostic_intent_tags"
     }
   ],
   "should_not_trigger": [
+    {
+      "text": "按回答级别审计这个报告的情绪分类，并把 sentiment 改成正中负。",
+      "family": "answer_level_sentiment_paused"
+    },
+    {
+      "text": "只看回答级别，帮我判定这个品牌的情绪是正向、中性还是负向。",
+      "family": "answer_level_sentiment_paused"
+    },
     {
       "text": "为这个品牌生产一份新的海外 GEO 售前报告。",
       "family": "report_generation"

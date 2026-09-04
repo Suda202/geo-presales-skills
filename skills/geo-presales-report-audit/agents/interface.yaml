@@ -1,7 +1,7 @@
 interface:
   display_name: "GEO 售前报告质量审计"
-  short_description: "审计可见度/情绪重叠样本、诊断标签、品牌关联、比较、准确性与引用"
-  default_prompt: "使用 $geo-presales-report-audit 审核并修正这份 GEO 售前 JSON 的品牌提及、正文首次出现排序与情绪分类：确认问题类型只有 visibility 与 sentiment、允许同一问题同时拥有两类并分别进入两个指标；将诊断意图作为独立标签审计，兼容当前六个值和未来自由多标签；同时复核属性关联、竞品结果、准确性、正文首次出现位置、情绪与引用，并在差异文档中按具体错误原因汇总全部对应记录编号。品牌排名差异须写出具体名称和处理动作，不得只写品牌实体识别、品牌名称规范化或排名提取。底层结果确认后，将分析结论与上传 CSV 交给 $geo-presales-report-editor。"
+  short_description: "审计品牌提及、正文首次出现排序、诊断标签与引用；暂不处理情绪"
+  default_prompt: "使用 $geo-presales-report-audit 审核并修正这份 GEO 售前 JSON 的品牌提及与正文首次出现排序：将诊断意图作为独立标签核对，兼容当前既有值与未来自由多标签；同时复核品牌实体、引用和正文位置，并在差异文档中按具体错误原因汇总全部对应记录编号。品牌排名差异须写出具体名称和处理动作，不得只写品牌实体识别、品牌名称规范化或排名提取。不得审计或修改 sentiment；底层结果确认后，将分析结论与上传 CSV 交给 $geo-presales-report-editor。"
 compatibility:
   canonical_format: "agent-skills"
   adapter_targets:
