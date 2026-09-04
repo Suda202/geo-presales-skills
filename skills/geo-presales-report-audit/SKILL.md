@@ -1,9 +1,9 @@
 ---
 name: geo-presales-report-audit
-description: Use when editing or correcting the analytical conclusions of a GEO presales diagnostic report, including visibility metrics, sentiment calibration, evidence integrity, and cross-module consistency. Does not generate customer reports, perform competitor research, or build Prompt banks.
+description: Use when auditing or correcting brand mention recognition, first-appearance rankings, or sentiment classification in GEO presales JSON results. Delivers safe structured corrections and Bad Case evidence; does not edit customer-facing analytical conclusions.
 metadata:
   author: 海外 GEO 项目
-  version: "2.2.0"
+  version: "2.2.3"
 ---
 
 # GEO 售前报告质量审计
@@ -12,7 +12,8 @@ metadata:
 
 用一手证据回答三件事：历史问题是否修复、当前报告是否新增客户可见问题、每条问题能否直接交给研发修复并用同一样本回归。
 
-- 使用 `geo-presales-report-editor` 基于已有统计与初始结论修改、定稿报告；使用本 Skill 审计报告或 JSON 底层结果是否正确。
+- 使用本 Skill 审核并修正 `brand_rankings`、`sentiment` 等底层结构化结果；完成后再使用 `geo-presales-report-editor` 基于已确认的结果修改分析结论并生成上传 CSV。
+- 不在本 Skill 修改客户报告的分析结论、客户文案或结论 CSV；底层数据确认后将这些工作交给 `geo-presales-report-editor`。
 - 仅在用户授权维护 Bad Case 时写入飞书；只要求检查、解释或复核时保持只读。
 - 不为凑数量找问题，不把第三方模型的正常推理自动归因成系统错误，不把某个 Task、品牌或品类结论固化为规则。
 - 不审计普通错别字、缺字、标点、排版和不影响数据或结论的基础页面文案。
@@ -36,7 +37,7 @@ metadata:
 1. 固定 Task、目标品牌、报告/JSON 版本、Topic、目标 Attribute、问题类型集合、诊断意图标签、审计时间、历史 Bad Case 表和用户指定重点。
 2. 按 `Case 配置 → Topic/Attribute/问题明细 → 回答全文 → 问题类型与诊断意图标签 → 结构化结果 → 聚合页面` 建立证据链。
 3. 双轨执行：逐条回归适用的历史问题，同时脱离历史清单开放式扫描新增问题。
-4. 找到最早出错环节，区分问题生成、采集、正文清洗、实体或竞品归类、出现顺序排名、情绪、引用、统计聚合和报告展示。
+4. 找到最早出错环节，区分问题生成、采集、正文清洗、实体或竞品归类、出现顺序排名、情绪、引用、统计聚合和报告展示；品牌排名差异必须继续拆到具体实体和具体误判，不能在交付中只写“品牌实体识别”。
 5. 先做反证，排除合理限定条件、正常证据保留、第三方模型自然输出、版本混用和当前无样本。
 6. 将可以独立修复、独立回归的样本拆成一条记录，按交付契约撰写并制作标注截图。
 7. 按当前证据更新状态；没有对应验证样本时只能标记“待验证”，不能写“已修复”。
@@ -63,4 +64,10 @@ metadata:
 
 ## 最终交付
 
-先给结论，再报告输入、输出、实际修改记录数、逐条字段前后值、未修改字段、验证与备份位置。每次修改都必须按字段完整列出所有被修改记录的身份；多平台数据使用 `platform + wordid`，不得只报总数、去重后的 wordid 或少量示例。报告审计另列已修复、修复失败或待修复、待验证和新增 Case；每条都带 Task、记录号、错误类型、具体例子和证据位置。最后说明哪些文件或飞书记录已实际写入并验证；差异为零时明确写“没有修改数据内容”。
+先给结论，再报告输入、输出、实际修改记录数、逐条字段前后值、未修改字段、验证与备份位置。每次修改都必须按字段完整列出所有被修改记录的身份；多平台数据使用 `platform + wordid`，不得只报总数、去重后的 wordid 或少量示例。
+
+审计差异文档必须在逐条明细前提供“错误类型—记录编号索引”，每种错误类型单独一行，完整列出对应记录身份：报告 Case 使用 `Task <编号> #<记录编号>`，多平台 JSON 使用 `platform + wordid`。至少覆盖修复失败、待修复和新增 Case；已修复与待验证如需汇总，必须另标状态，不得混入同事的待修改清单。报告级问题没有单条记录号时，写 `Task <编号>（报告级：<模块或具体数字>）`，不得编造编号。索引必须与后文逐条明细一一对应，不得只给数量或少量示例。
+
+输出 `brand_rankings` 差异时，不得把“品牌实体识别”“品牌名称规范化”或“排名提取”单独写成错误类型。按实际原因分行，例如“研究系统/论文原型误计为品牌”“模型/产品系列名误计为品牌”“引用锚文本公司名误计为品牌”“去引用正文候选品牌漏提”“品牌别名/误拼未统一”“去引用正文首次出现顺序排名错误”。逐条明细必须列出具体名称与动作：误计项写“名称（排除）”，漏提项写“名称（补入）”，归一项写“原名 → 标准名”，排序项写校正后的首次出现顺序。不存在的原因不得凑写；只有排序变更时只写排序原因。
+
+报告审计另列已修复、修复失败或待修复、待验证和新增 Case；每条都带 Task、记录号、错误类型、具体例子和证据位置。最后说明哪些文件或飞书记录已实际写入并验证；差异为零时明确写“没有修改数据内容”，并在索引处写“无审计差异”。

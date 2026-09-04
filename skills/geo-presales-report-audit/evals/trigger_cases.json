@@ -10,7 +10,7 @@
       "family": "historical_regression"
     },
     {
-      "text": "检查这份海外 GEO 报告还有没有新增问题，所有 Case 都要写 Task、记录号和错误类型。",
+      "text": "检查这份海外 GEO 报告还有没有新增问题，所有 Case 都要写 Task、记录号和错误类型，并在差异文档里按错误类型汇总对应记录编号。",
       "family": "new_badcase_discovery"
     },
     {

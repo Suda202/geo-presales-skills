@@ -7,9 +7,9 @@
   -> Case Builder
   -> Prompt Builder
   -> 外部采集和后端统计（不在本仓库）
+  -> Report Audit
   -> Report Editor
   -> 客户报告和 CSV
-       -> Report Audit
 ```
 
 ## 选哪个 Skill
@@ -18,10 +18,10 @@
 | --- | --- | --- | --- |
 | `geo-presales-eval-case-builder` | 有品牌资料，需要构建售前诊断报告的标准输入字段，或把 Case 积累到飞书 Base | 规范化 Case、1–3 个监测主题、已核验竞品，写入飞书 Base | 不出题、不采集回答、不写报告 |
 | `geo-presales-prompt-builder` | 已有 Case，需要生成英文 AI 搜索监测题库 | `overseas-geo-question-bank/v8` 题库、属性规划、质量报告 | 不创建主题、不选竞品、不计算指标 |
-| `geo-presales-report-editor` | 需要修改报告里的品牌提及识别或情绪分类结果，或提交 Bad Case | 修正后的可上传 CSV、Bad Case 记录 | 不重算生产指标，不修改 HTML 或页面 |
-| `geo-presales-report-audit` | 需要修改报告的分析结论，或核对指标和证据是否正确 | 审计结论、可复现的问题说明、必要的 Bad Case 草稿 | 不生成客户报告，不做竞品研究或出题 |
+| `geo-presales-report-editor` | 底层品牌提及、排序与情绪结果已确认，需要修改报告分析结论并生成上传 CSV | 更新后的客户分析结论、可上传 CSV | 不重算底层结果，不修改 HTML 或页面 |
+| `geo-presales-report-audit` | 需要审核或修正品牌提及识别、正文首次出现排序或情绪分类结果 | 修正后的结构化结果、安全补丁、可复现的问题说明与必要的 Bad Case 草稿 | 不修改客户报告分析结论，不做竞品研究或出题 |
 
-`geo-presales-report-editor` 负责修改品牌提及识别和情绪分类结果并生成上传 CSV；`geo-presales-report-audit` 负责修改分析结论。两者处理报告的不同层次，可以连续使用。
+先用 `geo-presales-report-audit` 修正品牌提及识别、首次出现排序与情绪分类等底层结果；再用 `geo-presales-report-editor` 基于已确认的结果修改分析结论并生成上传 CSV。两者处理报告的不同层次，可以连续使用。
 
 ## Prompt Builder 的关键约束
 

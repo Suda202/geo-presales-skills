@@ -30,7 +30,7 @@
       ]
     },
     "badcase_regression": {
-      "weight": 0.35,
+      "weight": 0.37,
       "phrases": [
         "回归历史 bad case",
         "历史问题是否修复",
