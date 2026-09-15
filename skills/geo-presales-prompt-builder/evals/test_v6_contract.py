@@ -380,6 +380,67 @@ class V6ContractTests(unittest.TestCase):
             "for AI crawler analytics and content optimization workflows?",
         )
 
+    def test_v8_thai_locale_uses_thai_templates_and_keeps_english_config(self) -> None:
+        # Topic 与品类相同 -> 省略范围从句（泰语固定句式）
+        self.assertEqual(
+            MODULE.build_v6_sentiment_prompt(
+                "แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน", "product", "YOUKU",
+                "แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน", "th",
+            ),
+            "ประเมิน แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน ผลิตภัณฑ์ YOUKU",
+        )
+        self.assertEqual(
+            MODULE.build_v6_sentiment_prompt(
+                "แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน", "product", "YOUKU",
+                "การเรียนภาษาจีนจากซีรีส์จีนที่มีคำบรรยาย", "th",
+            ),
+            "ประเมิน แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน ผลิตภัณฑ์ YOUKU "
+            "ด้านการเรียนภาษาจีนจากซีรีส์จีนที่มีคำบรรยาย",
+        )
+        self.assertEqual(
+            MODULE.build_v6_market_perception_prompt(
+                "Chinese-language video streaming platform",
+                "Chinese-language video streaming platforms", "th",
+            ),
+            "Chinese-language video streaming platform คืออะไร และควรประเมินอย่างไร?",
+        )
+        # 未知 locale 回落到英文模板
+        self.assertEqual(
+            MODULE.build_v6_sentiment_prompt("cat", "product", "Brand", "scope", "fr"),
+            "Evaluate the cat product Brand on scope",
+        )
+
+    def test_v8_new_locale_needs_only_a_registry_entry(self) -> None:
+        """新增语言只加注册表条目，不改 validator 代码。"""
+        MODULE.V8_LOCALE_TEMPLATES["xx"] = {
+            "name": "Test",
+            "object_labels": {"company": "C", "product": "P"},
+            "evaluation": "E {category} {object} {brand}",
+            "evaluation_scoped": "E {category} {object} {brand} S {scope}",
+            "category_awareness": "A {category}",
+            "category_awareness_scoped": "A {category} S {scope}",
+            "candidate_nouns": ["foo"], "interrogatives": ["bar"],
+        }
+        try:
+            self.assertEqual(
+                MODULE.build_v6_sentiment_prompt("cat", "product", "B", "other scope", "xx"),
+                "E cat P B S other scope",
+            )
+            # Topic 复述品类 -> 省略范围从句
+            self.assertEqual(
+                MODULE.build_v6_sentiment_prompt("cat", "product", "B", "cat", "xx"), "E cat P B"
+            )
+            self.assertEqual(MODULE.build_v6_market_perception_prompt("cat", "cat", "xx"), "A cat")
+            self.assertTrue(MODULE._v6_requests_concrete_candidates("bar foo?", "xx"))
+            self.assertFalse(MODULE._v6_requests_concrete_candidates("bar baz?", "xx"))
+            # 未注册语言回落英文
+            self.assertEqual(
+                MODULE.build_v6_sentiment_prompt("cat", "product", "B", "scope", "zz"),
+                "Evaluate the cat product B on scope",
+            )
+        finally:
+            MODULE.V8_LOCALE_TEMPLATES.pop("xx", None)
+
     def test_v6_evaluation_rejects_topic_in_english_prompt_but_allows_chinese_translation(self) -> None:
         data = valid_v6_bank()
         evaluation = next(

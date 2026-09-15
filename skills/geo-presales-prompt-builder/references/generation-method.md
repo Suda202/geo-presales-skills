@@ -83,7 +83,7 @@ Discovery 的规划顺序：
 
 `Evaluate the {category_label} {company|product} {brand_name} on {evaluation_scope}`
 
-`company|product` 由 `brand_object_type` 决定。`evaluation_scope` 由当前 Topic 转写而来，只表达具体业务范围或场景，不把 Topic 当成英文 Prompt 词汇。目标品牌和当前 Topic 的每个适用竞品各生成一题；每题只替换品类、对象类型、当前被评价品牌与评价范围，只出现一个品牌，不加标点、追问或额外评价维度。英文 `user_question / monitoring_prompt / query` 不得出现独立单词 `topic`；中文翻译和元数据不受此规则限制。
+`company|product` 由 `brand_object_type` 决定。当 `category_label` 与 Topic 归一后相同（Coverage Topic 复述核心品类）时，省略范围从句，只保留评价对象。Evaluation 与 Category Awareness 的实际句式来自 [语言注册表](locale-templates.json) 中 `locale` 对应的条目。`evaluation_scope` 由当前 Topic 转写而来，只表达具体业务范围或场景，不把 Topic 当成英文 Prompt 词汇。目标品牌和当前 Topic 的每个适用竞品各生成一题；每题只替换品类、对象类型、当前被评价品牌与评价范围，只出现一个品牌，不加标点、追问或额外评价维度。英文 `user_question / monitoring_prompt / query` 不得出现独立单词 `topic`；中文翻译和元数据不受此规则限制。
 
 ### Category Awareness × 1
 
@@ -95,7 +95,7 @@ Discovery 的规划顺序：
 
 `What is a {category_label}, and how should I evaluate one?`
 
-先确认购买品类，再询问评价标准；它描述市场认知，不衡量目标品牌主动提及。
+先确认购买品类，再询问评价标准；它描述市场认知，不衡量目标品牌主动提及。句式同样取自语言注册表中 `locale` 对应的条目。
 
 ## 5. 逐题写作规则
 

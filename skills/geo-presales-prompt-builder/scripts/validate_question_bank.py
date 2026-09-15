@@ -7,6 +7,7 @@ import json
 import copy
 import re
 import sys
+import unicodedata
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -103,8 +104,47 @@ V6_CONFIG_FIELDS = {
     "expected_total",
     "quotas",
     "competitor_selection",
+    "locale",
 }
 V7_CONFIG_FIELDS = V6_CONFIG_FIELDS | {"attribute_plan"}
+LOCALE_REGISTRY_PATH = Path(__file__).resolve().parents[1] / "references" / "locale-templates.json"
+
+
+def _load_locale_registry() -> dict:
+    """Load the locale registry; fall back to an English-only stub if unreadable."""
+    fallback = {
+        "en": {
+            "object_labels": {"company": "company", "product": "product"},
+            "evaluation": "Evaluate the {category} {object} {brand}",
+            "evaluation_scoped": "Evaluate the {category} {object} {brand} on {scope}",
+            "category_awareness": "What is a {category}, and how should I evaluate one?",
+            "category_awareness_scoped":
+                "What is a {category}, and how should I evaluate one for {scope}?",
+            "candidate_nouns": [], "interrogatives": [],
+        }
+    }
+    try:
+        raw = json.loads(LOCALE_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return fallback
+    return {
+        key: value for key, value in raw.items()
+        if not key.startswith("_") and isinstance(value, dict)
+    } or fallback
+
+
+V8_LOCALE_TEMPLATES = _load_locale_registry()
+# 英文始终可用：旧题库没有 locale 字段，行为必须保持不变
+V8_LOCALE_TEMPLATES.setdefault("en", {
+    "object_labels": {"company": "company", "product": "product"},
+    "evaluation": "Evaluate the {category} {object} {brand}",
+    "evaluation_scoped": "Evaluate the {category} {object} {brand} on {scope}",
+    "category_awareness": "What is a {category}, and how should I evaluate one?",
+    "category_awareness_scoped":
+        "What is a {category}, and how should I evaluate one for {scope}?",
+    "candidate_nouns": [], "interrogatives": [],
+})
+V8_LOCALES = set(V8_LOCALE_TEMPLATES)
 V7_ATTRIBUTE_PRIORITIES = ("P1", "P2", "P3")
 V7_ATTRIBUTE_ENTRY_FIELDS = {
     "attribute",
@@ -326,8 +366,17 @@ ABSTRACT_EVALUATION_LABELS = {
 }
 
 
+def _kept_char(ch: str) -> bool:
+    """Letters and digits in any script, plus combining marks. Punctuation,
+    underscores and symbols stay separators, as in the original ASCII-only rule."""
+    return ch.isalnum() or unicodedata.category(ch).startswith("M")
+
+
 def normalize(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+    lowered = str(value).lower()
+    return " ".join(
+        "".join(ch if _kept_char(ch) else " " for ch in lowered).split()
+    )
 
 
 def normalize_human_label(value: object) -> str:
@@ -373,36 +422,56 @@ def build_v4_sentiment_prompt(category_label: str, brand_object_type: str, brand
     return f"Evaluate the {category_label} {object_label} {brand} on {topic}"
 
 
+def _locale_spec(locale: str) -> dict:
+    return V8_LOCALE_TEMPLATES.get(locale) or V8_LOCALE_TEMPLATES["en"]
+
+
 def build_v6_sentiment_prompt(
     category_label: str,
     brand_object_type: str,
     brand: str,
     evaluation_scope: str,
+    locale: str = "en",
 ) -> str:
-    """Build the v6 sentiment Prompt with a customer-facing business scope."""
-    object_label = "company" if brand_object_type == "company" else "product"
-    return f"Evaluate the {category_label} {object_label} {brand} on {evaluation_scope}"
+    """Build the sentiment Prompt from the locale registry.
+
+    As with Category Awareness, a Coverage Topic that restates the core category
+    would only repeat it in the scope clause, so the clause is dropped there.
+    """
+    spec = _locale_spec(locale)
+    label = spec["object_labels"].get(brand_object_type, spec["object_labels"]["product"])
+    template = spec["evaluation"] if (
+        bool(category_topic_key(category_label))
+        and category_topic_key(category_label) == category_topic_key(evaluation_scope)
+    ) else spec["evaluation_scoped"]
+    return template.format(category=category_label, object=label, brand=brand, scope=evaluation_scope)
 
 
 def category_topic_key(value: object) -> str:
-    """Reduce a category or Topic phrase to a comparable key, ignoring case and plurals."""
-    words = re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).split()
+    """Reduce a category or Topic phrase to a comparable key, ignoring case and plurals.
+
+    Works for any script: the plural rule only fires on Latin words ending in "s".
+    """
     return " ".join(
         word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
-        for word in words
+        for word in normalize(value).split()
     )
 
 
-def build_v6_market_perception_prompt(category_label: str, topic: str) -> str:
-    """Build the category-first market-perception Prompt template.
+def build_v6_market_perception_prompt(
+    category_label: str, topic: str, locale: str = "en"
+) -> str:
+    """Build the category-first market-perception Prompt template from the registry.
 
     Coverage Topics restate the product line's own core category, so the scope clause
     would only repeat it; those Topics use the shorter two-part form instead.
     """
+    spec = _locale_spec(locale)
     key = category_topic_key(category_label)
-    if key and key == category_topic_key(topic):
-        return f"What is a {category_label}, and how should I evaluate one?"
-    return f"What is a {category_label}, and how should I evaluate one for {topic}?"
+    template = spec["category_awareness"] if (
+        bool(key) and key == category_topic_key(topic)
+    ) else spec["category_awareness_scoped"]
+    return template.format(category=category_label, scope=topic)
 
 
 def build_v6_validation_prompt(brand: str, validation_items: list[dict]) -> str:
@@ -651,9 +720,18 @@ def _replace_v6_entity(text: str, name: str, replacement: str) -> str:
     return text
 
 
-def _v6_requests_concrete_candidates(text: str) -> bool:
+def _v6_requests_concrete_candidates(text: str, locale: str = "en") -> bool:
     """Accept high-confidence commercial questions that naturally yield named candidates."""
     lowered = str(text).strip().casefold()
+    if locale != "en":
+        # Non-Latin scripts have no ASCII word boundaries, so match a registered
+        # candidate noun next to a registered interrogative instead.
+        spec = _locale_spec(locale)
+        nouns = [n for n in spec.get("candidate_nouns") or [] if n]
+        marks = [m for m in spec.get("interrogatives") or [] if m]
+        if nouns and marks and any(n in lowered for n in nouns) and any(m in lowered for m in marks):
+            return True
+        return False
     if re.match(r"^what\s+(?:is|does)\b", lowered):
         return False
     candidate_pattern = re.compile(
@@ -1284,6 +1362,10 @@ def validate_v6(
         errors.append("CONFIG official_domain must equal Case field 官方域名")
     if object_type not in {"company", "product"}:
         errors.append("CONFIG brand_object_type must equal company or product")
+    locale = str(config.get("locale") or "en").strip().casefold()
+    if locale not in V8_LOCALE_TEMPLATES:
+        errors.append(f"CONFIG locale must be a registered locale {sorted(V8_LOCALE_TEMPLATES)}")
+        locale = "en"
 
     topics: dict[str, dict] = {}
     raw_topics = config.get("topics")
@@ -1545,7 +1627,7 @@ def validate_v6(
         if intent in {"discovery", "category_awareness"}:
             if has_target or mentioned:
                 errors.append(f"{prefix} {question_id}: {intent} must not name configured brands")
-            if intent == "discovery" and not _v6_requests_concrete_candidates(text):
+            if intent == "discovery" and not _v6_requests_concrete_candidates(text, locale):
                 errors.append(f"{prefix} {question_id}: discovery must request concrete candidates")
         elif intent == "competitor":
             if not has_target or len(mentioned) != 1:
@@ -1660,12 +1742,12 @@ def validate_v6(
                 if len(named_brands) == 1:
                     evaluation_brand = named_brands[0]
             expected = build_v6_sentiment_prompt(
-                category, object_type, evaluation_brand, topic_text
+                category, object_type, evaluation_brand, topic_text, locale
             )
             if text != expected:
                 errors.append(f"{prefix} {question_id}: must equal the fixed sentiment template")
         if intent == "category_awareness" and topic_id in topics:
-            expected = build_v6_market_perception_prompt(category, topic_text)
+            expected = build_v6_market_perception_prompt(category, topic_text, locale)
             if text != expected:
                 errors.append(
                     f"{prefix} {question_id}: must equal the category-first market perception template"

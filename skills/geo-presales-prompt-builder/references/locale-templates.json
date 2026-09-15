@@ -1,0 +1,30 @@
+{
+  "_comment": "Locale registry for overseas-geo-question-bank/v8. Adding a language means adding an entry here — no validator code change. Each entry supplies the four fixed templates (with and without the scope clause), the company/product object labels, and the nouns used to detect Discovery candidate requests.",
+  "en": {
+    "name": "English",
+    "object_labels": { "company": "company", "product": "product" },
+    "evaluation": "Evaluate the {category} {object} {brand}",
+    "evaluation_scoped": "Evaluate the {category} {object} {brand} on {scope}",
+    "category_awareness": "What is a {category}, and how should I evaluate one?",
+    "category_awareness_scoped": "What is a {category}, and how should I evaluate one for {scope}?",
+    "candidate_nouns": [
+      "brand", "brands", "company", "companies", "manufacturer", "manufacturers",
+      "provider", "providers", "product", "products", "solution", "solutions",
+      "supplier", "suppliers", "tool", "tools", "vendor", "vendors",
+      "option", "options", "platform", "platforms", "service", "services"
+    ],
+    "interrogatives": ["which", "what", "who"]
+  },
+  "th": {
+    "name": "Thai",
+    "object_labels": { "company": "บริษัท", "product": "ผลิตภัณฑ์" },
+    "evaluation": "ประเมิน {category} {object} {brand}",
+    "evaluation_scoped": "ประเมิน {category} {object} {brand} ด้าน{scope}",
+    "category_awareness": "{category} คืออะไร และควรประเมินอย่างไร?",
+    "category_awareness_scoped": "{category} คืออะไร และควรประเมินอย่างไรสำหรับ {scope}?",
+    "candidate_nouns": [
+      "แพลตฟอร์ม", "ผู้ให้บริการ", "แบรนด์", "แอป", "บริการ", "ตัวเลือก", "เว็บไซต์", "สินค้า"
+    ],
+    "interrogatives": ["ใด", "อะไร", "แบบไหน"]
+  }
+}

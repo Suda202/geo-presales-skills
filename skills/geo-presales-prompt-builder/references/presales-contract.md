@@ -34,7 +34,11 @@ Accuracy 默认配额为 0，不需要上游事实包，也不产生 `fact_value
 - v8 不包含 `diagnosis_intent`、逐题 `attributes`、`topic_type`、`question_type`、`funnel_intent`、`decision_stage`、`metric_scopes`、`attribute_pool`、`attribute_id`、`attribute_ids` 或 `priority_attribute_ids`。
 - v8 必须包含 Builder 派生的 `attribute_plan`；每 Topic 恰好一项，同一 Attribute 和源字段允许被多个 Topic 使用，不做唯一归属。
 
-v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_object_type / category_label / official_domain / derived_field_sources / topics / attribute_plan / expected_total / quotas / competitor_selection`。拒绝 `target_audiences / pain_points / use_cases` 等平行输入字段及其他未声明配置，避免绕过评测集 Case 字段。
+v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_object_type / category_label / official_domain / derived_field_sources / topics / attribute_plan / expected_total / quotas / competitor_selection / locale`。拒绝 `target_audiences / pain_points / use_cases` 等平行输入字段及其他未声明配置，避免绕过评测集 Case 字段。
+
+`locale` 可选，默认 `en`，取值必须是 [语言注册表](locale-templates.json) 中已登记的键。它只决定**题面语言**：`user_question / monitoring_prompt` 使用该语言的文字，Evaluation 与 Category Awareness 由注册表里该语言的固定模板生成；因为 `category_label` 与 Topic 文本会嵌入这两类题面，非 `en` 题库应把这两个显示名改写成该语言。Case 字段、Tags 与翻译保持原有写法。非 `en` 题库应在每题保留 `en_translation`，便于与英文基线对照。
+
+新增一门语言只需在 `locale-templates.json` 增加一个条目（四个模板、company/product 标签、候选名词与疑问词），不改 validator 代码；未登记的语言会被 validator 拒绝，构建期回落英文模板。
 
 ## `attribute_plan` 合同
 

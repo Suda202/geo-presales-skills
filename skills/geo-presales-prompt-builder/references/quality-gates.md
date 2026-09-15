@@ -23,7 +23,7 @@
 - Competitor 题只比较目标品牌与当前 Topic 的一个适用竞品；每个适用竞品恰好一题。当前 Topic 有两题以上时，除竞品名称外英文题面完全相同。
 - Verification 配额为 0，默认题库不生成 Verification 题；P1 的属性级正确性核查并入 Accuracy 合同。
 - 默认产物不生成 Accuracy 题；如用户明确要求，先使用另行确认的事实核验合同，不临时复用默认 Builder 合同。
-- Evaluation 每题只评价一个品牌；每个 Topic 分别对目标品牌和当前 Topic 的每个适用竞品各生成一题，不得混入其他品牌或不适用竞品。它只替换固定模板的品牌与 Topic 具体范围；英文 `user_question / monitoring_prompt / query` 不出现独立单词 `topic`，中文翻译和元数据不受此限制。Category Awareness 使用品类优先固定模板且不出现品牌；当 `category_label` 与 `topic` 归一后相同（忽略大小写、标点与复数）时，使用省略范围从句的短式。
+- Evaluation 每题只评价一个品牌；每个 Topic 分别对目标品牌和当前 Topic 的每个适用竞品各生成一题，不得混入其他品牌或不适用竞品。它只替换固定模板的品牌与 Topic 具体范围；英文 `user_question / monitoring_prompt / query` 不出现独立单词 `topic`，中文翻译和元数据不受此限制。Category Awareness 使用品类优先固定模板且不出现品牌。Evaluation 与 Category Awareness 在 `category_label` 与 Topic 归一后相同（忽略大小写、标点与复数）时，都使用省略范围从句的短式。
 - `analysis_type` 与 `formal_visibility_eligible` 精确匹配 v8 分流表：Discovery 为 `visibility,sentiment`/`true`，Competitor 与 Evaluation 为 `sentiment`/`false`，Verification 与 Accuracy 只在独立合同下使用（售前配额 0，不产生题），Category Awareness 无 `analysis_type` 且 `formal_visibility_eligible=true`。自由 Tags 不改变路由。
 - `monitoring_prompt` 等于 `user_question`；`intent_key` 唯一；不存在 `diagnosis_intent / attributes / topic_type / question_type / funnel_intent / decision_stage / metric_scopes / attribute_pool / attribute_id / attribute_ids / priority_attribute_ids / paired_discovery_ids`。
 

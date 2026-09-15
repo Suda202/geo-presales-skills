@@ -19,7 +19,7 @@ metadata:
 1. 读取 [售前与售后共用的监测问题生成原则](../shared/prompt-generation-principles.md)。
 2. 读取 [属性规划](references/attribute-planning.md)。
 3. 读取 [生成方法](references/generation-method.md)。
-4. 读取 [v8 产物契约](references/presales-contract.md)。
+4. 读取 [v8 产物契约](references/presales-contract.md)；生成非英文语言题库时读取 [语言注册表](references/locale-templates.json)。
 5. 质检时读取 [质量门](references/quality-gates.md)。
 6. 需要正反例时读取 [Edgelight 示例](references/examples.md)。
 7. 读取 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)；意图 Tag、问题类型与字段名以本文件为准。
@@ -52,7 +52,7 @@ Accuracy 默认配额为 0，不读取或要求上游事实包。不得从旧评
 4. 按生成方法编写自然英文根问题及等义中文。Discovery 和 Category Awareness 不出现任何具体品牌；Competitor、Evaluation 遵守各自品牌边界。按题面实际品牌提及写入唯一品牌范围 Tag：出现目标品牌或正式竞品为 `Brand Scope: Branded`，否则为 `Brand Scope: Non-Branded`。逐题守住四条写作规则：意图与格式匹配（Discovery 含候选触发名词，Competitor 具备场景、双具名品牌和明确推荐要求，Evaluation 明确评价任务）、不引导答案、缩写和跨品类歧义在题面内消解、买家语境只来自 Case 字段。Case 字段提供多个既有品类称呼时，基线候选题可按称呼各留一题，称呼变体不得自造。
 5. Discovery 必须覆盖当前 Topic 全部 P1，其余单属性题优先覆盖 P2；只有 P1/P2 已充分覆盖时才使用 P3。每题把实际测试的属性写为一个或多个 `Attribute: {attribute}` Tag；无独立属性条件的品类基线题允许不写 Attribute Tag。Competitor 优先使用双方都能合理比较的 P1 和高优先 P2，只覆盖当前 Topic 的适用竞品，每个适用竞品恰好一题。当前 Topic 有两条以上 Competitor 题时，除竞品名称外，英文问题的字符、条件、任务、比较维度和 Attribute Tags 完全同构。
 6. 不生成 Verification 与 Accuracy 问题。保留 Verification 作为意图定义（批量验证 AI 是否正确认知目标品牌与多个关键 Attribute 的关联，适用阶段为售后），P1 的属性级正确性核查并入 Accuracy 合同；只有用户明确要求售后验证或事实核验时，才在独立合同下单独确认产物，不得从 Case 或模型记忆临时补真值，也不在默认售前题库中生成 `validation_items` 或 `fact_value / official_source_url / fact_checked_at`。
-7. 使用固定 Evaluation 与品类优先 Category Awareness 模板，不自由改写任务结构。Category Awareness 在 `category_label` 与 `topic` 归一后相同（忽略大小写、标点与复数）时使用省略范围从句的短式。每个 Topic 为目标品牌和当前 Topic 的每个适用竞品各生成一条 Evaluation；每题只出现一个品牌，不得混入其他竞品或不适用竞品。Evaluation 只把 Topic 当作语义约束，将其转写为客户可理解的具体业务范围或场景。英文 Prompt 正文（JSON `user_question / monitoring_prompt`、CSV `query`）不得出现独立单词 `topic`；不限制中文翻译、CSV `topic` 列或其他元数据。
+7. 使用固定 Evaluation 与品类优先 Category Awareness 模板，不自由改写任务结构；两者在 `category_label` 与 Topic 归一后相同时都省略范围从句；`config.locale` 非 `en` 时改用 [语言注册表](references/locale-templates.json) 中该语言的固定句式，只翻译题面（含嵌入题面的 category_label 与 Topic 显示名），不翻译其他字段。Category Awareness 在 `category_label` 与 `topic` 归一后相同（忽略大小写、标点与复数）时使用省略范围从句的短式。每个 Topic 为目标品牌和当前 Topic 的每个适用竞品各生成一条 Evaluation；每题只出现一个品牌，不得混入其他竞品或不适用竞品。Evaluation 只把 Topic 当作语义约束，将其转写为客户可理解的具体业务范围或场景。英文 Prompt 正文（JSON `user_question / monitoring_prompt`、CSV `query`）不得出现独立单词 `topic`；不限制中文翻译、CSV `topic` 列或其他元数据。
 8. 为每题写入一个默认诊断 Tag：`Intent: Discovery / Competitor / Verification / Accuracy / Evaluation / Category Awareness`。这些角色的数量必须满足第 3 步固定配额；Tags 字段仍允许增加其他自由 Tags。完成独立二遍语义 review，先确认 Topic 路由、属性分级与 Tags，再检查题面和翻译。保存 v8 JSON 后运行 validator 与回归测试。
 
 ## 分析与指标边界
