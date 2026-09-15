@@ -10,6 +10,12 @@
 | `Intent: Evaluation` | `Evaluate the LED display manufacturer and commercial display solution provider company Edgelight on LED display manufacturers and commercial display solution providers` | `Brand Scope: Branded`；固定模板，不出现独立单词 `topic`。 |
 | `Intent: Category Awareness` | `What is a LED display manufacturer and commercial display solution provider, and how should I evaluate one for LED display manufacturers and commercial display solution providers?` | `Brand Scope: Non-Branded`；固定品类优先模板，不出现任何品牌。 |
 
+Category Awareness 的退化情形：当 `category_label` 与 Topic 归一后相同（忽略大小写、标点与复数），范围从句只是在复述品类，改用短式。例如 Coverage Topic 就是核心品类时：
+
+`What is a Chinese-language video streaming platform, and how should I evaluate one?`
+
+Edgelight 的 Topic 比品类多出 `manufacturers and` 等限定，不构成复读，仍用完整模板。
+
 第三条 Competitor 只把上述模板中的 `SANSI LED` 替换为 `LianTronics`。不要为了“更贴合竞品”改变任务、条件、比较维度、词序或标点。
 
 Topic 局部竞品例子：Botslab 的“智能行车记录仪”只与 70mai 比较；“家庭安防摄像头”只与 Reolink 和 aosu 比较。前者生成 1 条 Competitor，后者生成 2 条 Competitor；各自 Discovery 数量按当前 Topic 的适用竞品数 `n` 分别取 `23-2×1=21` 和 `23-2×2=19`，Verification 均为 0。不得让 70mai 出现在家庭安防比较题，也不得让 Reolink 或 aosu 出现在行车记录仪比较题。

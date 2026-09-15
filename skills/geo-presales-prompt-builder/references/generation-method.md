@@ -91,6 +91,10 @@ Discovery 的规划顺序：
 
 `What is a {category_label}, and how should I evaluate one for {topic}?`
 
+当 `category_label` 与 `topic` 归一后相同（忽略大小写、标点与复数）时，Topic 只是在复述核心品类，此时省略范围从句，改用短式：
+
+`What is a {category_label}, and how should I evaluate one?`
+
 先确认购买品类，再询问评价标准；它描述市场认知，不衡量目标品牌主动提及。
 
 ## 5. 逐题写作规则

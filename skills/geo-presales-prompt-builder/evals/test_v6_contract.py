@@ -355,6 +355,31 @@ class V6ContractTests(unittest.TestCase):
         self.assertIn("must equal the fixed sentiment template", joined)
         self.assertIn("must equal the category-first market perception template", joined)
 
+    def test_v6_market_perception_shortens_when_topic_restates_the_category(self) -> None:
+        self.assertEqual(
+            MODULE.build_v6_market_perception_prompt(
+                "Chinese-language video streaming platform",
+                "Chinese-language video streaming platforms",
+            ),
+            "What is a Chinese-language video streaming platform, and how should I evaluate one?",
+        )
+        self.assertEqual(
+            MODULE.build_v6_market_perception_prompt(
+                "LED display manufacturer and commercial display solution provider",
+                "LED display manufacturers and commercial display solution providers",
+            ),
+            "What is a LED display manufacturer and commercial display solution provider, "
+            "and how should I evaluate one?",
+        )
+        self.assertEqual(
+            MODULE.build_v6_market_perception_prompt(
+                "AI search visibility platform",
+                "AI crawler analytics and content optimization workflows",
+            ),
+            "What is a AI search visibility platform, and how should I evaluate one "
+            "for AI crawler analytics and content optimization workflows?",
+        )
+
     def test_v6_evaluation_rejects_topic_in_english_prompt_but_allows_chinese_translation(self) -> None:
         data = valid_v6_bank()
         evaluation = next(

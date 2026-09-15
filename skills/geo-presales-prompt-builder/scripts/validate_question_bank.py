@@ -384,8 +384,24 @@ def build_v6_sentiment_prompt(
     return f"Evaluate the {category_label} {object_label} {brand} on {evaluation_scope}"
 
 
+def category_topic_key(value: object) -> str:
+    """Reduce a category or Topic phrase to a comparable key, ignoring case and plurals."""
+    words = re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).split()
+    return " ".join(
+        word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
+        for word in words
+    )
+
+
 def build_v6_market_perception_prompt(category_label: str, topic: str) -> str:
-    """Build the category-first market-perception Prompt template."""
+    """Build the category-first market-perception Prompt template.
+
+    Coverage Topics restate the product line's own core category, so the scope clause
+    would only repeat it; those Topics use the shorter two-part form instead.
+    """
+    key = category_topic_key(category_label)
+    if key and key == category_topic_key(topic):
+        return f"What is a {category_label}, and how should I evaluate one?"
     return f"What is a {category_label}, and how should I evaluate one for {topic}?"
 
 
