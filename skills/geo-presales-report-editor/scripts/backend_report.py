@@ -663,6 +663,44 @@ def has_material_page_opportunities(payload):
     )
 
 
+def has_material_attribute_diagnostics(payload):
+    """属性诊断里有非 unknown 的条目时，品牌表达证据才有可锚定的 Attribute。"""
+    return any(
+        item.get("status") != "unknown"
+        for item in payload.get("attribute_diagnostics", [])
+    )
+
+
+def material_market_attribute_ids(payload):
+    """品类认知里非 insufficient 的 finding 所锚定的 Attribute。"""
+    return {
+        str(item.get("attribute_id"))
+        for item in payload.get("market_perception_diagnostics", {}).get("findings", [])
+        if item.get("alignment_status") != "insufficient" and item.get("attribute_id")
+    }
+
+
+def attribute_id_of_ref(payload, ref):
+    """把 `diagnostic:target_attributes:/K` 解成 Attribute ID；不是该格式或越界返回 None。"""
+    match = re.fullmatch(r"diagnostic:target_attributes:/(\d+)", str(ref or ""))
+    if not match:
+        return None
+    attributes = payload.get("target_attributes", [])
+    index = int(match.group(1))
+    if index >= len(attributes):
+        return None
+    return str(attributes[index].get("attribute_id") or "").strip() or None
+
+
+def anchored_attribute_ids(payload, refs, pointer):
+    """某个结论条目通过 target_attributes 引用锚定到的 Attribute 集合。"""
+    return {
+        attribute_id
+        for ref in refs.get(pointer) or []
+        if (attribute_id := attribute_id_of_ref(payload, ref))
+    }
+
+
 def rate_tokens(rate):
     percent = rate * 100
     values = {
@@ -991,7 +1029,7 @@ def diagnostic_fact_paths(module_id):
     return {
         "M02": ("comparison_outcomes", "competitor_comparison_summary"),
         "M03": ("page_opportunities",),
-        "M04": ("attribute_diagnostics",),
+        "M04": ("attribute_diagnostics", "target_attributes"),
         "M05": ("accuracy_findings",),
         "M01": ("attribute_diagnostics", "comparison_outcomes", "accuracy_findings"),
         "M06": ("page_opportunities",),
@@ -1034,7 +1072,7 @@ def module_purpose(module_id):
         "M01": "综合 overview 与 M02-M05、M07-M08 已定稿结论，先区分整体与六类诊断意图，再选出互不重复的整体、主题、平台、引用和跨维度判断，不引入新事实。",
         "M02": "用 Discovery 指标判断品牌进入与位置状态；用 Competitor 后端汇总说明每个正式竞品的决胜回答胜率及明确正面对比优劣势。",
         "M03": "用来源类型、官网引用和全站候选页面证据判断来源主导权、官网可发现性、页面机会与第三方承接；主题定范围，具体能力/问题缺口定修改目标。",
-        "M04": "用本品表达证据及支持强度判断已被识别的差异点、购买顾虑和信任风险。",
+        "M04": "用本品表达证据及支持强度判断已被识别的差异点、购买顾虑和信任风险，并注明每条证据对应的 Attribute，供 M01 与品类认知交叉。",
         "M05": "解释后端已分档问题覆盖的需求和阶段，判断缺口是单点还是广泛存在；不重新分档或输出行动。",
         "M06": "只把后端给出的行动路由写成客户可读行动，并区分我方可直接交付、我方建议与客户执行，写清复测信号，不重新判状态或新增方向。",
         "M07": "用后端已确认的匹配 Prompt 样本判断整体和主题的品牌提及与平均提及位置是否跨平台稳定，并保留样本与因果边界。",
@@ -1054,6 +1092,7 @@ def module_synthesis_rules(module_id):
             "不同数据维度都是分析结论，不人为区分正式结论与切片观察；仍须保留样本范围，不外推全网、不猜机制。",
             "M07 出现实质性跨平台一致或分歧且会改变结论可信度、问题范围或优先级时，至少保留一条；只有证据不足或与更重要判断完全重复时才省略。",
             "M08 出现实质性 included、missing 或 conflicting 且会改变差异化判断或优先级时，至少保留一条；不得写成可见度或确定输赢原因。",
+            "品牌表达已按 Attribute 标注时，必须把同一 Attribute 的品类认知结论与品牌表达证据放进同一条要点：市场标准与品牌被质疑的点重合是客户要处理的风险，与品牌被认可的点重合说明差异点已有落点，被认可的点全落在市场标准之外说明定位与市场错位。该要点必须同时引用两侧，不得分开写成两句让客户自己对；三类信号都没有证据时保持模块独立，不强行交叉。",
         ],
         "M02": [
             "先判断是否获得提及；提及为零时平均提及位置写为短横线，只能判断缺席。",
@@ -1085,6 +1124,7 @@ def module_synthesis_rules(module_id):
             "评价问题本身会提及目标品牌；正向评价只能说明品牌印象和可识别特点，不能证明品牌在发现中被提及或已经进入真实采购流程。",
             "风险必须说明具体对象、适用场景和缺少的材料；只有需核实、门槛更高等泛化提醒应删除。",
             "不要用公开资料不能替代真实表现这类免责声明；改写为采购判断仍缺少的具体材料，如适用主体、证书范围、质量或服务数据、交付记录、政策说明或客户案例。",
+            "每条被认可或被质疑的表达证据，都要用 diagnostic:target_attributes:/索引 注明它说的是哪个预设 Attribute，供 M01 与品类认知交叉。找不到对应属性时才不标注，整体至少要有一条锚定。",
         ],
         "M05": [
             "P0 解释尚未进入哪些需求，P1 解释进入后哪些位置仍落后，P2 解释哪些主题值得保持。",
@@ -1541,6 +1581,47 @@ def validate_evidence_refs(root, task, content, refs, payload):
     if task["module_id"] == "M01" and has_material_market_perception(payload):
         if not any(ref.startswith("module:M08:") for ref in flattened_refs if isinstance(ref, str)):
             raise ContractError("M01 必须引用已完成的品类认知/购买框架结论")
+    if task["module_id"] == "M01" and "module:M04" in resources:
+        # 品类认知说「市场用什么标准选」，品牌表达说「品牌被认可/质疑什么」。
+        # 两边单独看都对，但交叉起来才是客户要处理的信号：市场看重某标准、
+        # 品牌恰恰在该标准上被质疑。所以要求这两侧落在同一条结论里，而不是
+        # 各写一句让客户自己去对。锚点是 Attribute，不是关键词相似度。
+        market_attributes = material_market_attribute_ids(payload)
+        if market_attributes:
+            m04_result = resources["module:M04"]
+            m04_refs = m04_result.get("evidence_refs") or {}
+            m04_content = m04_result.get("content") or {}
+            findings = payload["market_perception_diagnostics"]["findings"]
+
+            joint_required = set()
+            for group in ("positive_evidence", "risk_evidence"):
+                for index in range(len(m04_content.get(group) or [])):
+                    joint_required |= anchored_attribute_ids(
+                        payload, m04_refs, f"/{group}/{index}")
+            joint_required &= market_attributes
+
+            if joint_required:
+                covered = set()
+                for items in refs.values():
+                    if not isinstance(items, list):
+                        continue
+                    left, right = set(), set()
+                    for ref in items:
+                        ref = str(ref)
+                        match = re.fullmatch(
+                            r"module:M04:/(positive_evidence|risk_evidence)/(\d+)", ref)
+                        if match:
+                            left |= anchored_attribute_ids(
+                                payload, m04_refs, f"/{match.group(1)}/{match.group(2)}")
+                        match = re.fullmatch(r"module:M08:/(\d+)", ref)
+                        if match and int(match.group(1)) < len(findings):
+                            right.add(str(findings[int(match.group(1))].get("attribute_id")))
+                    covered |= left & right
+                missing = sorted(joint_required - covered)
+                if missing:
+                    raise ContractError(
+                        "M01 必须在同一条结论里交叉判断该 Attribute 的品类认知与品牌表达："
+                        + "、".join(missing))
     if task["module_id"] == "M03" and has_material_page_opportunities(payload):
         if not any(
             isinstance(ref, str) and ref.startswith("diagnostic:page_opportunities:")
@@ -1553,6 +1634,17 @@ def validate_evidence_refs(root, task, content, refs, payload):
                 prefix = f"fact:/findings/{index}/"
                 if not any(isinstance(ref, str) and ref.startswith(prefix) for ref in flattened_refs):
                     raise ContractError(f"M08 必须覆盖品类认知诊断 {item['finding_id']}")
+    if (task["module_id"] == "M04"
+            and has_material_attribute_diagnostics(payload)
+            and material_market_attribute_ids(payload)):
+        # 品类认知有正式状态、属性诊断也有实际结论时，才要求品牌表达证据注明
+        # Attribute——这正是 M01 能交叉判断的前提。此时不给锚点就无法核查交叉，
+        # 所以不能整体绕过；没有可交叉的品类认知时不强求，避免无谓约束。
+        anchored = set()
+        for pointer in statement_pointers("M04", content):
+            anchored |= anchored_attribute_ids(payload, refs, pointer)
+        if not anchored:
+            raise ContractError("M04 必须注明表达证据对应的 Attribute")
     for pointer, items in refs.items():
         if not isinstance(items, list) or not items:
             raise ContractError(f"{pointer} 至少需要一个证据引用")

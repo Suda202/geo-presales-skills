@@ -66,6 +66,8 @@
 
 `target_attributes` 不能直接转成结论。只有 `attribute_diagnostics` 能描述实际关联：知道且主动推荐为 Strength，知道但不主动推荐为 Opportunity，否定或错误关联为 Objection，证据不足为 Unknown。Attribute 通过主题或 Tag 承载；客户报告可按主题/Tag 组织，但不新增独立 Attribute 模块、上传字段或跨平台状态。
 
+`attribute_diagnostics` 与 `market_perception_diagnostics` 共用同一套 `target_attributes.attribute_id`，这是「市场看重什么」与「品牌被认可/质疑什么」能按属性交叉的前提。M04 的品牌表达证据用 `diagnostic:target_attributes:/索引` 注明所属 Attribute；该引用只用于内部核查，不进入上传 CSV 或客户文案。
+
 ### 竞品与准确性
 
 `comparison_outcomes.outcome` 只允许 `target_wins / competitor_wins / tie / unclear`，并保存 `decisiveness` 与证据。不得映射成 Sentiment。
@@ -134,6 +136,7 @@
 - `included / missing / conflicting` 必须有市场标准、正整数支持样本和非空证据，支持样本数不得超过唯一证据引用数；`insufficient` 可为零样本与空证据。
 - 状态由后端根据 Market Perception 样本正式给出。报告侧不得从 `market_perception` 原始结果重新归纳、匹配或自判。
 - 该对象只回答市场购买框架是否包含品牌预设差异点，不回答品牌 Visibility、直接竞品输赢或任何流量/成交归因。
+- findings 的 `attribute_id` 与 `attribute_diagnostics` 共用同一套 `target_attributes`，因此可与品牌表达证据按 Attribute 交叉。交叉结论由 M01 承载并经 `summary_overview.points[]` 进入客户 CSV；M08 自身仍只解释购买框架状态，不吸收情绪。
 
 ### 跨平台一致性
 

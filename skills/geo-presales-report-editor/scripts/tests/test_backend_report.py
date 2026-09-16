@@ -470,8 +470,10 @@ def content_for(module_id):
     }[module_id]
 
 
-def refs_for(module_id):
-    return {
+def refs_for(module_id, *, attribute_join=False):
+    """attribute_join=True 时模拟品类认知与品牌表达的联合判断：
+    M04 证据注明所属 Attribute，M01 在同一条结论里同时引用该 Attribute 的两侧。"""
+    refs = {
         "M02": {
             "/0": ["fact:/mention_ranking/0", "fact:/mention_ranking/1"],
             "/1": ["fact:/share_segments/0", "fact:/share_segments/1"],
@@ -520,9 +522,16 @@ def refs_for(module_id):
             "/conclusion": ["module:M06:/summary"],
         },
     }[module_id]
+    if attribute_join and module_id == "M04":
+        refs["/positive_evidence/0"] = [
+            *refs["/positive_evidence/0"], "diagnostic:target_attributes:/0"]
+    if attribute_join and module_id == "M01":
+        refs["/points/2"] = [
+            *refs["/points/2"], "module:M04:/positive_evidence/0", "module:M08:/0"]
+    return refs
 
 
-def result_for(task, *, content=None, refs=None):
+def result_for(task, *, content=None, refs=None, attribute_join=False):
     return {
         "protocol_version": task["protocol_version"],
         "run_id": task["run_id"],
@@ -533,7 +542,9 @@ def result_for(task, *, content=None, refs=None):
         "status": "completed",
         "output": {
             "content": content if content is not None else content_for(task["module_id"]),
-            "evidence_refs": refs if refs is not None else refs_for(task["module_id"]),
+            "evidence_refs": (
+                refs if refs is not None
+                else refs_for(task["module_id"], attribute_join=attribute_join)),
         },
     }
 
@@ -544,7 +555,7 @@ class BackendReportTests(unittest.TestCase):
         MODULE.write_json(path, raw)
         return path
 
-    def submit_all(self, run_dir):
+    def submit_all(self, run_dir, *, attribute_join=False):
         while True:
             root, manifest = MODULE.load_run(run_dir)
             tasks = MODULE.ready_tasks(root, manifest)
@@ -552,7 +563,7 @@ class BackendReportTests(unittest.TestCase):
                 return
             for task in tasks:
                 result_path = root / "results" / f"{task['task_id']}.inbox.json"
-                MODULE.write_json(result_path, result_for(task))
+                MODULE.write_json(result_path, result_for(task, attribute_join=attribute_join))
                 MODULE.submit_result(root, task["task_id"], result_path)
 
     def test_accepts_current_dify_json_string_inputs(self):
@@ -784,7 +795,7 @@ class BackendReportTests(unittest.TestCase):
             for module_id in ("M02", "M03", "M04", "M05", "M08"):
                 task = next(task for task in MODULE.ready_tasks(run_root, manifest) if task["module_id"] == module_id)
                 result_path = root / f"{module_id}-result.json"
-                MODULE.write_json(result_path, result_for(task))
+                MODULE.write_json(result_path, result_for(task, attribute_join=True))
                 MODULE.submit_result(run_root, task["task_id"], result_path)
                 _, manifest = MODULE.load_run(run_root)
             m01 = next(task for task in MODULE.ready_tasks(run_root, manifest) if task["module_id"] == "M01")
@@ -805,7 +816,7 @@ class BackendReportTests(unittest.TestCase):
                     break
                 for task in tasks:
                     content = content_for(task["module_id"])
-                    refs = refs_for(task["module_id"])
+                    refs = refs_for(task["module_id"], attribute_join=True)
                     if task["module_id"] == "M01":
                         content = json.loads(json.dumps(content, ensure_ascii=False))
                         refs = json.loads(json.dumps(refs, ensure_ascii=False))
@@ -822,6 +833,89 @@ class BackendReportTests(unittest.TestCase):
             self.assertTrue(any("购买框架尚未包含" in row["value"] for row in rows))
             self.assertNotIn("summary_market_perception", {row["module"] for row in rows})
 
+    def test_m04_must_anchor_evidence_on_attribute_when_joint_analysis_possible(self):
+        """品类认知与属性诊断都有正式结论时，品牌表达证据必须注明 Attribute，
+        否则 M01 无从核查两侧是否真的交叉。"""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_root, manifest = MODULE.prepare_run(
+                self.write_payload(root, market_perception_payload()), root / "run"
+            )
+            m04 = next(t for t in MODULE.ready_tasks(run_root, manifest)
+                       if t["module_id"] == "M04")
+            result_path = root / "M04-result.json"
+            MODULE.write_json(result_path, result_for(m04))
+            with self.assertRaisesRegex(MODULE.ContractError, "注明表达证据对应的 Attribute"):
+                MODULE.submit_result(run_root, m04["task_id"], result_path)
+            MODULE.write_json(result_path, result_for(m04, attribute_join=True))
+            MODULE.submit_result(run_root, m04["task_id"], result_path)
+
+    def test_m01_must_join_same_attribute_across_m04_and_m08(self):
+        """M01 只分别引用两侧不够，必须落在同一条结论里才算交叉判断。"""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_root, manifest = MODULE.prepare_run(
+                self.write_payload(root, market_perception_payload()), root / "run"
+            )
+            while True:
+                tasks = MODULE.ready_tasks(run_root, manifest)
+                m01 = next((t for t in tasks if t["module_id"] == "M01"), None)
+                if m01 is None:
+                    if not tasks:
+                        break
+                    for task in tasks:
+                        result_path = root / f"{task['task_id']}.result.json"
+                        MODULE.write_json(result_path, result_for(task, attribute_join=True))
+                        MODULE.submit_result(run_root, task["task_id"], result_path)
+                    _, manifest = MODULE.load_run(run_root)
+                    continue
+                content = content_for("M01")
+                refs = refs_for("M01", attribute_join=True)
+                # 拆开：M04 证据单占一条、M08 单占另一条，两侧不相遇
+                refs["/points/2"] = ["module:M04:/positive_evidence/0", "module:M05:/p0"]
+                refs["/points/3"] = ["module:M08:/0"]
+                content["points"].append("当前购买框架尚未包含品牌预设的多平台覆盖差异点。")
+                result_path = root / "M01-result.json"
+                MODULE.write_json(result_path, result_for(m01, content=content, refs=refs))
+                with self.assertRaisesRegex(MODULE.ContractError, "同一条结论"):
+                    MODULE.submit_result(run_root, m01["task_id"], result_path)
+                return
+
+    def test_joint_attribute_judgment_flows_into_uploaded_overview(self):
+        """同一条结论同时引用两侧时通过，且 Attribute 编码不得进入上传 CSV。"""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_root, manifest = MODULE.prepare_run(
+                self.write_payload(root, market_perception_payload()), root / "run"
+            )
+            while True:
+                tasks = MODULE.ready_tasks(run_root, manifest)
+                if not tasks:
+                    break
+                for task in tasks:
+                    content = content_for(task["module_id"])
+                    refs = refs_for(task["module_id"], attribute_join=True)
+                    if task["module_id"] == "M01":
+                        content = json.loads(json.dumps(content, ensure_ascii=False))
+                        refs = json.loads(json.dumps(refs, ensure_ascii=False))
+                        content["points"].append(
+                            "市场看重报告与价格，而品牌恰恰在这一点上被质疑，需要优先处理。")
+                        # 同一条结论同时引用该 Attribute 的品类认知结论与品牌表达证据
+                        refs["/points/3"] = [
+                            "module:M08:/0", "module:M04:/positive_evidence/0"]
+                    result_path = root / f"{task['task_id']}.result.json"
+                    MODULE.write_json(result_path, result_for(task, content=content, refs=refs))
+                    MODULE.submit_result(run_root, task["task_id"], result_path)
+                    _, manifest = MODULE.load_run(run_root)
+            MODULE.finalize_run(run_root)
+            csv_text = (run_root / "artifacts/report-upload.csv").read_text(encoding="utf-8-sig")
+            with (run_root / "artifacts/report-upload.csv").open(
+                    "r", encoding="utf-8-sig", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            self.assertTrue(any("需要优先处理" in row["value"] for row in rows))
+            self.assertNotIn("ATTR-", csv_text)
+            self.assertNotIn("summary_market_perception", {row["module"] for row in rows})
+
     def test_profound_diagnostics_complete_together_without_expanding_upload_schema(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -834,7 +928,7 @@ class BackendReportTests(unittest.TestCase):
                     break
                 for task in tasks:
                     content = content_for(task["module_id"])
-                    refs = refs_for(task["module_id"])
+                    refs = refs_for(task["module_id"], attribute_join=True)
                     if task["module_id"] == "M02":
                         content = [
                             "Target对Leader的竞品胜率为74.36%，39个决胜回答中目标品牌获胜29次、Leader获胜10次。",

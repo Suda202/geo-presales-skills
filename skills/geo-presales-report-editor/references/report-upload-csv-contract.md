@@ -31,6 +31,8 @@
 
 当前后台上传契约没有独立的跨平台和购买框架模块字段。M07、M08 先以内部结构化模块保存；其结论会在改变诊断可信度、范围、差异化判断或优先级时由 M01 写入 `summary_overview.points[]`，从而进入正式上传 CSV。不得擅自新增 `summary_platform_consistency` 或 `summary_market_perception` 上传行；后台契约扩展后再增加独立展示。
 
+品类认知与品牌表达的交叉结论（市场标准与品牌被认可/被质疑的点重合）同样只走 `summary_overview.points[]`。M04 证据上的 `attribute_id` 锚点只用于内部核查，不得进入任何上传行。
+
 M02 的决胜回答胜率和正面对比优劣势仍写入现有 `summary_competitor_performance.items[].text`，不新增数值列。客户文案只把决胜回答胜率称为“竞品胜率”，不得写总体胜率。
 
 M03 的正式页面机会仍写入现有 `summary_citation_sources.items[].text`，M06 的具体页面动作仍写入现有行动字段；不新增 Attribute、Tag、页面相关性、Citation 状态或 priority 列。Attribute 由主题/Tag 承载，内部 `page_opportunities` 只用于生成有证据的客户文案。
