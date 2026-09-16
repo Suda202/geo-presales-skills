@@ -13,4 +13,5 @@ skills/*/assets/brand-lexicon.*.json
 skills/*/assets/domain-categories.json
 skills/*/build/
 skills/*/tests/fixture_report_data.json
+skills/*/tests/_preview.html
 skills/shared/brand-lexicon.*.json

@@ -132,7 +132,6 @@ def build_body(meta: dict) -> str:
         if section_id == "overview":
             body.append('<div class="section-body">')
             body.append(kpi_row())
-            body.append('<div id="scopeNotes"></div>')
             body.append(
                 insight_note("结论", "overviewInsight")
             )

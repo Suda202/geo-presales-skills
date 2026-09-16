@@ -8,7 +8,6 @@
   var DATA = window.REPORT_DATA || {};
   var META = DATA.meta || {};
   var SLICES = DATA.slices || {};
-  var GRADE_NAMES = META.grade_names || { P0: "优先改进", P1: "持续优化", P2: "保持稳定" };
   var FILLS = ["gold", "blue", "cyan", "green", "amber", "red", ""];
   var MAX_COMPETITION_ROWS = 5;
 
@@ -480,7 +479,6 @@
       '<div class="detail-meta-cell"><span>主题</span><strong>' + esc(record ? record.topic : "—") + "</strong></div>" +
       '<div class="detail-meta-cell"><span>诊断意图</span><strong>' + esc(record ? record.intent : "—") + "</strong></div>" +
       '<div class="detail-meta-cell"><span>标签</span><strong>' + esc(record ? record.tag : "—") + "</strong></div>" +
-      '<div class="detail-meta-cell"><span>分档</span><strong>' + esc(GRADE_NAMES[record && record.grade] || "—") + "</strong></div>" +
       // 引用份额的计算层级：这里是「单个回答」；题级在明细表，切片级在 KPI，
       // 平台级切平台 tab。同一指标四个层级都保留，不做合并。
       '<div class="detail-meta-cell"><span>本回答引用份额</span><strong>' +
@@ -517,8 +515,12 @@
     var slice = currentSlice();
     var pages = ((slice.sources || {}).pages) || [];
     var official = ((slice.sources || {}).official_pages) || [];
-    var absent = records.filter(function (r) { return r.grade === "P0"; });
-    var lag = records.filter(function (r) { return r.grade === "P1"; });
+    // 官网清单取「目标品牌本该出现却没进回答」的题：发现类问题（用户没点名品牌，
+    // 品牌本该争夺一席），或题面点名目标品牌的问题（明确在问它，AI 说不出话就是缺口）。
+    // 题面只点名竞品的评价题不算——品牌本来就不该在那道题里出现。
+    var absent = records.filter(function (r) {
+      return (r.discovery || r.target_in_question) && !r.mentioned;
+    });
 
     var officialEl = document.getElementById("officialPlan");
     if (officialEl) {
@@ -620,17 +622,6 @@
       ].filter(Boolean));
   }
 
-  function renderScopeNotes() {
-    var el = document.getElementById("scopeNotes");
-    if (!el) return;
-    var notes = META.scope_notes || [];
-    el.innerHTML = notes.map(function (note) {
-      return '<p class="scope-note"><span class="section-scope-note" title="' +
-        esc(note.detail) + '">' + esc(note.label || "口径说明") + "</span>" +
-        esc(note.detail) + "</p>";
-    }).join("");
-  }
-
   function emptyRow(text) {
     return '<p class="support-line">' + esc(text) + "</p>";
   }
@@ -639,7 +630,6 @@
 
   function renderAll() {
     renderKpis();
-    renderScopeNotes();
     renderCompetition();
     renderSources();
     renderSentiment();

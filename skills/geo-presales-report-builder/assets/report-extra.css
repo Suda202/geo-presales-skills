@@ -136,13 +136,28 @@
   padding: 18px 0;
 }
 
-/* 口径降级等作用域说明：数据会影响客户对数字的理解，必须在正文里可见 */
-.scope-note {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 12px 0 0;
-  font-size: 12.5px;
-  line-height: 1.65;
-  color: var(--muted);
+/* 抽屉：原型给右栏 minmax(380px,1fr)，在宽屏下占去四成，正文被压窄。
+   右栏只需要放品牌榜和引用列表，改成定宽上限，空间让给正文。 */
+#drawerBody .detail-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+}
+
+/* 回答里的表格：默认自适应容器宽度、单元格内正常换行。
+   回答里的商品表列多，横滑能看全但观感像"没显示完"，撑宽又会被压成一列一个词——
+   折中是缩小字号 + 给单元格一个较小的最小宽度，让列数多的表尽量挤进一屏。 */
+.answer-table-wrap {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.answer-table-wrap .answer-table {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  font-size: 11.5px;
+}
+.answer-table th,
+.answer-table td {
+  min-width: 56px;
+  padding: 5px 7px;
+  overflow-wrap: anywhere;
 }

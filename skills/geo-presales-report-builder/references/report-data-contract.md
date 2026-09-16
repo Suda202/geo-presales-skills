@@ -46,7 +46,6 @@
 | `topics` | string[] | 监测主题全称 |
 | `intents` | string[] | 诊断意图中文标签，取自 `shared/canonical-intent-mapping.md` |
 | `tags` | string[] | 标签，取自题库 |
-| `grade_names` | object | `{"P0":"优先改进","P1":"持续优化","P2":"保持稳定"}` |
 | `questions` | object[] | 每题的静态信息，见下 |
 
 `questions[]` 条目：
@@ -109,7 +108,8 @@
     {
       "qid": 1, "en": "…", "zh": "…",
       "mention_rate": "66.7%", "rank": "2.0", "share": "20.0%",
-      "citation_share": "6.0%", "sentiment": "90.9%", "grade": "P0"
+      "citation_share": "6.0%", "sentiment": "90.9%",
+      "discovery": true, "mentioned": true
     }
   ]
 }
@@ -148,7 +148,9 @@
 
 **records**
 
-- 每题一行，`grade` 取值 `P0`/`P1`/`P2`：未提及 → `P0`；提及位置 ≥4 → `P1`；1–3 → `P2`。
+- 每题一行。
+- `discovery` 是布尔，取该题的诊断意图是否为 `discovery`；`target_in_question` 是布尔，取题面是否点名目标品牌（用与正文识别同一套别名匹配）；`mentioned` 是布尔，取目标品牌在该题的有效回答里是否出现过；该题在本切片无有效答案时 `mentioned` 为 `null`（与 `rank` 的 `—` 同步）。
+- 前三者是内容规划「官网阵地」清单的取数判据：**`(discovery || target_in_question) && !mentioned`** 才是内容缺口。理由是该题的目标品牌为被期待对象——发现题里用户没点名品牌，品牌本该争夺一席；题面点名目标品牌时，AI 说不出它的话就是缺口；而题面只点名竞品的评价题、以及只问品类选择标准的品类认知题不算。**不要**让渲染层去比 `intent` 的中文标签或 `mention_rate` 的百分比字符串。
 - `sentiment` 仅情绪题有值，其余为 `null`。
 - `mention_rate`/`share`/`citation_share` 是该题在该切片下的值。
 

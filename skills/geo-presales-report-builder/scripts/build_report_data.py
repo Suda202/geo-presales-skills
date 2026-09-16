@@ -224,7 +224,6 @@ SOURCE_BUCKET = {
 }
 SOURCE_BUCKET_ORDER = ["自有网站", "社交平台", "媒体网站", "竞品网站", "新闻稿平台",
                        "机构网站", "其他"]
-GRADE_NAMES = {"P0": "优先改进", "P1": "持续优化", "P2": "保持稳定"}
 COMPETITION_FILLS = ["blue", "cyan", "green", "amber", "red"]
 
 
@@ -1128,6 +1127,9 @@ def build_sentiment(answers: list[dict]) -> dict:
 def build_records(answers: list[dict], questions: list[dict], topic: str,
                   objects: list[dict]) -> list[dict]:
     object_count = len(objects)
+    # 题面是否点名目标品牌，用与正文识别同一套别名匹配，不在渲染层另写一套。
+    target_aliases = next(
+        (list(o["aliases"]) for o in objects if o["role"] == "target"), [])
     by_question: dict[str, list[dict]] = defaultdict(list)
     for answer in answers:
         by_question[answer["question_id"]].append(answer)
@@ -1149,7 +1151,14 @@ def build_records(answers: list[dict], questions: list[dict], topic: str,
             "share": "—",
             "citation_share": "—",
             "sentiment": None,
-            "grade": None,
+            # 内容规划取「目标品牌本该出现却没进回答」的题去补官网内容。判据是
+            # 该题的目标品牌是否为被期待对象：题面不点名任何品牌（发现题），或
+            # 题面点名目标品牌，都算；题面只点名竞品、或问品类选择标准的不算。
+            # 显式给出三个布尔，不让渲染层去比中文标签或百分比字符串。
+            "discovery": question.get("diagnostic_intent") == "discovery",
+            "target_in_question": bool(
+                core_util.find_alias_spans(question["question_text"], target_aliases)),
+            "mentioned": None,
             # 该题下每个纳入品牌的口径，供审计报告的分题全品牌表使用。
             # 之前只带目标品牌一行，审计侧只能自己再算一遍，形成第二份指标实现。
             "brands": [],
@@ -1163,14 +1172,13 @@ def build_records(answers: list[dict], questions: list[dict], topic: str,
             row["mention_rate"] = fmt_pct(len(mentions) / len(valid))
             row["share"] = fmt_pct(len(mentions) / total_mentions) if total_mentions else "—"
             row["citation_share"] = fmt_pct(citation_own / citation_total) if citation_total else "—"
+            row["mentioned"] = bool(mentions)
             if mentions:
                 average = sum(target_of(a)["report_rank"] for a in mentions) / len(mentions)
                 row["rank"] = fmt_num(average)
-                row["grade"] = "P1" if average >= 4 else "P2"
             else:
                 # 排名只有分母为 0 才显示「—」，未提及按末位计。
                 row["rank"] = str(object_count)
-                row["grade"] = "P0"
             # 该题下每个纳入品牌的口径。分题粒度，不等于切片级的 competition/matrix：
             # 靠它才能看出「某品牌只在某道题有存在感、在其余题被谁挤掉」。
             # 算提及率排名本来就要遍历全部对象，这里不增加计算量，只是把已算出的结果留下。
@@ -1264,7 +1272,6 @@ def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
         "topics": topics,
         "intents": intents,
         "tags": tags,
-        "grade_names": dict(GRADE_NAMES),
         "questions": questions,
         "run_id": RUN_ID,
         "source_collection": str(collect_dir),
@@ -1288,8 +1295,9 @@ def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
             "share_of_voice_denominator": "有效 Discovery 回答中各纳入对象提及次数之和",
             "citation_scope": "diagnostic_intent=discovery 的全量引用记录",
             "region_dimension": "按 (region, platform, topic) 切片分别计算；全平台/全主题切片为池化口径",
-            "grade_rule": "未提及→P0；平均提及位置≥4→P1；1–3→P2；该题在本切片无有效答案时为 null",
-            "configured_competitors": "以客户确认版 Case（case-fields-updated.json）为准：Sterra / Novita / Coway",
+            "configured_competitors": "以客户确认版 Case 为准："
+                                      + " / ".join(o["canonical_name"] for o in config["objects"]
+                                                   if o["role"] == "competitor"),
             "object_set": "目标品牌 + 3 个配置竞品 + 词表 competitor_open；词表命中配置对象的条目只并入别名与域名",
             "source_type_note": "开放品牌官网域名由后端规则归入「竞品网站」，与配置竞品官网同桶；"
                                 "后端已知域名表覆盖有限，评测站/媒体站多落入「其他」",
@@ -1303,6 +1311,42 @@ def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
 
 
 
+# 回答正文里混着平台的原始 HTML。转义前必须按类型处理，否则会被当文本显示——
+# 实测 `<img src="data:image/jpeg;base64,...">` 一出现就是几百字，把表格单元撑爆。
+_HTML_IMG = re.compile(r"<img\b[^>]*>", re.I)
+_HTML_IMAGE_ALT = re.compile(r"<image\b[^>]*>", re.I)
+# 平台给的交互建议块（追问、相关推荐），不是回答内容，整块去掉
+_HTML_PLATFORM_BLOCK = re.compile(
+    r"<\s*/?\s*(?:Elicitations?Group|Elicitations?|FollowUp)\b[^>]*>", re.I)
+# 商品卡：标题在产品语义上是有用信息，保留为文本
+_HTML_ENTITY_CARD = re.compile(r"<EntityCard\b[^>]*\btitle=\"([^\"]*)\"[^>]*/?>", re.I)
+_HTML_ENTITY_CARD_BARE = re.compile(r"<\s*/?\s*EntityCard\b[^>]*>", re.I)
+# 布局与排版标签：只去标签、留文字
+_HTML_UNWRAP = re.compile(
+    r"<\s*/?\s*(?:div|span|a|p|ul|ol|li|strong|em|b|i|table|thead|tbody|tr|td|th"
+    r"|ProductComparisonTable)\b[^>]*>", re.I)
+_HTML_BR = re.compile(r"<\s*br\s*/?\s*>", re.I)
+_HTML_LEFT = re.compile(r"<\s*/?\s*[a-zA-Z][a-zA-Z0-9]*\b[^>]*>")
+
+
+def normalize_answer_html(text: str) -> str:
+    """把回答里的原始 HTML 归一成 markdown 能处理的纯文本。
+
+    处理顺序有讲究：先去掉整块（图片、平台建议块），再把商品卡换成标题，
+    最后才展开布局标签——顺序反了会留下孤立属性。
+    """
+    value = str(text or "")
+    value = _HTML_IMG.sub("", value)
+    value = _HTML_IMAGE_ALT.sub("", value)
+    value = _HTML_PLATFORM_BLOCK.sub("", value)
+    value = _HTML_ENTITY_CARD.sub(r"\1", value)
+    value = _HTML_ENTITY_CARD_BARE.sub("", value)
+    value = _HTML_BR.sub("\n", value)
+    value = _HTML_UNWRAP.sub("", value)
+    value = _HTML_LEFT.sub("", value)      # 兜底：任何残留标签
+    return value
+
+
 def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
     """把 AI 回答的 markdown 转成可直接注入的 HTML。
 
@@ -1312,7 +1356,7 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
     import html as _html
     import re as _re
 
-    lines = _html.escape(text).replace("\r\n", "\n").split("\n")
+    lines = _html.escape(normalize_answer_html(text)).replace("\r\n", "\n").split("\n")
     out: list[str] = []
     i = 0
     list_stack: list[str] = []
@@ -1345,13 +1389,33 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
             while i < len(lines) and _re.match(r"^\|.*\|\s*$", lines[i].strip()):
                 rows.append([cell.strip() for cell in lines[i].strip().strip("|").split("|")])
                 i += 1
+            # 行对齐表头列数。列数**多于**表头说明源行被未转义的 `|`（URL 里常见）
+            # 切碎了——实测一行 9 格、表头 6 格，截断会把价格塞进「picture」列造成错位。
+            # 这种行整行丢弃，宁可少一行也不显示错位数据；少列的行补空即可。
+            width = len(header)
+            rows = [r for r in rows if len(r) <= width]
+            rows = [(row + [""] * width)[:width] for row in rows]
+            # 整列为空的丢掉：回答里的商品表常有 picture 之类全空列，
+            # 剥掉图片后它只剩个空表头，看起来像数据缺失。
+            if rows:
+                keep = [idx for idx in range(len(header))
+                        if any(idx < len(row) and row[idx] for row in rows)]
+                if keep and len(keep) < len(header):
+                    header = [header[idx] for idx in keep]
+                    rows = [[row[idx] if idx < len(row) else "" for idx in keep] for row in rows]
+            # 丢掉损坏行后，有些表只剩评分占位符（`****`、`0.0`）之类的空壳。
+            # 没有任何一格是有实质内容的（≥12 字）就整表不要，留着只是噪声。
+            substantive = [row for row in rows if any(len(cell) >= 12 for cell in row)]
+            if not substantive:
+                continue
             table = ["<table class=\"answer-table\"><thead><tr>"]
             table += [f"<th>{inline(cell)}</th>" for cell in header]
             table.append("</tr></thead><tbody>")
             for row in rows:
                 table.append("<tr>" + "".join(f"<td>{inline(cell)}</td>" for cell in row) + "</tr>")
             table.append("</tbody></table>")
-            out.append("".join(table))
+            # 套一层横向滚动容器：回答里的商品表列多，不套会被压成一列一个词。
+            out.append('<div class="answer-table-wrap">' + "".join(table) + "</div>")
             continue
 
         heading = _re.match(r"^(#{1,6})\s+(.*)$", stripped)

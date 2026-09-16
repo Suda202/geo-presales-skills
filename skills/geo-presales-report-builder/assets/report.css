@@ -313,29 +313,6 @@ td.self{background:var(--gold-soft);font-weight:700;color:var(--gold-deep)}
 .theme-row b{display:block;color:var(--ink-2);font-size:13px;line-height:1.6}
 .theme-row p{margin:5px 0 0;color:var(--muted);font-size:12.5px;line-height:1.6}
 
-/* ---------- 品牌进入机会 ---------- */
-.priority-grid{display:block}
-.priority-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:6px 24px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--sh);margin-bottom:24px}
-.priority-stat{padding:16px 18px 16px 0}
-.priority-stat+.priority-stat{padding-left:18px;border-left:1px solid var(--line-2)}
-.priority-stat span{display:block;color:var(--gold-deep);font:800 10px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase}
-.priority-stat strong{display:block;margin-top:7px;color:var(--ink);font:400 30px/1 var(--serif);font-variant-numeric:tabular-nums}
-.priority-stat small{display:block;margin-top:5px;color:var(--muted);font-size:12px}
-.priority-list-title{margin:0 0 13px;color:var(--ink);font:600 19px/1.35 var(--serif)}
-.priority-tabs{display:inline-flex;gap:3px;margin:0 0 16px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
-.priority-tab{min-height:30px;padding:7px 14px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:700 12px/1 var(--sans);cursor:pointer}
-.priority-tab.active{background:var(--ink);color:var(--paper)}
-.priority-tab:not(.active):hover{color:var(--ink)}
-.priority-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 26px}
-.p-card{display:block;border-top:1px solid var(--line-2);padding:13px 0;margin:0;cursor:pointer}
-.p-card:hover b{color:var(--gold-deep)}
-.p-card b{display:block;font-size:13.5px;line-height:1.5;color:var(--ink);transition:color .14s}
-.p-card small{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.5}
-.p-card .p-meta{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-.priority-empty{grid-column:1/-1;padding:22px 0;color:var(--muted);font-size:13.5px;text-align:center;border-top:1px solid var(--line-2)}
-.priority-footer{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px}
-.priority-footer .pagination{margin-top:0}
-
 /* ---------- 下一步行动 ---------- */
 .opportunity-list{border-top:1px solid var(--ink)}
 .opportunity-row{display:grid;grid-template-columns:220px minmax(0,1.4fr) minmax(230px,.85fr);gap:18px 30px;align-items:start;padding:20px 0;border-bottom:1px solid var(--line)}
@@ -626,9 +603,6 @@ footer .shell{display:flex;justify-content:space-between;gap:20px;border-top:1px
   .donut-panel .panel-body{flex-direction:column;align-items:center}
   .insight-note{grid-template-columns:1fr;gap:12px;padding:20px}
   .expression-summary{grid-template-columns:1fr;gap:12px}
-  .priority-summary{grid-template-columns:1fr}
-  .priority-stat+.priority-stat{border-left:0;border-top:1px solid var(--line-2);padding-left:0}
-  .priority-list{grid-template-columns:1fr}
   .opportunity-row{grid-template-columns:1fr}
   .opportunity-basis{padding-left:0;border-left:0}
   .dual-tabs{align-items:flex-start;flex-direction:column}

@@ -446,7 +446,7 @@ def run_checks(report: dict, collect: Path) -> list[str]:
 
     meta = report.get("meta") or {}
     for field in ("brand", "brand_display", "official_domain", "category", "generated_at",
-                  "regions", "platforms", "topics", "intents", "tags", "grade_names",
+                  "regions", "platforms", "topics", "intents", "tags",
                   "questions"):
         if field not in meta:
             failures.append(f"meta 缺少字段 {field}")
@@ -514,6 +514,24 @@ def run_checks(report: dict, collect: Path) -> list[str]:
         for metric in ("mention", "share", "rank", "sent", "official"):
             if metric not in (slc.get("matrix") or {}):
                 failures.append(f"{key}: matrix 缺少 {metric}")
+
+    # 内容规划的官网清单按「目标品牌本该出现却没进回答」取，判据必须与已校验的
+    # mention_rate 自洽——两者矛盾时清单会静默换一批题，页面看不出问题。
+    for key, slc in slices.items():
+        for record in slc.get("records") or []:
+            qid = record.get("qid")
+            for flag in ("discovery", "target_in_question"):
+                if not isinstance(record.get(flag), bool):
+                    failures.append(f"{key}: 题 {qid} 的 {flag} 不是布尔值")
+            rate, mentioned = record.get("mention_rate"), record.get("mentioned")
+            if rate == "—":
+                if mentioned is not None:
+                    failures.append(f"{key}: 题 {qid} 无有效答案，mentioned 应为 null")
+            elif not isinstance(mentioned, bool):
+                failures.append(f"{key}: 题 {qid} 的 mentioned 不是布尔值")
+            elif mentioned != (rate != "0.0%"):
+                failures.append(f"{key}: 题 {qid} 的 mentioned={mentioned} 与 "
+                                f"mention_rate={rate} 矛盾")
     return failures
 
 
@@ -768,6 +786,13 @@ def _mutations(base: dict):
                lambda n: n.__setitem__("total_citations", n["total_citations"] - 5)),
         mutate("把 sentiment_claims_status 改成 done", ["meta"],
                lambda n: n.__setitem__("sentiment_claims_status", "done")),
+        mutate(f"把 {key_a} 某题的 discovery 改成字符串", ["slices", key_a, "records"],
+               lambda n: n[0].__setitem__("discovery", "yes") if n else None),
+        mutate(f"把 {key_a} 某题的 target_in_question 改成字符串",
+               ["slices", key_a, "records"],
+               lambda n: n[0].__setitem__("target_in_question", "yes") if n else None),
+        mutate(f"把 {key_a} 某题的 mentioned 改成字符串", ["slices", key_a, "records"],
+               lambda n: n[0].__setitem__("mentioned", "yes") if n else None),
     ]
 
 
