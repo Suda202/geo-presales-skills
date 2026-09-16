@@ -16,3 +16,4 @@
 | Tags 变相固定枚举 | v8 只规定 Builder 的默认 Intent、Brand Scope 与 Attribute 命名空间；允许其他自由 Tags。 |
 | 自由 Tags 污染指标路由 | `analysis_type` 与 `formal_visibility_eligible` 由生成角色单独确定，不随自定义 Tags 改动。 |
 | 品牌范围标签失真 | 从题面实际目标品牌或竞品提及反推 Branded / Non-Branded，并做确定性校验。 |
+| 本地化删掉品类限定 | 非 `en` locale 的 Discovery 题面必须逐字包含本地化 `category_label`，validator 确定性拦截，英文题库豁免。泰语题库曾丢掉 32/34 道品类限定，采集回答有 9 条答成语言学习 App 和线上外教。 |

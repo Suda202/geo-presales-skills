@@ -1,9 +1,9 @@
 ---
 name: geo-presales-report-audit
-description: Use when auditing or correcting brand mention recognition and first-appearance rankings in GEO presales JSON results. Delivers safe brand-ranking corrections and Bad Case evidence; does not edit customer-facing analytical conclusions or sentiment.
+description: This skill should be used when auditing or correcting brand mention recognition and first-appearance rankings in GEO presales results, at either layer — raw crawler output (answer text that has no brand_rankings yet) or the assembled report JSON. It produces safe brand-ranking corrections and Bad Case evidence, not customer-facing analytical conclusions, metric aggregation, or sentiment changes.
 metadata:
   author: 海外 GEO 项目
-  version: "2.3.0"
+version: "2.5.0"
 ---
 
 # GEO 售前报告质量审计
@@ -13,7 +13,8 @@ metadata:
 用一手证据回答三件事：历史问题是否修复、当前报告是否新增客户可见问题、每条问题能否直接交给研发修复并用同一样本回归。
 
 - 使用本 Skill 审核并修正 `brand_rankings` 等底层结构化结果；完成后再使用 `geo-presales-report-editor` 基于已确认的结果修改分析结论并生成上传 CSV。
-- 暂不审计、判断或修改 `sentiment`。当前回答级情绪口径已冻结，待句子级情绪方案与验收标准确认后，另行设计并恢复该能力；本轮必须逐值保留原 `sentiment`。
+- **两层都管，原始层在上游**：报告 JSON 层（已有 `wordid` / `brand_rankings`）见 [结构化结果审计](references/structured-result-audit.md)；采集原始层（只有原始响应、品牌序列还没生成）见 [原始爬虫层品牌抽取](references/raw-crawl-extraction.md)。原始层的品牌序列做对之前，不要开始算任何指标。
+- 暂不审计、判断或修改后端 JSON 的 `sentiment` 字段。回答级情绪口径已冻结，本轮必须逐值保留原 `sentiment`。句子级情绪方案已由 `geo-presales-sentiment-judge` 承载（基于爬虫回答提取目标品牌正负句、计算正向率，产物独立于后端字段）；需要情绪指标时使用该 skill，不在本 Skill 内恢复字段级审计。
 - 不在本 Skill 修改客户报告的分析结论、客户文案或结论 CSV；底层数据确认后将这些工作交给 `geo-presales-report-editor`。
 - 仅在用户授权维护 Bad Case 时写入飞书；只要求检查、解释或复核时保持只读。
 - 不为凑数量找问题，不把第三方模型的正常推理自动归因成系统错误，不把某个 Task、品牌或品类结论固化为规则。
@@ -28,6 +29,7 @@ metadata:
 3. [诊断方法口径](references/diagnostic-methodology-audit.md)
 4. [Bad Case 交付契约](references/badcase-output-contract.md)
 5. [回归状态口径](references/regression-status.md)
+6. [原始爬虫层品牌抽取](references/raw-crawl-extraction.md)——采集原始层的去引用、分片抽取契约与独立校验。处理没有 `wordid` 的采集目录时必读。
 - 读取 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)；问题类型枚举、诊断意图值与 Visibility 范围以本文件为准。
 
 涉及网页报告时先使用 `web-access`。涉及飞书 Wiki、多维表格或文档时使用 `lark-cli` 和对应的 `lark-wiki`、`lark-base`、`lark-doc` Skill，并先确认可读写的组织、profile、应用和机器人身份。
@@ -44,7 +46,14 @@ metadata:
 8. 将诊断意图与品牌提及范围分开核对：未知标签原样保留并核对配置，不因不在旧枚举中直接判错；不根据问题类型或诊断意图重判情绪。
 9. 写入飞书后逐条读回标题、字段、附件、状态和来源报告；未读回不得宣称更新完成。
 
-审计 JSON 时只执行两遍品牌处理：先建立全批次候选实体与标准品牌词典，再按统一词典逐条排除引用和非品牌实体、去重并按正文首次出现顺序排名。正文已经列为候选或比较对象的品牌保持计入，不以审计者对需求符合度的二次判断删选。跨回答统一同一品牌的输出名，但官网大小写只作参考；母品牌、子品牌和产品线不因隶属关系自动互换。`sentiment` 一律保持输入值；不得根据回答、问题类型、诊断意图或竞品胜负重新判定。
+审计 JSON 时只执行两遍品牌处理：先建立全批次候选实体与标准品牌词典，再按统一词典逐条排除引用和非品牌实体、去重并按正文首次出现顺序排名。正文已经列为候选或比较对象的品牌保持计入，不以审计者对需求符合度的二次判断删选。跨回答统一同一品牌的输出名，但官网大小写只作参考；父品牌、子品牌和产品线是否归一，必须以输入竞品为锚点并核对回答中的等同、候选层级、官方来源和“明确区分”证据，按 `references/structured-result-audit.md §3.1` 决定，不能因隶属关系自动互换。`sentiment` 一律保持输入值；不得根据回答、问题类型、诊断意图或竞品胜负重新判定。
+
+处理采集原始层时，顺序固定为 **去引用 → 分片抽取 → 独立校验 → 归一标准名 → 排名**，详见 [原始爬虫层品牌抽取](references/raw-crawl-extraction.md)。四条硬性约束：
+
+- 排名一律基于 `body_ranking`（已清空商品卡 `merchants` 列），不是 `body_markdown`。
+- 品牌序列未通过 `verify_brand_extraction.py` 前，不得开始算指标；退出码非 0 即为阻断。
+- 分片回收后先归一标准名再排名。同一品牌因大小写被拆成两行，会让它多占一个名次，品牌总数与排名同时错。
+- 采集器自带的 `mentioned_*` 标记不能作为提及依据，它扫的是整个响应体；检测与处理走 `geo-presales-crawl-integrity`。
 
 ## 不可降低的交付门槛
 
@@ -58,6 +67,15 @@ metadata:
 ## 确定性辅助工具
 
 `structured_result_audit.py` 负责引用清洗、结构校验和 `brand_rankings` 审核补丁安全写回；`prepare_badcase_draft.py` 负责 Bad Case 草稿格式；`annotate_evidence_screenshot.py` 负责确定性证据标注。参数与语义边界见结构化审计和 Bad Case 交付参考。三者都不替代开放式品牌发现、句子级情绪、竞品胜负或 Attribute 关联判断，也不直接写入飞书。
+
+原始采集层另有两个：
+
+| 脚本 | 负责 | 不负责 |
+|---|---|---|
+| `de_cite_crawl.py` | 把采集目录规范化为去引用正文，产出 `normalized-answers.jsonl`（含清空 merchants 列的 `body_ranking`） | 识别品牌、判情绪 |
+| `verify_brand_extraction.py` | 品牌抽取的独立复核：名称在正文、首现顺序、标准名一致性、词典召回 | 生成品牌序列本身 |
+
+标准品牌别名表放 `assets/brand_lexicon.<case>.json`，键为标准名、值为正文中出现的写法。**分片抽取回收后必须先归一标准名再算排名**，`verify_brand_extraction.py` 的第 3 项检查会拦截漏归一的写法。
 
 修改触发描述、审计规则或脚本后，重新运行 `evals/trigger_cases.json`、`evals/execution_cases.json`、`scripts/run_structured_result_evals.py` 和 `tests/test_scripts.py`，并把门禁结果更新到 `reports/`。
 

@@ -20,6 +20,7 @@
 - 每个 `Attribute: …` 都回指当前 Topic 的 `attribute_plan`；同名 Attribute 可跨 Topic，不能把其他 Topic 的属性串入当前题。
 - 问题自然、独立、可回答、单一任务、品类可识别、前提中性；中英文等义。
 - Discovery 明确要求具体候选，不出现目标品牌或正式竞品，每题最多一个主要购买条件。
+- 非 `en` locale 的 Discovery 题面必须写出本地化 `category_label`（归一化后逐字包含）。本地化时删掉反复出现的品类限定词，会让监测问题落到别的品类上，判定失败；英文题库不受此检查，品类称呼变体由人工语义复核把关。
 - Competitor 题只比较目标品牌与当前 Topic 的一个适用竞品；每个适用竞品恰好一题。当前 Topic 有两题以上时，除竞品名称外英文题面完全相同。
 - Verification 配额为 0，默认题库不生成 Verification 题；P1 的属性级正确性核查并入 Accuracy 合同。
 - 默认产物不生成 Accuracy 题；如用户明确要求，先使用另行确认的事实核验合同，不临时复用默认 Builder 合同。
@@ -31,13 +32,17 @@
 
 - Topic 数为 1–3；每 Topic 恰好 25 题，聚合配额、`expected_total` 与最终题数必须一致，整批为 25/50/75 题。
 - 每 Topic 按当前适用竞品数 `n` 硬校验：Discovery `23 - 2n`、Competitor `n`、Verification `0`、Accuracy `0`、Evaluation `1 + n`、Category Awareness `1`。
-- Discovery 必须覆盖全部 P1，并用有独立购买价值的 P2/P3 问题补足固定配额；无法满足时停止，不得制造伪重复。`formal_visibility_eligible=true` 的数量按 Discovery 与 Category Awareness 统计。
+- Discovery 必须覆盖全部 P1，并用有独立购买价值的 P2/P3 问题补足固定配额；无法满足时停止，不得制造伪重复。`formal_visibility_eligible=true` 的数量按 Discovery 与 Category Awareness 统计；但报告侧正式可见度指标的分母只按 Discovery 计算，Category Awareness 不进该分母。
 - 每条 Discovery 题面归一后唯一，并明确要求具体品牌、制造商、供应商、产品或解决方案候选。
 - 每 Topic 的 Competitor 恰好逐一覆盖其适用竞品；两题以上时通过“仅竞品名不同”的控制变量检查。其他 Topic 的竞品出现即失败。
 - 每 Topic 的 Evaluation 对目标品牌和每个适用竞品各覆盖恰好一次；单题出现多品牌、缺失品牌或使用不适用竞品即失败。
 - Discovery 的 Attribute Tags 覆盖每个 P1，其余单属性题优先覆盖 P2；Competitor 的维度与 Attribute Tags 来自双方可比的 P1 和高优先 P2。P3 只补余量。
 - 不存在伪重复或输入外虚构条件，也不把 Case 品牌自述直接当成已核验真值。同一 Case 字段跨 Topic 重复使用是允许行为。
 - Prompt Builder 全程不调用 `web-access`，不搜索、打开或重新核验目标品牌官网。
+
+## 本地化专项复核
+
+非英文题库在语义警告之外逐题确认：题面是否仍写明本地化 `category_label`。英文源题面反复出现品类限定是正常的；本地化为了简练把它删掉，题面会退化成光秃秃的"哪些平台 / which platform"，模型随即改答别的品类——泰语题库曾因此在 34 道 Discovery 中丢掉 32 道品类限定，采集回来的回答有 9 条完全答成语言学习 App 和线上外教。该检查已由 validator 确定性执行，不要只依赖人工阅读。
 
 ## 语义警告
 

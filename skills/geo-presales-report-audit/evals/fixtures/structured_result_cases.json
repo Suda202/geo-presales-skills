@@ -123,6 +123,26 @@
         {"brand_name": "Oneisall", "rank_pos": 1},
         {"brand_name": "PETLIBRO", "rank_pos": 2}
       ]
+    },
+    {
+      "name": "正式竞品锚定父品牌与产品线为同一候选",
+      "cleaned_text": "NVIDIA first presents Cosmos, then refers to the same platform as NVIDIA Omniverse and NVIDIA.",
+      "entity_catalog": [
+        {"canonical_name": "NVIDIA Cosmos", "aliases": ["NVIDIA", "NVIDIA Omniverse", "nivida Cosmos"], "eligible": true}
+      ],
+      "expected": [{"brand_name": "NVIDIA Cosmos", "rank_pos": 1}]
+    },
+    {
+      "name": "回答明确区分的相似父子品牌保持独立",
+      "cleaned_text": "Aether AI builds causal world models, while AETHER Robotics is a separate autonomy stack.",
+      "entity_catalog": [
+        {"canonical_name": "Aether AI", "aliases": [], "eligible": true},
+        {"canonical_name": "AETHER Robotics", "aliases": [], "eligible": true}
+      ],
+      "expected": [
+        {"brand_name": "Aether AI", "rank_pos": 1},
+        {"brand_name": "AETHER Robotics", "rank_pos": 2}
+      ]
     }
   ],
   "sentiment_cases": [

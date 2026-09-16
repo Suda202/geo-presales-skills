@@ -8,14 +8,16 @@
 
 | Prompt Builder Intent Tag | 后端 diagnostic_intent | 中文客户标签 | analysis_type | formal_visibility_eligible | 报告模块 |
 |---|---|---|---|---|---|
-| `Intent: Discovery` | `discovery` | 发现（发现类问题） | `visibility` | `true` | M01 发现 |
-| `Intent: Competitor` | `competitor` | 竞品（竞品类问题） | `visibility` | `true`* | M02 竞品 |
-| `Intent: Verification` | `validation` | 验证（验证类问题） | `visibility` | `false` | M03 验证 |
+| `Intent: Discovery` | `discovery` | 发现（发现类问题） | `visibility,sentiment` | `true` | M01 发现 |
+| `Intent: Competitor` | `competitor` | 竞品（竞品类问题） | `sentiment` | `false` | M02 竞品 |
+| `Intent: Verification` | `validation` | 验证（验证类问题） | —（空） | `false` | M03 验证 |
 | `Intent: Accuracy` | `accuracy` | 准确性（准确性类问题） | `accuracy` | `false` | M04 准确性 |
 | `Intent: Evaluation` | `sentiment` | 评价（评价类问题） | `sentiment` | `false` | M05 评价 |
-| `Intent: Category Awareness` | `market_perception` | 品类认知（品类认知类问题） | `visibility` | `true`* | M08 品类认知 |
+| `Intent: Category Awareness` | `market_perception` | 品类认知（品类认知类问题） | —（空） | `true` | M08 品类认知 |
 
-*重要：`formal_visibility_eligible = true` 表示进入后端可见度处理管线，**不等于**进入正式 Visibility 指标（品牌进入率、平均提及排名、声量、问题机会）。报告侧正式 Visibility 指标和主要引用生态**只使用 Discovery（`Intent: Discovery`）**；Competitor 和 Category Awareness 分别进入独立的 M02 竞品模块和 M08 品类认知模块。
+*重要：`formal_visibility_eligible = true` 表示进入后端可见度处理管线，**不等于**进入正式 Visibility 指标（品牌进入率、平均提及位置、声量、问题机会）。报告侧正式 Visibility 指标和主要引用生态**只使用 Discovery（`Intent: Discovery`）**；Competitor 只统计情感并进入独立的 M02 竞品模块，不再进入可见度题集；Category Awareness 进入独立的 M08 品类认知模块。
+
+情绪适用范围与 Discovery 独立判断：后端已标记为 Sentiment 的样本必须进入 M05 评价/情绪聚合，不得因为该记录不属于 Discovery 或同时带有其他诊断意图而删除；它仍不得进入正式 Visibility。
 
 > **迁移说明**：`Intent: Discovery`、`Intent: Competitor` 等诊断意图 Tag 当前作为默认枚举使用，计划迁移为项目自定义 Tags（不再是固定枚举）。迁移完成前，仍以本表为默认对照；迁移后，`analysis_type` 和 `formal_visibility_eligible` 的推导规则须在自定义 Tag 的定义文件中重新声明，不得依赖本表 Intent Tag 列自动推导。
 

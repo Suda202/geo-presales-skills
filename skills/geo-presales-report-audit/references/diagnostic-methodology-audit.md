@@ -62,7 +62,7 @@ Validation 必须：
 
 ## 跨 Skill 可见度范围校验
 
-**校验点**：`formal_visibility_eligible = true` 在 Prompt Builder 中标记了 Discovery、Competitor、Category Awareness 三类。报告侧正式 Visibility 指标（品牌进入率、声量、平均提及排名、问题机会、主要引用生态）**只使用 Discovery**；Competitor 进 M02 竞品模块，Category Awareness 进 M08 品类认知模块。
+**校验点**：`formal_visibility_eligible = true` 在 Prompt Builder 中只标记 Discovery 与 Category Awareness 两类，Competitor 与 Evaluation 均为 `false`。该字段只表示进入后端可见度处理管线，**不等于**进入正式 Visibility 指标。报告侧正式 Visibility 指标（品牌进入率、声量、平均提及排名、问题机会、主要引用生态）**只使用 Discovery**；Competitor 进 M02 竞品模块，Category Awareness 进 M08 品类认知模块。
 
 审计时须核对：
 - 正式 Visibility 分母不得包含 Competitor 或 Category Awareness 样本。

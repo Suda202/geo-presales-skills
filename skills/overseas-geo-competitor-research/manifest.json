@@ -1,0 +1,22 @@
+{
+  "name": "overseas-geo-competitor-research",
+  "version": "0.5.0",
+  "owner": "海外GEO项目",
+  "updated_at": "2026-08-25",
+  "review_cadence": "monthly",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "entrypoint": "SKILL.md",
+  "summary": "支持从零发现或核验用户候选，并冻结三个处于同一购买集合的海外 GEO 正式竞品。",
+  "target_platforms": ["openai", "claude", "generic", "agent-skills-compatible"],
+  "factory_components": ["scripts", "references", "agents", "evals", "reports"],
+  "primary_outputs": [
+    "research-plan",
+    "three-formal-competitors",
+    "selection-strategy",
+    "same-purchase-set-audit",
+    "comparison-guardrails"
+  ]
+}

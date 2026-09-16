@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 
+from .config import all_objects
 from .util import (
     domain_matches,
     find_alias_spans,
@@ -14,18 +15,21 @@ from .util import (
 
 
 SOURCE_TYPES = {
-    "brand_official": "品牌官网",
-    "competitor_official": "竞品官网",
-    "media_review": "媒体评测",
-    "ugc": "用户生成内容",
-    "corporate_site": "企业网站",
-    "encyclopedia_reference": "百科与参考资料",
+    # 现行 7 类，以《引用来源分类》定义为准。旧版的 corporate_site（企业网站）已取消：
+    # 未命中默认类别的企业网站归入 other；开放竞品官网也不进 competitor_official。
+    "brand_official": "自有网站",
+    "competitor_official": "竞品网站",
+    "ugc": "社交平台",
+    "media_review": "媒体网站",
+    "press_release": "新闻稿平台",
     "institutional": "机构网站",
-    "other": "其他来源",
+    "other": "其他",
 }
 
 
 KNOWN_HOST_TYPES = {
+    # 百科类按现行定义归入机构网站
+    "baike.baidu.com": "institutional",
     "reddit.com": "ugc",
     "youtube.com": "ugc",
     "facebook.com": "ugc",
@@ -51,10 +55,20 @@ KNOWN_HOST_TYPES = {
 }
 
 
-def _known_type(host: str) -> str | None:
+def _known_type(host: str, cache: dict | None = None) -> str | None:
+    """域名 → 来源类别。
+
+    分类不是封闭集合：`KNOWN_HOST_TYPES` 只放稳定的高频域名，其余走运行时缓存
+    （`config["domain_category_cache"]`）。缓存由报告侧按实际链接判读后写回，
+    每次运行都会把新出现的域名补进去，因此覆盖度随运行增长。
+    """
     for known, source_type in KNOWN_HOST_TYPES.items():
         if host == known or host.endswith("." + known):
             return source_type
+    if cache:
+        for known, source_type in cache.items():
+            if host == known or host.endswith("." + known):
+                return source_type
     if host.endswith(".gov") or ".gov." in host or host.endswith(".edu") or ".edu." in host:
         return "institutional"
     return None
@@ -98,11 +112,15 @@ def prepare_answers(run_root: Path, config: dict, question_bank: dict, crawl: di
     for sample in crawl["samples"]:
         question = question_by_id[sample["question_id"]]
         answer_text = sample.get("answer_text") or ""
+        # 品牌匹配跑在去引用正文上（`ranking_text`，由上游剥离引用标记与商品卡商家列）；
+        # 缺该字段时回落到原文以保持旧输入可用。理由见 build_report_data.py 的 de_cite
+        # 注释：被引文章标题里的品牌不该算成回答提及。
+        matching_text = sample.get("ranking_text") or answer_text
         evidence_path = run_root / "evidence/answers" / f"{sample['sample_id']}.txt"
         write_text(evidence_path, answer_text)
         object_records = []
-        for obj in config["objects"]:
-            spans = find_alias_spans(answer_text, obj["aliases"]) if sample["analysis_eligible"] else []
+        for obj in all_objects(config):
+            spans = find_alias_spans(matching_text, obj["aliases"]) if sample["analysis_eligible"] else []
             object_records.append({
                 "object_id": obj["object_id"],
                 "canonical_name": obj["canonical_name"],
@@ -145,7 +163,7 @@ def prepare_answers(run_root: Path, config: dict, question_bank: dict, crawl: di
                 "classification_confidence": None,
             })
             if row["host"]:
-                source_type, object_id = _classify_official(row["host"], config["objects"])
+                source_type, object_id = _classify_official(row["host"], all_objects(config))
                 if source_type:
                     row.update({
                         "source_type": source_type,
@@ -155,7 +173,7 @@ def prepare_answers(run_root: Path, config: dict, question_bank: dict, crawl: di
                         "classification_confidence": 1.0,
                     })
                 else:
-                    known = _known_type(row["host"])
+                    known = _known_type(row["host"], config.get("domain_category_cache"))
                     if known:
                         row.update({
                             "source_type": known,

@@ -1,8 +1,8 @@
 {
   "name": "geo-presales-report-audit",
-  "version": "2.3.0",
+  "version": "2.5.0",
   "owner": "海外 GEO 项目",
-  "updated_at": "2026-09-04",
+  "updated_at": "2026-09-16",
   "status": "active",
   "maturity_tier": "production",
   "lifecycle_stage": "production",
@@ -17,6 +17,7 @@
   "factory_components": [
     "references",
     "scripts",
+    "assets",
     "evals",
     "reports",
     "tests"

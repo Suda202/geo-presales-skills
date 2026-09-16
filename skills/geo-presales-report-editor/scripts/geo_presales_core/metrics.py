@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from decimal import Decimal, ROUND_HALF_UP
 
+from .config import all_objects
 from .deterministic import SOURCE_TYPES
 from .util import sha256_obj
 
@@ -29,8 +30,15 @@ def _average(values: list[int], digits: int = 1) -> dict:
     return {"numerator": sum(values), "denominator": len(values), "raw": float(raw), "display": f"#{displayed}"}
 
 
-def _selected_valid(answers_doc: dict) -> list[dict]:
-    return [item for item in answers_doc["answers"] if item["selected_for_report"] and item["validity"] == "valid"]
+def _valid_answers(answers_doc: dict) -> list[dict]:
+    """指标样本 = 全部有效回答。
+
+    不再按 ``selected_for_report`` 过滤：那个字段的含义是「每题展示哪一条」，属于呈现选择，
+    不该同时决定算哪一条。重复采集时每题有 N 条有效回答，N 条全部进分母——只取一条会丢掉
+    重复采集的意义（15 次里提到 3 次，与只测 1 次提到 1 次不是一回事）。
+    代表样本仍由 ``selected_for_report`` 标记，供明细展示与任务生成使用。
+    """
+    return [item for item in answers_doc["answers"] if item["validity"] == "valid"]
 
 
 def _object(answer: dict, object_id: str) -> dict:
@@ -54,16 +62,38 @@ def _metric_scopes(answer: dict) -> set[str]:
 
 
 def _is_formal_visibility_answer(answer: dict) -> bool:
+    """正式可见度样本 = **Discovery 意图**（Suda 2026-09-16 裁定）。
+
+    只按「分析类型含 visibility」判定会多收品类认知题——本题库里 2 道
+    category_awareness 题带着 `visibility,sentiment`，而那 2 道按
+    `canonical-intent-mapping.md`「报告侧正式 Visibility 指标只使用 Discovery」
+    不应进入可见度。诊断意图是权威判据。
+
+    `analysis_type` 只作为意图缺失时（旧数据）的回落，不再单独决定样本资格。
+
+    | 诊断意图 | 是否进正式可见度 |
+    |---|---|
+    | discovery | 是 |
+    | competitor / evaluation / case category_awareness / accuracy / verification | 否 |
+    """
     intents = _diagnostic_intents(answer)
     if intents:
         return "discovery" in intents
+    analysis_type = str(answer.get("analysis_type") or "").strip().casefold()
+    if analysis_type:
+        return "visibility" in {part.strip() for part in analysis_type.split(",") if part.strip()}
     return answer.get("question_type") == "generic"
 
 
 def _is_sentiment_answer(answer: dict) -> bool:
+    """情绪样本口径：`analysis_type` 中**包含** sentiment 即计入。
+
+    canonical-intent-mapping 要求「后端已标记为 Sentiment 的样本必须进入 M05 评价/情绪聚合」，
+    因此 Discovery 的 `visibility,sentiment` 必须计入；按精确相等比较会整批漏掉。
+    """
     analysis_type = str(answer.get("analysis_type") or "").strip().casefold()
     if analysis_type:
-        return analysis_type == "sentiment"
+        return "sentiment" in {part.strip() for part in analysis_type.split(",") if part.strip()}
     # Legacy payloads did not carry analysis_type. Explicit sentiment scope
     # markers remain a compatibility fallback only when that field is absent.
     scopes = _metric_scopes(answer)
@@ -103,16 +133,16 @@ def _opportunity_sort_key(item: dict):
 
 
 def compute_metrics(config: dict, question_bank: dict, answers_doc: dict) -> dict:
-    selected_valid = _selected_valid(answers_doc)
-    discovery = [item for item in selected_valid if _is_formal_visibility_answer(item)]
-    sentiment_answers = [item for item in selected_valid if _is_sentiment_answer(item)]
+    valid_answers = _valid_answers(answers_doc)
+    discovery = [item for item in valid_answers if _is_formal_visibility_answer(item)]
+    sentiment_answers = [item for item in valid_answers if _is_sentiment_answer(item)]
     target_id = config["target_object_id"]
 
     object_metrics = {}
     mention_values = {}
     rank_values = {}
     mention_counts = {}
-    for obj in config["objects"]:
+    for obj in all_objects(config):
         included = [answer for answer in discovery if _object(answer, obj["object_id"])["mentioned"]]
         mention_counts[obj["object_id"]] = len(included)
         mention_values[obj["object_id"]] = _percent(len(included), len(discovery))
@@ -123,7 +153,7 @@ def compute_metrics(config: dict, question_bank: dict, answers_doc: dict) -> dic
 
     total_mentions = sum(mention_counts.values())
     voice_values = {object_id: _percent(count, total_mentions) for object_id, count in mention_counts.items()}
-    for obj in config["objects"]:
+    for obj in all_objects(config):
         object_metrics[obj["object_id"]] = {
             "object_id": obj["object_id"],
             "name": obj["canonical_name"],
@@ -306,8 +336,12 @@ def compute_metrics(config: dict, question_bank: dict, answers_doc: dict) -> dic
         },
         "coverage": {
             "designed_questions": len(question_bank["questions"]),
-            "valid_answers": len(selected_valid),
-            "invalid_or_missing_answers": len(question_bank["questions"]) - len(selected_valid),
+            "valid_answers": len(valid_answers),
+            # 直接数无效回答。原先用「题数 − 有效回答数」在重复采集下会算出负数：
+            # 每题 N 条重复时有效回答数可以大于题数。
+            "invalid_or_missing_answers": sum(
+                1 for item in answers_doc["answers"] if item["validity"] != "valid"
+            ),
             "valid_discovery_answers": len(discovery),
         },
         "overview": {

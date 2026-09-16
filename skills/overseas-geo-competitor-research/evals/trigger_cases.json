@@ -1,0 +1,20 @@
+{
+  "recommended_threshold": 0.5,
+  "should_trigger": [
+    {"text": "没有提供竞品，请为这个品牌从零研究三个同一购买集合的正式竞品。", "family": "from_scratch"},
+    {"text": "核验客户填写的两个候选是不是同一次购买决策里的竞品，并自动补足三个。", "family": "verify_and_fill"},
+    {"text": "检查这些品牌是否真的会进入同一轮选型，功能相似但购买路径不同的不要。", "family": "purchase_set_audit"},
+    {"text": "为竞品名称、官网和可替代性保存官网及独立来源证据。", "family": "evidence_refresh"}
+  ],
+  "should_not_trigger": [
+    {"text": "生成完整的售前评测集 Case，竞品没填就自动补齐。", "family": "full_case"},
+    {"text": "根据确认的三个竞品生成英文监测 Prompt。", "family": "prompt_generation"},
+    {"text": "抓取回答并计算正式竞品的提及率。", "family": "answer_metrics"},
+    {"text": "根据现有竞品数据写售前报告结论。", "family": "report_writing"}
+  ],
+  "near_neighbor": [
+    {"text": "把评测集里的三个竞品名称改成英文，其他不动。", "family": "mechanical_edit"},
+    {"text": "解释什么叫同一购买集合，不需要搜索或核验品牌。", "family": "explain_only"},
+    {"text": "客户已经确认三个竞品和官网，直接写入 Case。", "family": "confirmed_case_input"}
+  ]
+}

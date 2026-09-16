@@ -1,0 +1,148 @@
+/* 原型 CSS 未覆盖的补充样式：仅新增，不覆盖任何既有规则。
+ * 新类名前缀统一为 plan-* 与 support-line 的补充，避免与原型的 .panel 体系冲突。 */
+
+.plan-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+}
+
+.plan-card + .plan-card {
+  margin-top: 14px;
+}
+
+.plan-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.plan-card-head strong {
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.plan-tag {
+  flex: 0 0 auto;
+  font: 700 10px/1.4 var(--mono);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.plan-tag.gold {
+  background: rgba(192, 90, 54, .1);
+  color: var(--gold-deep);
+}
+
+.plan-tag.blue {
+  background: rgba(77, 122, 149, .1);
+  color: var(--blue);
+}
+
+.plan-card-body {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.plan-note {
+  margin: 14px 0 0;
+  font: 10px/1.5 var(--mono);
+  color: var(--quiet);
+}
+
+.support-line {
+  font-size: 12.5px;
+  color: var(--quiet);
+  margin: 0;
+  padding: 8px 0;
+}
+
+/* 报告未使用原型的多选下拉，这里补足 tab 行的间距 */
+.filter-tabs {
+  margin-bottom: 0;
+}
+
+.filter-tabs + .filter-tabs {
+  margin-top: 12px;
+}
+
+/* URL 限单行显示，溢出省略；完整地址通过 title 悬停查看。
+   原型默认 word-break:break-all 会让长 URL 折成多行，撑高行高。 */
+.page-list .page-item small {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+  cursor: help;
+}
+
+/* 抽屉里的回答原文按 markdown 渲染后的排版 */
+.answer-md h3, .answer-md h4, .answer-md h5, .answer-md h6 {
+  font: 600 14px/1.5 var(--sans);
+  color: var(--ink);
+  margin: 18px 0 8px;
+}
+.answer-md p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+.answer-md ul, .answer-md ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+.answer-md li { margin-bottom: 4px; }
+.answer-md strong { color: var(--ink); font-weight: 600; }
+.answer-md code {
+  font: 12px/1.5 var(--mono);
+  background: var(--panel);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.answer-md a { color: var(--blue); text-decoration: none; word-break: break-all; }
+.answer-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12.5px;
+}
+.answer-table th, .answer-table td {
+  border: 1px solid var(--line-2);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--ink-2);
+}
+.answer-table th { background: var(--panel); font-weight: 600; color: var(--ink); }
+
+/* 原型的 .answer-panel 带 white-space:pre-line，那是给纯文本回答用的；
+   markdown 渲染后必须关掉，否则标签之间的换行会被当成正文保留。 */
+.answer-md.answer-panel {
+  white-space: normal;
+  padding: 18px 0;
+}
+
+/* 口径降级等作用域说明：数据会影响客户对数字的理解，必须在正文里可见 */
+.scope-note {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--muted);
+}

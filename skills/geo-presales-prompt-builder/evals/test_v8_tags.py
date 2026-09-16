@@ -194,6 +194,39 @@ class V8TagsTests(unittest.TestCase):
             errors,
         )
 
+    def test_v8_non_english_discovery_must_keep_the_localized_category_qualifier(self) -> None:
+        """泰语题库曾把品类限定删成光秃秃的 "แพลตฟอร์มใด"，问题落到语言学习品类上。"""
+        data = valid_v8_bank()
+        data["config"]["locale"] = "th"
+        data["config"]["category_label"] = "แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน"
+        errors, _, _ = MODULE.validate(data)
+        self.assertTrue(
+            any("must contain the localized category qualifier" in error for error in errors),
+            errors,
+        )
+
+    def test_v8_non_english_discovery_passes_with_the_localized_category_qualifier(self) -> None:
+        data = valid_v8_bank()
+        label = "แพลตฟอร์มสตรีมมิ่งวิดีโอภาษาจีน"
+        data["config"]["locale"] = "th"
+        data["config"]["category_label"] = label
+        for row in data["questions"]:
+            if "Intent: Discovery" in row["tags"]:
+                row["user_question"] = f"{label}ใดที่ {row['user_question']}"
+                row["monitoring_prompt"] = row["user_question"]
+        errors, _, _ = MODULE.validate(data)
+        self.assertFalse(
+            [error for error in errors if "localized category qualifier" in error], errors
+        )
+
+    def test_v8_english_banks_are_exempt_from_the_category_qualifier_gate(self) -> None:
+        """英文题面没有翻译环节，品类称呼变体由人工语义复核把关。"""
+        data = valid_v8_bank()
+        errors, _, _ = MODULE.validate(data)
+        self.assertFalse(
+            [error for error in errors if "localized category qualifier" in error], errors
+        )
+
     def test_v8_attribute_tags_must_exist_in_the_current_topic_plan(self) -> None:
         data = valid_v8_bank()
         discovery = next(

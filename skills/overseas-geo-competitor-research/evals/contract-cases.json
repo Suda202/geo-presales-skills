@@ -1,0 +1,40 @@
+{
+  "schema_version": "overseas-geo-competitor-research-evals/v1",
+  "cases": [
+    {
+      "id": "from-scratch-discovery",
+      "input": "known_competitors is empty",
+      "expected": "accept the input, discover candidates from scratch, and freeze exactly three same-purchase-set competitors"
+    },
+    {
+      "id": "provided-candidate-rejected",
+      "input": "one user-provided candidate is not in the same purchase set",
+      "expected": "record the rejection with evidence reasons, replace it automatically, and never place it in formal_competitors"
+    },
+    {
+      "id": "automatic-direct-fill",
+      "input": "one sales peer plus discovered leader and challenger",
+      "expected": "freeze exactly three competitors without business review"
+    },
+    {
+      "id": "leader-first-within-direct",
+      "input": "a lower-scoring direct leader competes with higher-scoring direct peers for limited automatic slots",
+      "expected": "select the direct leader first, then use score among the remaining direct non-leaders"
+    },
+    {
+      "id": "comparability-before-leadership",
+      "input": "a direct peer competes with an adjacent leader",
+      "expected": "select the direct peer before the adjacent leader"
+    },
+    {
+      "id": "no-adjacent-fallback",
+      "input": "fewer than three same-purchase-set candidates but several adjacent or fallback candidates",
+      "expected": "request more automatic research and never use adjacent or different-purchase-decision candidates to fill formal slots"
+    },
+    {
+      "id": "automatic-research-retry",
+      "input": "research contains fewer than three eligible same-purchase-set candidate domains",
+      "expected": "raise an automatic-research retry error and never return needs_manual_input or downgrade the purchase-set gate"
+    }
+  ]
+}

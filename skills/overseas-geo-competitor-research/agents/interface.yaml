@@ -1,0 +1,24 @@
+interface:
+  display_name: "海外 GEO 售前竞品研究"
+  short_description: "从零发现或核验同一购买集合的三个竞品"
+  default_prompt: "联网研究并冻结三个与目标品牌处于同一购买集合的正式竞品。known_competitors 允许为空；有值时先核验，未通过同次购买决策硬门槛则记录淘汰并自动替换。相邻产品和不同购买决策的品牌不得凑数。"
+compatibility:
+  canonical_format: "agent-skills"
+  adapter_targets:
+    - "openai"
+    - "claude"
+    - "generic"
+  activation:
+    mode: "manual"
+    paths: []
+  execution:
+    context: "inline"
+    shell: "bash"
+  trust:
+    source_tier: "local"
+    remote_inline_execution: "forbid"
+    remote_metadata_policy: "allow-metadata-only"
+  degradation:
+    openai: "metadata-adapter"
+    claude: "neutral-source-plus-adapter"
+    generic: "neutral-source"

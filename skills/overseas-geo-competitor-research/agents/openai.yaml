@@ -1,0 +1,4 @@
+interface:
+  display_name: "海外 GEO 售前竞品研究"
+  short_description: "从零发现或核验同一购买集合的三个竞品"
+  default_prompt: "基于目标品牌、Topic 和目标市场最新证据，冻结三个处于同一购买集合的正式竞品。known_competitors 可为空；已提供项也必须通过同次购买决策硬门槛，否则记录淘汰并自动替换。不得用相邻产品或不同购买决策的品牌补位。"

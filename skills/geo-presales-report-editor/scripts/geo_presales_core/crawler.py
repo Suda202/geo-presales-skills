@@ -6,10 +6,34 @@ from pathlib import Path
 from .util import ContractError, extract_urls, normalize_text, sha256_obj
 
 
+# 失败页判定。签名必须**指向助手自身出错**，不能是给用户的建议。
+#
+# 刻意不写裸 `try again`：正常回答里会出现「滤芯堵了就再冲一次」这类建议，
+# 全句匹配会把它们误判成失败页。要匹配的是自我指涉的措辞
+# （"Could you try again?" / "I encountered an error" / "unable to generate a response"）。
+#
+# 2026-09-16 补：实测 `I encountered an error doing what you asked. Could you try again?`
+# 与 `I am unable to generate a response at this time.` 在旧表下判为有效，
+# 会让失败页静默进入可见度分母（botslab topic_2 实测分母 90 应为 89）。
+#
+# **已知边界**：这是纯词法匹配，没有长度或位置约束，因此含这些词写的**短**正常回答
+# 会被判成失败页、静默剔出分母（例如用户评价「我的第一台出过问题但售后很快换新」）。
+# 曾试过加长度约束，但失败页实测 60–200 字符、误报例 101 字符，落在同一区间，
+# 词法 + 长度分不开；Suda 2026-09-16 裁定不做长度约束，只补签名。
+# 实测暴露面：三个数据集 240 条回答里只有 1 条含签名词且判定正确——属机制隐患，非现行错误。
+# 后续若发现某批数据有效回答数偏低，先查这里。
 INVALID_SIGNATURES = [
     ("LOGIN_REQUIRED", re.compile(r"\b(log in|login|sign in|sign up)\b.{0,80}\b(chatgpt|account|continue)\b", re.I | re.S)),
-    ("ERROR_PAGE", re.compile(r"\b(something went wrong|internal server error|bad gateway|service unavailable|try again later)\b", re.I)),
-    ("REFUSAL", re.compile(r"^(i['’]?m sorry[, ]+but |i (?:can(?:not|'t)|won't) (?:help|assist|provide)|unable to comply)", re.I)),
+    ("ERROR_PAGE", re.compile(
+        r"\b(something went wrong|internal server error|bad gateway|service unavailable"
+        r"|try again later|could you try again|i encountered an error|an error occurred"
+        r"|error (?:doing|while doing) what you asked)\b", re.I)),
+    ("REFUSAL", re.compile(
+        r"^(i['’]?m sorry[, ]+but "
+        r"|i (?:can(?:not|'t)|won't) (?:help|assist|provide)"
+        r"|unable to comply"
+        r"|i(?:'m| am| was)? unable to (?:generate|respond|provide|answer|complete)"
+        r"|unable to (?:generate|respond to|provide) (?:a |an )?(?:response|answer|reply|result))", re.I)),
     ("PLACEHOLDER", re.compile(r"^(n/?a|no answer|placeholder|loading\.{0,3})$", re.I)),
 ]
 

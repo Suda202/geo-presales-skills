@@ -36,6 +36,68 @@ def _as_list(value) -> list:
     return [value]
 
 
+_MARKET_RE = re.compile(r"^[a-z]{2}(?:[-_][a-z0-9]{2,8})*$")
+_LANGUAGE_RE = re.compile(r"^[a-z]{2,3}(?:[-_][a-z0-9]{2,8})*$")
+_PLATFORM_ALIASES = {
+    "chatgpt": "chatgpt",
+    "gemini": "gemini",
+    "aio": "aio",
+    "ai overview": "aio",
+    "google ai overview": "aio",
+    "google ai overviews": "aio",
+    "aimode": "aimode",
+    "ai mode": "aimode",
+    "google ai mode": "aimode",
+    "perplexity": "perplexity",
+    "copilot": "copilot",
+    "grok": "grok",
+    "doubao": "doubao",
+    "deepseek": "deepseek",
+    "kimi": "kimi",
+    "qwen": "qwen",
+    "qianwen": "qwen",
+    "yuanbao": "yuanbao",
+}
+
+
+def _normalize_codes(value, pattern, label: str) -> list[str]:
+    """市场码与语言码只校验形状，不再限定具体取值。"""
+    codes: list[str] = []
+    for item in _as_list(value):
+        token = str(item or "").strip().casefold().replace("_", "-")
+        if not token:
+            continue
+        if token in {"united states", "usa"}:
+            token = "us"
+        elif token == "english":
+            token = "en"
+        if not pattern.match(token):
+            raise ContractError(f"Invalid {label} code: {item!r}")
+        if token not in codes:
+            codes.append(token)
+    if not codes:
+        raise ContractError(f"Config is missing {label}")
+    return codes
+
+
+def _normalize_platforms(value) -> list[str]:
+    platforms: list[str] = []
+    for item in _as_list(value):
+        token = str(item or "").strip().casefold()
+        if not token:
+            continue
+        canonical = _PLATFORM_ALIASES.get(token)
+        if not canonical:
+            if not re.match(r"^[a-z0-9][a-z0-9 ._+-]{0,30}$", token):
+                raise ContractError(f"Invalid platform: {item!r}")
+            canonical = token
+        if canonical not in platforms:
+            platforms.append(canonical)
+    if not platforms:
+        raise ContractError("Config is missing platform")
+    return platforms
+
+
 def _clean_aliases(name: str, aliases) -> list[str]:
     values = [name]
     for item in _as_list(aliases):
@@ -69,7 +131,7 @@ def _normalize_object(raw: dict | str, role: str, index: int) -> dict:
         raise ContractError(f"{role} object {name!r} is missing a valid official domain")
     aliases = _clean_aliases(name, raw.get("aliases") or raw.get("confirmed_aliases"))
     return {
-        "object_id": "target" if role == "target" else f"competitor-{index:02d}",
+        "object_id": "target" if role == "target" else f"{role}-{index:02d}",
         "role": role,
         "display_order": index,
         "canonical_name": name,
@@ -136,15 +198,9 @@ def normalize_config(raw: dict) -> dict:
             raise ContractError("Config is missing topic")
         topics = [{"topic_id": "legacy", "topic_type": "coverage", "topic": topic}]
 
-    market = str(raw.get("market") or raw.get("target_market") or "US").strip().casefold()
-    if market not in {"us", "usa", "united states", "united_states"}:
-        raise ContractError("This version supports only the US market")
-    language = str(raw.get("language") or "en").strip().casefold()
-    if language not in {"en", "en-us", "english", "english-us"}:
-        raise ContractError("This version supports only English")
-    platform = str(raw.get("platform") or "chatgpt").strip().casefold()
-    if platform != "chatgpt":
-        raise ContractError("This version supports only ChatGPT")
+    markets = _normalize_codes(raw.get("markets") or raw.get("market") or raw.get("target_market") or ["US"], _MARKET_RE, "market")
+    languages = _normalize_codes(raw.get("languages") or raw.get("language") or ["en"], _LANGUAGE_RE, "language")
+    platforms = _normalize_platforms(raw.get("platforms") or raw.get("platform") or ["chatgpt"])
 
     brand_raw = raw.get("brand") or {
         "name": raw.get("brand_name") or raw.get("customer_name"),
@@ -157,6 +213,10 @@ def normalize_config(raw: dict) -> dict:
     competitors = [_normalize_object(item, "competitor", index) for index, item in enumerate(_as_list(competitor_raw), 1)]
     if not 1 <= len(competitors) <= 3:
         raise ContractError("Config must contain 1 to 3 confirmed competitors")
+    discovered = [
+        _normalize_object(item, "discovered", index)
+        for index, item in enumerate(_as_list(raw.get("discovered_objects") or raw.get("discovered_competitors")), 1)
+    ]
 
     alias_owner: dict[str, str] = {}
     for obj in [target, *competitors]:
@@ -176,13 +236,17 @@ def normalize_config(raw: dict) -> dict:
         "topic": topic,
         "topics": topics,
         "target_attributes": _as_list(raw.get("target_attributes")),
-        "market": "US",
-        "language": "en",
-        "platform": "chatgpt",
+        "market": markets[0],
+        "markets": markets,
+        "language": languages[0],
+        "languages": languages,
+        "platform": platforms[0],
+        "platforms": platforms,
         "audiences": [str(item) for item in _as_list(raw.get("audiences")) if str(item).strip()],
         "supplemental_context": str(raw.get("supplemental_context") or raw.get("background_info") or "").strip(),
         "avoid_expressions": [str(item) for item in _as_list(raw.get("avoid_expressions")) if str(item).strip()],
         "objects": [target, *competitors],
+        "discovered_objects": discovered,
         "target_object_id": "target",
         "quotas": quotas,
         "sample_policy": str(raw.get("sample_policy") or "first_valid_per_question"),
@@ -198,6 +262,11 @@ def normalize_config(raw: dict) -> dict:
         raise ContractError("sentiment_confidence_threshold must be between 0.5 and 1")
     result["config_hash"] = sha256_obj(result)
     return result
+
+
+def all_objects(config: dict) -> list[dict]:
+    """参与品牌识别与声量计算的全部对象：配置竞品 + 开放发现品牌。"""
+    return [*config["objects"], *config.get("discovered_objects", [])]
 
 
 def validate_domain_text(value: str) -> bool:

@@ -5,3 +5,12 @@ __pycache__/
 # 本地私有配置和报告运行产物
 skills/geo-presales-eval-case-builder/references/lark-base-target.local.md
 /runs/
+
+# 客户资料与运行产物：品牌词表、引用域名缓存、候选清单都不入公开仓库。
+# 词表按各 Skill 的 SKILL.md 在自己的 assets/ 下生成。
+skills/*/assets/brand_lexicon.*.json
+skills/*/assets/brand-lexicon.*.json
+skills/*/assets/domain-categories.json
+skills/*/build/
+skills/*/tests/fixture_report_data.json
+skills/shared/brand-lexicon.*.json

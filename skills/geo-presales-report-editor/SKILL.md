@@ -14,6 +14,20 @@ metadata:
 
 输入按以下顺序定位：用户提供的报告 CSV、当前附件或已确认统计文件、当前 Task/品牌对应的运行目录或统计包、已配置的只读后端适配器。已有 CSV 时直接编辑 CSV，不要求先重建报告。页面链接只可用于定位 Task 或只读核对证据；不得在页面内回填或上传。
 
+## 底层的归属与变更纪律
+
+`scripts/geo_presales_core/`（含 `metrics.py`、`deterministic.py`、`config.py`）**归本 skill 所有**，是四个 skill 共用的指标口径实现——`geo-presales-report-builder`、`geo-presales-report-audit`、`geo-presales-crawl-integrity` 都直接引用它。
+
+**其他 skill 对本目录只读。** 需要改口径时，改在本 skill 里，不在下游复制一份；下游需要不同口径时在自身的适配层做显式转换，并在产物里标注口径来源。
+
+**改本目录之前**：
+
+1. 跑 `python3 -m unittest discover -s tests`，全部通过才算改完。
+2. 在改动说明里写明**受影响的下游 skill 与指标**——同一个函数改了，四份报告的同一列数字会一起变。
+3. 口径判据（哪一类样本进哪个指标）改动必须先取得确认，不能只按注释里的假设改。
+
+**为什么立这条**（2026-09-16 实测）：`_is_formal_visibility_answer` 被改成「分析类型含 visibility 即计入可见度」，注释假设「只有 discovery 带 visibility」，但题库里 2 道 `category_awareness` 题也带着 `visibility,sentiment`。后果是可见度分母从 264 静默变成 279、提及率从 12.5% 掉到 11.8%，**全程不报错**；下游的独立校验脚本按 Discovery 口径复算，才把差异暴露出来。同一轮里文件归属逻辑被改成只按题面匹配，而 AIO 的响应没有 `prompt` 字段（100/100 为空），导致该平台整批归零。两次都是「改的人不知道下游有谁、下游也不知道上游改了」。
+
 ## 开始前读取
 
 所有模式完整读取：

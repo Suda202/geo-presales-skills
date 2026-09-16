@@ -341,12 +341,184 @@ class StructuredResultTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("structured_result_cases=12", result.stdout)
+        self.assertIn("structured_result_cases=14", result.stdout)
         self.assertIn("failed=0", result.stdout)
 
     def test_prepare_records_explicit_target_brand(self) -> None:
         bundle = STRUCTURED.build_review_bundle(self.base_payload(), "Lit by Larry")
         self.assertEqual(bundle["target_brand"], "Lit by Larry")
+
+
+DE_CITE_SCRIPT = ROOT / "scripts" / "de_cite_crawl.py"
+VERIFY_SCRIPT = ROOT / "scripts" / "verify_brand_extraction.py"
+
+PROMPT = "Which smart dash cam brands should car owners consider?"
+
+
+def write_crawl_fixture(raw_dir, result_text, platform="chatgpt"):
+    """极简采集目录 + 题库，覆盖一个平台一条回答。"""
+    root = Path(raw_dir)
+    collect = root / f"scraper.{platform}" / "US"
+    collect.mkdir(parents=True, exist_ok=True)
+    (collect / "0001.json").write_text(json.dumps({
+        "status": "success",
+        "task_result": {"prompt": PROMPT, "result_text": result_text},
+    }))
+    bank = root / "bank.json"
+    bank.write_text(json.dumps({
+        "config": {"topics": [{"topic_id": "topic_1", "topic": "smart dash cams"}]},
+        "questions": [{
+            "question_id": "BOT-T1-D01",
+            "topic_id": "topic_1",
+            "diagnosis_intent": "discovery",
+            "analysis_type": "visibility",
+            "formal_visibility_eligible": True,
+            "user_question": PROMPT,
+            "monitoring_prompt": PROMPT,
+            "zh_translation": "车主应该考虑哪些行车记录仪品牌？",
+        }],
+    }))
+    return root, bank
+
+
+def run_de_cite(tmp, result_text, platform="chatgpt"):
+    root, bank = write_crawl_fixture(tmp, result_text, platform)
+    out = root / "normalized.jsonl"
+    proc = subprocess.run(
+        [sys.executable, str(DE_CITE_SCRIPT), "--collect-dir", str(root),
+         "--question-bank", str(bank), "--out", str(out)],
+        capture_output=True, text=True,
+    )
+    rows = [json.loads(line) for line in out.read_text().splitlines()] if out.exists() else []
+    return proc.returncode == 0, proc, rows
+
+
+class DeCiteCrawlTests(unittest.TestCase):
+    def test_removes_citation_markers_and_definition_lines(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ok, proc, rows = run_de_cite(tmp, (
+                "Top brands are VIOFO and Vantrue. ([TechRadar][1])\n\n"
+                '[1]: https://www.techradar.com/best-dash-cams "TechRadar"'
+            ))
+            self.assertTrue(ok, proc.stdout + proc.stderr)
+            body = rows[0]["body_markdown"]
+            self.assertIn("VIOFO", body)
+            self.assertNotIn("TechRadar", body)
+            self.assertNotIn("techradar.com", body)
+
+    def test_blanks_merchant_column_but_keeps_goods_title(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ok, proc, rows = run_de_cite(
+                tmp,
+                "Intro.\n\n| id | goods | price | rating | merchants | picture |\n"
+                "|---|---|---|---|---|---|\n"
+                "| 1 | **VIOFO - A229 Pro 3CH Dash Cam** | $299 | 4.4 | "
+                "[$299.99 - Best Buy](https://www.bestbuy.com/x) | |\n",
+            )
+            self.assertTrue(ok, proc.stdout + proc.stderr)
+            row = rows[0]
+            self.assertIn("VIOFO - A229 Pro", row["body_ranking"])
+            self.assertNotIn("Best Buy", row["body_ranking"])
+            # body_markdown 保留原始形态；排名只看 body_ranking
+            self.assertIn("Best Buy", row["body_markdown"])
+
+    def test_failure_page_is_marked_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ok, proc, rows = run_de_cite(
+                tmp, "I encountered an error doing what you asked. Could you try again?")
+            self.assertTrue(ok, proc.stdout + proc.stderr)
+            self.assertEqual(rows[0]["answer_status"], "unavailable")
+
+    def test_unknown_prompt_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root, bank = write_crawl_fixture(tmp, "Some answer.")
+            (Path(root) / "scraper.chatgpt" / "US" / "0001.json").write_text(json.dumps({
+                "status": "success",
+                "task_result": {"prompt": "Not in the bank?", "result_text": "Some answer."},
+            }))
+            proc = subprocess.run(
+                [sys.executable, str(DE_CITE_SCRIPT), "--collect-dir", str(root),
+                 "--question-bank", str(bank), "--out", str(Path(root) / "n.jsonl")],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("不在题库", proc.stderr)
+
+
+def write_extraction_fixture(tmp, body, brands):
+    root = Path(tmp)
+    (root / "normalized.jsonl").write_text(json.dumps({
+        "answer_id": "chatgpt:BOT-T1-D01:0001",
+        "answer_status": "available",
+        "body_markdown": body,
+        "body_ranking": body,
+    }) + "\n")
+    (root / "extract-chatgpt-1.json").write_text(json.dumps([
+        {"answer_id": "chatgpt:BOT-T1-D01:0001",
+         "brands": [{"brand": b, "evidence": ""} for b in brands]}
+    ]))
+    return root / "normalized.jsonl", root
+
+
+class VerifyBrandExtractionTests(unittest.TestCase):
+    def run_verify(self, tmp, body, brands, lexicon=None):
+        normalized, extractions = write_extraction_fixture(tmp, body, brands)
+        cmd = [sys.executable, str(VERIFY_SCRIPT), "--normalized", str(normalized),
+               "--extractions", str(extractions), "--out", str(Path(tmp) / "v.json")]
+        if lexicon:
+            lex = Path(tmp) / "lex.json"
+            lex.write_text(json.dumps(lexicon))
+            cmd += ["--lexicon", str(lex)]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        report = json.loads((Path(tmp) / "v.json").read_text())
+        return proc, report
+
+    def test_correct_extraction_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, report = self.run_verify(
+                tmp, "VIOFO leads, then Vantrue.", ["VIOFO", "Vantrue"])
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertEqual(report["order_mismatch"], [])
+            self.assertEqual(report["name_variants"], {})
+
+    def test_name_variant_collision_blocks(self) -> None:
+        """回归：同一品牌被写成多种大小写，未归一会让它占两个名次。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, report = self.run_verify(
+                tmp, "Lamtto and LAMTTO are options.", ["Lamtto", "LAMTTO"])
+            self.assertEqual(proc.returncode, 2)
+            self.assertEqual(report["name_variants"], {"lamtto": ["LAMTTO", "Lamtto"]})
+
+    def test_order_mismatch_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, report = self.run_verify(
+                tmp, "VIOFO leads, then Vantrue.", ["Vantrue", "VIOFO"])
+            self.assertEqual(proc.returncode, 2)
+            self.assertEqual(len(report["order_mismatch"]), 1)
+            self.assertEqual(
+                report["order_mismatch"][0]["observed"], ["VIOFO", "Vantrue"])
+
+    def test_brand_absent_from_body_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, report = self.run_verify(tmp, "VIOFO leads.", ["VIOFO", "Garmin"])
+            self.assertEqual(proc.returncode, 2)
+            self.assertEqual(report["brand_not_in_body"][0]["brand"], "Garmin")
+
+    def test_lexicon_recall_flags_missing_brand(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, report = self.run_verify(
+                tmp, "VIOFO and Vantrue are options.", ["VIOFO"],
+                lexicon={"VIOFO": ["viofo"], "Vantrue": ["vantrue"]})
+            self.assertEqual(len(report["suspected_missed_brands"]), 1)
+            self.assertEqual(report["suspected_missed_brands"][0]["brand"], "Vantrue")
+
+    def test_lexicon_metadata_keys_are_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, report = self.run_verify(
+                tmp, "VIOFO leads.", ["VIOFO"],
+                lexicon={"_comment": "note", "VIOFO": ["viofo"]})
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertEqual(report["suspected_missed_brands"], [])
 
 
 if __name__ == "__main__":

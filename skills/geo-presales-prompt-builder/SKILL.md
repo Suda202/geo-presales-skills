@@ -68,7 +68,7 @@ Accuracy 默认配额为 0，不读取或要求上游事实包。不得从旧评
 | `Intent: Evaluation` | `sentiment` | `false` |
 | `Intent: Category Awareness` | 空 | `true` |
 
-把 `analysis_type` 用于分析模块分流，把 `formal_visibility_eligible` 用于正式可见度题集资格。两者由 Prompt 生成角色确定，不从可自由修改的 Tags 自动推导；增删自定义 Tag 不得改变路由。Discovery 同时承担可见度与情感分析；Competitor 与 Evaluation 只进入情感模块；Verification 与 Accuracy 只在独立合同下使用，不进入默认售前题库的可见度或情感指标；Category Awareness 不分流进任何标准分析模块，由售前报告作为认知标准与品牌属性对比输入直接消费。正式 Visibility、声量、排名、Share of Voice 与聚合引用指标的分子与分母只统计 `formal_visibility_eligible = true` 的 Discovery 与 Category Awareness，Competitor 不再计入。旧 `metric_scopes` 只可由兼容适配器生成，不是 v8 核心字段，也不得覆盖上述两个字段。
+把 `analysis_type` 用于分析模块分流，把 `formal_visibility_eligible` 用于标记进入后端可见度处理管线的题集。两者由 Prompt 生成角色确定，不从可自由修改的 Tags 自动推导；增删自定义 Tag 不得改变路由。Discovery 同时承担可见度与情感分析；Competitor 与 Evaluation 只进入情感模块；Verification 与 Accuracy 只在独立合同下使用，不进入默认售前题库的可见度或情感指标；Category Awareness 不分流进任何标准分析模块，由售前报告作为认知标准与品牌属性对比输入直接消费。**报告侧正式 Visibility、声量、排名、Share of Voice 与聚合引用指标的分子与分母只统计 `Intent: Discovery` 题**；Category Awareness 与 Competitor 均不计入，Competitor 进 M02 竞品模块，Category Awareness 进 M08 品类认知模块。`formal_visibility_eligible = true` 只表示进入后端可见度处理管线，不等于进入正式可见度指标。旧 `metric_scopes` 只可由兼容适配器生成，不是 v8 核心字段，也不得覆盖上述两个字段。
 
 不生成或保留 `topic_type`、`question_type`、`funnel_intent`、`decision_stage`。旧 `overseas-geo-question-bank/v5` 仅允许只读验证或迁移，不得作为新题库默认输出。
 

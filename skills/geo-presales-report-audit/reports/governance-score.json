@@ -3,7 +3,7 @@
   "failures": [],
   "warnings": [],
   "details": {
-    "skill_dir": "/Users/huangsifan/海外GEO/.agents/skills/geo-presales-report-audit",
+    "skill_dir": "geo-presales-report-audit",
     "manifest_present": true,
     "frontmatter_name": "geo-presales-report-audit",
     "manifest_name": "geo-presales-report-audit",

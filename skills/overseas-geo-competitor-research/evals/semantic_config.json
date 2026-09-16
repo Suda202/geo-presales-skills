@@ -1,0 +1,15 @@
+{
+  "fallback_positive_concepts": ["competitor_research"],
+  "positive_concepts": {
+    "competitor_research": {
+      "weight": 1.0,
+      "phrases": ["研究竞品", "找竞品", "正式竞品", "候选竞品", "同一购买集合", "同一次购买决策", "同一轮选型", "可替代性", "competitor research", "same purchase set"]
+    }
+  },
+  "negative_concepts": {
+    "full_case": {"weight": 0.95, "exclusive": true, "phrases": ["完整的售前评测集 case", "生成完整 case", "直接写入 case"]},
+    "prompt_generation": {"weight": 0.95, "exclusive": true, "phrases": ["生成英文监测 prompt", "生成 prompt"]},
+    "answer_or_report": {"weight": 0.95, "exclusive": true, "phrases": ["抓取回答", "计算正式竞品", "写售前报告结论"]},
+    "mechanical_or_explain": {"weight": 0.95, "exclusive": true, "phrases": ["名称改成英文", "不需要搜索或核验"]}
+  }
+}

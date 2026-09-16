@@ -767,6 +767,31 @@ def _v6_requests_concrete_candidates(text: str, locale: str = "en") -> bool:
     )
 
 
+def _v8_compact(value: object) -> str:
+    """跨语种比较文本时去掉空白和标点，保留各语种文字本身。"""
+    return re.sub(r"[^\w]+", "", str(value).casefold(), flags=re.UNICODE)
+
+
+def _v8_localized_question_dropped_category(
+    user_question: object,
+    category_label: object,
+    locale: str,
+) -> bool:
+    """非英文 Discovery 题面必须写出本地化品类限定。
+
+    本地化时把反复出现的品类限定词删掉，会让监测问题落到别的品类上：泰语题库曾把
+    "Which Chinese-language video streaming platforms ..." 缩成 "แพลตฟอร์มใด ..."，
+    模型于是改答语言学习 App 和线上外教。英文题库不受此检查——那里没有翻译环节，
+    品类称呼变体由人工语义复核把关。
+    """
+    if locale == "en":
+        return False
+    label = _v8_compact(category_label)
+    if not label:
+        return False
+    return label not in _v8_compact(user_question)
+
+
 def _v6_url_belongs_to_domain(source_url: str, official_domain: str) -> bool:
     source = urlparse(source_url)
     target_value = official_domain if "://" in official_domain else f"https://{official_domain}"
@@ -1136,6 +1161,8 @@ def validate_v8(data: dict) -> tuple[list[str], list[str], dict]:
             if isinstance(item, dict) and str(item.get("name") or "").strip()
         ]
     brand = str(config.get("brand_name") or "").strip()
+    category_label = str(config.get("category_label") or "").strip()
+    bank_locale = str(config.get("locale") or "en").strip() or "en"
     discovery_attribute_coverage: dict[str, set[str]] = {}
     competitor_attribute_tags: dict[str, list[tuple[str, ...]]] = {}
     tag_counts: Counter = Counter()
@@ -1177,6 +1204,14 @@ def validate_v8(data: dict) -> tuple[list[str], list[str], dict]:
         if len(scope_tags) != 1:
             errors.append(f"{prefix}.tags must contain exactly one Brand Scope tag")
         text = str(row.get("user_question") or "").strip()
+        if role == "discovery" and _v8_localized_question_dropped_category(
+            text, category_label, bank_locale
+        ):
+            errors.append(
+                f"{prefix}.user_question must contain the localized category qualifier "
+                f"{category_label!r}: the localized Prompt dropped the category, so the "
+                f"question can fall into another category"
+            )
         mentions_brand = any(
             _contains_v6_entity(text, entity)
             for entity in [brand, *competitor_names]
