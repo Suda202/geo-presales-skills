@@ -35,7 +35,7 @@ metadata:
 1. [结论综合规则](references/conclusion-synthesis-guide.md)
 2. [上传 CSV 契约](references/report-upload-csv-contract.md)
 3. [统计范围与客户指标命名契约](references/metric-scope-and-copy-contract.md)
-4. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)：模块代码（M01–M08）、意图词表与 `target_attributes` 派生说明。
+4. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)：模块代码（M01–M10）、意图词表与 `target_attributes` 派生说明。
 
 只有从 v2 后端统计包新生成 CSV 时，再完整读取 [后端输入契约](references/backend-input-contract.md) 和 [报告任务契约](references/backend-report-task-contract.md)。命令和异常恢复见 [使用说明](references/usage.md)。
 
@@ -64,7 +64,7 @@ metadata:
 
 ## 硬边界
 
-> 模块代码：M05 = 评价/情绪，M06 = 行动建议，M07 = 平台差异，M08 = 品类认知（Market Perception）。完整映射见 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)。
+> 模块代码按事实来源划分：M01 数据总览、M02 竞品表现、M03 引用来源、M04 品牌表达（评价/情绪）、M05 品牌进入（后端已分档的缺口）、M06 下一步行动、M07 平台一致、M08 购买框架（品类认知）、M10 最终摘要。**与诊断意图不是一一对应**——验证、准确性没有模块，只作为诊断输入。完整映射见 [跨 skill 规范映射](../shared/canonical-intent-mapping.md)，职责与依赖见 [报告模块任务契约](references/backend-report-task-contract.md)。
 
 - 指标、分母、分档、行动路由和优先级只使用后端结果；不从明细重算。正式可见度与主要引用生态只用 `diagnostic_intent=discovery`；情绪直接使用完整 `analysis_type=sentiment` 结果，不再按 `diagnostic_intent`、Discovery/Evaluation、通用题/品牌题或其他意图二次筛选。
 - 客户文案中的六类诊断标签固定为“发现、竞品、验证、准确性、评价、品类认知”；标签单独展示时使用这些名称，在结论句中统一写成“发现类问题、竞品类问题、验证类问题、准确性类问题、评价类问题、品类认知类问题”。不得混用“发现型、纯发现型、竞品比较、功能核实、准确性诊断、品牌评价”等别名。
