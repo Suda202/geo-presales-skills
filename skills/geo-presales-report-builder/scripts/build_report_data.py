@@ -1472,6 +1472,8 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
             def _placeholder_row(row: list[str]) -> bool:
                 if any(len(cell) >= 12 for cell in row):
                     return False
+                if not any("*" in cell or "⭐" in cell for cell in row):
+                    return False
                 return all(_re.fullmatch(r"[\*⭐☆\s\d.%-]*", cell) for cell in row)
             rows = [row for row in rows if not _placeholder_row(row)]
             # 整列为空的丢掉：回答里的商品表常有 picture 之类全空列，

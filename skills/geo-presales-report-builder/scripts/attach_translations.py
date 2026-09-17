@@ -70,15 +70,20 @@ def main() -> int:
         details[key]["answer_zh_html"] = markdown_to_html(value)
         filled += 1
 
-    # 截断门禁(Bewinch 2026-09-17 校准):长回答译文/原文 HTML 长度比
-    # < 全批中位的 60% 即列疑似。该信号召回可靠(实测 6 中 4 真,含只翻 16%、
+    # 截断门禁(Bewinch 2026-09-17 校准):长回答译文/原文**纯文本**长度比
+    # < 全批中位的 60% 即列疑似。必须剥标签后再比——比渲染 HTML 会被标记膨胀
+    # 失真(引用 pill 每个 ~150 字符,原文有 pill、译文省略时比例被拉低,实测
+    # 一次改动让误报从 2 涨到 17)。该信号召回可靠(实测 6 中 4 真,含只翻 16%、
     # 断尾+乱码、链接全丢),但纯散文的完整中译也会天然压到 ~0.3(英文词
     # ≈1.7 汉字),因此默认只警告,清单必须人工复核:对照原文核 URL 集合、
     # 数字锚点与末段是否语义对齐。机械化 URL/pill 比对已试过并否决——
     # 实测 155/379 条译文存在正常的链接省略,误报远高于截断本身。
-    ratios = {key: len(details[key]["answer_zh_html"]) / len(details[key]["answer_html"])
+    import re as _re
+    def _text_len(html: str) -> int:
+        return len(_re.sub(r"<[^>]+>", "", html or ""))
+    ratios = {key: _text_len(details[key]["answer_zh_html"]) / _text_len(details[key]["answer_html"])
               for key in translated
-              if details[key].get("answer_html") and len(details[key]["answer_html"]) >= 1500}
+              if details[key].get("answer_html") and _text_len(details[key]["answer_html"]) >= 1200}
     suspected = []
     if len(ratios) >= 10:
         median = sorted(ratios.values())[len(ratios) // 2]

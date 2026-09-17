@@ -229,12 +229,13 @@
       var max = types.reduce(function (acc, row) {
         return Math.max(acc, parseFloat(String(row[1]).replace("%", "")) || 0);
       }, 0) || 1;
-      typesEl.innerHTML = types.map(function (row) {
+      typesEl.innerHTML = '<div class="bar-head"><span>类别</span><span>引用份额</span></div>' +
+        (types.map(function (row) {
         var value = parseFloat(String(row[1]).replace("%", "")) || 0;
         return '<div class="bar-row"><span class="bar-label">' + esc(row[0]) + "</span>" +
           '<div class="track"><div class="fill ' + esc(row[3] || "") + '" style="width:' + Math.max(2, (value / max) * 100) + '%"></div></div>' +
           '<b class="bar-val">' + esc(row[1]) + "</b></div>";
-      }).join("") || emptyRow("暂无数据");
+      }).join("") || emptyRow("暂无数据"));
     }
 
     var domainsEl = document.getElementById("sourceDomains");

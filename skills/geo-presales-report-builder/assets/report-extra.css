@@ -186,3 +186,17 @@
 .sentiment-evidence-card .sentiment-evidence-dir + .sentiment-evidence-claim {
   margin-top: 8px;
 }
+
+/* 回答正文里的引用 pill（([来源名][N]) 渲染结果） */
+.answer-md .cite-pill{display:inline-flex;align-items:center;gap:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:baseline;margin:0 2px;padding:1px 7px 1px 8px;border-radius:999px;background:rgba(192,90,54,.08);border:1px solid rgba(192,90,54,.22);font-size:11px;line-height:1.5;color:var(--gold-deep);text-decoration:none}
+.answer-md a.cite-pill:hover{background:rgba(192,90,54,.16)}
+.answer-md .cite-pill-num{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:14px;padding:0 3px;border-radius:999px;background:rgba(192,90,54,.18);font:700 9px/1 var(--mono)}
+.answer-md td .cite-pill{max-width:120px}
+
+/* 官网引用页面：基础版 .page-head 缺 grid，两个列头连排；对齐到 .page-item 的两列 */
+.page-list:not(.has-mention) .page-head{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:10px;padding:0 0 9px;margin-bottom:2px;border-bottom:1px solid var(--line);color:var(--quiet);font:800 10px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.page-list:not(.has-mention) .page-head span:last-child{text-align:right}
+
+/* 引用来源类别列头：列宽对齐 .source-type-list .bar-row（104px | 1fr | 46px） */
+.bar-head{display:grid;grid-template-columns:104px minmax(0,1fr) 46px;gap:11px;padding:0 0 8px;margin-bottom:10px;border-bottom:1px solid var(--line);color:var(--quiet);font:800 10px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.bar-head span:last-child{grid-column:3;text-align:right}
