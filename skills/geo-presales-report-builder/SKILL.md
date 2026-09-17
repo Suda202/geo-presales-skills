@@ -3,7 +3,7 @@ name: geo-presales-report-builder
 description: This skill should be used when generating a customer-facing overseas GEO presales diagnosis report (single-file HTML, V4.0 prototype styling) directly from Scrapeless crawler collection data plus a Case record, covering visibility, citations, sentiment, content planning and per-question detail with country / platform / topic filtering. Do not use it to compute the upload CSV (that is geo-presales-report-editor), to audit brand mention recognition, or to write report conclusions by hand.
 metadata:
   author: Overseas GEO Project
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # 海外 GEO 售前诊断报告生成
@@ -35,6 +35,16 @@ metadata:
 **Case 记录必须以客户确认后的最新版本为准。** 同一品牌的磁盘上可能同时存在多份 Case（初版与客户核对版），竞品集可能不同——取错会让整份报告的竞品对比失去意义，用之前先确认哪份是当前版本（实例见 [案例备注](references/case-notes.md)）。
 
 ## 执行流程
+
+整条链可用驾驶脚本一条命令跑到下一个暂停点(词表冻结、情感判读、观点归纳、翻译是语义/人工环节,脚本会停下并打印缺什么、按什么格式补,补齐后重跑同一命令续跑):
+
+```bash
+python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv> \
+  --case <Case.json> --lexicon assets/brand_lexicon.<品类>.json --out-dir <输出> \
+  --brands "目标,配置1,配置2,配置3,开放1" --target <目标品牌> --brand-name <品牌> [--dry-run]
+```
+
+退出码:`0` 跑完到渲染、`3` 停在暂停点、其余为某步失败。它只调度不实现,各步口径以下列分步定义为准;单独重跑某一步时直接用该步命令。
 
 0. **先校验采集数据可信度**：用 `geo-presales-crawl-integrity` 检查采集目录，它会逐平台报出字段层混用、参考定义丢失、引用字段为空、答案失败等问题，并指名具体文件。**跳过这一步会把采集缺陷当成品牌表现**——实测中单个任务出现过数十到上百条空答案、空 URL 占位与题面缺失（规模实例见 [案例备注](references/case-notes.md)）。校验结论要写进报告的可用性说明。
 
@@ -75,8 +85,7 @@ metadata:
      --lexicon assets/brand_lexicon.<品类>.json --output <输出>/sentiment-units.json
    ```
 
-   按展示品牌分批判读（**只判展示的 5 个**，判全部开放品牌成本是前者的 2 倍以上且不进报告），
-   每批判输出 `<品牌>-labels.json`。判读代理遇到拿不准的句子不得自行拍板，记入待裁决清单交用户裁。
+   按展示品牌分批判读（**只判展示的 5 个**，判全部开放品牌成本是前者的 2 倍以上且不进报告）。判读交接的四个中间产物（拆批视图、labels、judged-sentences、claims）的格式与门禁见 [情感判读交接契约](references/sentiment-handoff-contract.md)；其中确定性环节用 `scripts/prep_sentiment_handoff.py` 的 `split / assemble / check-claims` 子命令生成与校验，**不要人肉整理**。判读代理遇到拿不准的句子不得自行拍板，记入 `sentiment-batches/review-queue.md` 交用户裁。
 
    接入：
 
@@ -88,14 +97,7 @@ metadata:
 
    脚本会用 `sentiment-judge` 的 `compute` 对账头部聚合，两处算不一致会直接报错。
 
-   **观点归纳**（情感板块要展示「标签 + 次数」，不是句子截断）：把判读句子按品牌各自归纳成 4–8 组，写出 `sentiment-claims/<品牌>-claims.json`：
-
-   ```json
-   {"brand":"X","positive":[{"label":"免安装零管线","count":37,"indices":[0,3,...],
-     "evidence":{"sentence":"<原文整句>","region":"MY","platform":"chatgpt","question_id":"0012"}}],"negative":[...]}
-   ```
-
-   `indices` 指向 `judged-sentences.json` 里该品牌同方向数组的下标，**必须互斥且穷尽**（各组 count 之和 = 输入条数）。`attach_sentiment.py` 会按切片过滤并重算计数，缺这个文件时回落到「句子前 24 字当标签」的旧行为。
+   **观点归纳**（情感板块要展示「标签 + 次数」，不是句子截断）：把判读句子按品牌各自归纳成 4–8 组，写出 `sentiment-claims/<品牌>-claims.json`，`indices` 指向 `judged-sentences.json` 里该品牌同方向数组的下标，**必须互斥且穷尽**；写完必须跑 `prep_sentiment_handoff.py check-claims` 门禁，退出码非 0 不得接入（Bewinch 案例中 Coway 曾把全局 idx 写进 indices，观点组在切片时被静默丢弃）。缺 claims 文件时 `attach_sentiment.py` 回落到「句子前 24 字当标签」的旧行为。
 
 6. **中文译文**（可选；不跑则抽屉只显示原文）：
 

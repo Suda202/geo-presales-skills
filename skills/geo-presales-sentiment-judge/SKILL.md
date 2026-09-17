@@ -54,7 +54,7 @@ metadata:
    {"positive": [0, 6, 18], "negative": [4, 13]}
    ```
 
-   单元很多时可分批读；不确定且影响正向率的单元列入清单交用户裁决，不得各自猜测。
+   单元很多时可分批读；不确定且影响正向率的单元列入清单交用户裁决，不得各自猜测。为 `geo-presales-report-builder` 报告判读时，拆批、labels、judged-sentences 与观点归纳的文件格式按该 skill 的 [情感判读交接契约](../geo-presales-report-builder/references/sentiment-handoff-contract.md) 执行（唯一定义点，本 skill 不另行定义）。
 4. **计算与交付**（口径未变，仍为 正面句 /（正面句 + 负面句））：
 
    ```bash
