@@ -10,7 +10,7 @@ metadata:
 
 ## 目标与边界
 
-从售前爬虫回答中提取品牌的正面句与负面句，产出正向率与逐句证据。这是 `geo-presales-report-audit` 冻结回答级情绪后确认的句子级方案（Suda 2026-09-16 确认口径）。
+从售前爬虫回答中提取品牌的正面句与负面句，产出**正向情感占比**（正向率）与逐句证据。这是 `geo-presales-report-audit` 冻结回答级情绪后确认的句子级方案（Suda 2026-09-16 确认口径）。
 
 - **单品牌与多品牌两种模式**。单品牌模式（`--aliases`）只抽目标品牌；多品牌模式（`--lexicon`）用品牌词表抽取目标品牌 + 配置竞品 + 开放品牌，每条单元带 `brand` / `brand_type`，供「竞品情感矩阵」使用。两种模式共用同一套别名匹配，口径不漂移。
 - 每个单元只按**它自己所属的品牌**判读，不做跨品牌比较、不做品牌间胜负判定。
@@ -55,7 +55,7 @@ metadata:
    ```
 
    单元很多时可分批读；不确定且影响正向率的单元列入清单交用户裁决，不得各自猜测。为 `geo-presales-report-builder` 报告判读时，拆批、labels、judged-sentences 与观点归纳的文件格式按该 skill 的 [情感判读交接契约](../geo-presales-report-builder/references/sentiment-handoff-contract.md) 执行（唯一定义点，本 skill 不另行定义）。
-4. **计算与交付**（口径未变，仍为 正面句 /（正面句 + 负面句））：
+4. **计算与交付**（口径为 正面句 /（正面句 + 负面句），正式指标名为**正向情感占比**）：
 
    ```bash
    python3 scripts/sentiment_sentences.py compute \
