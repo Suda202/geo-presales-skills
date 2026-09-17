@@ -34,7 +34,8 @@
 
 - 「正文引用元数据」= `[N] → url` 的编号映射，支撑正文 `citation_pills` 的编号解析。
 - 「来源面板」= 回答右侧展示的来源卡片 / 来源列表（带标题等展示信息）。
-- Gemini、AI Mode、AIO 两列取自同一字段（`citations` / `source`），ChatGPT 的来源面板未单独保存。**取数时按用途区分，不因字段相同互相替代。**
+- **来源面板取数：AI Mode 与 Gemini 取 `citations`，AIO 取 `source`**；ChatGPT 未单独保存。这三家的「正文引用元数据」与「来源面板」取自同一字段。
+- **取数时按用途区分，不因字段相同互相替代。**
 
 `related_queries`、`search_model_queries`、`ads`、`products` 都不是来源列表。
 
