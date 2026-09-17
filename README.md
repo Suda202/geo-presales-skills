@@ -36,7 +36,7 @@ python3 scripts/build_report_data.py --collect <采集目录> --questions <题�
   --case <Case.json> --out <输出>/report-data.json
 ```
 
-补上 `--lexicon assets/brand_lexicon.<品类>.json --domain-cache assets/domain-categories.json` 才完整：**省略时开放品牌不进指标，声量份额与提及率排名的分母只有 Case 里的配置品牌，数字偏小**。这两个文件用 `mine_brand_lexicon.py` 和 `collect_domain_candidates.py` 生成（见 [SKILL.md](skills/geo-presales-report-builder/SKILL.md) 步骤 2–3）。
+必须补上 `--lexicon assets/brand_lexicon.<品类>.json --domain-cache assets/domain-categories.json`：**口径要求声量份额与提及率排名的分母是全部纳入品牌（目标 + 3 个配置竞品 + 开放词表命中），省略时开放品牌不进指标，算出来的数不成立，不能当正式指标交付**。这两个文件用 `mine_brand_lexicon.py` 和 `collect_domain_candidates.py` 生成（见 [SKILL.md](skills/geo-presales-report-builder/SKILL.md) 步骤 2–3）。
 
 ### 任务二 · 指标统计 + 生成 HTML 报告
 
@@ -102,7 +102,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 - 引用次数只计正文 pill（`([来源名][N])`）的出现次数，不拿供应商字段的来源清单充数。
 - 正文为空的答案不进任何分母，也不计为「未提及」。
-- 声量份额与平均提及位置的分母是全部纳入品牌（目标 + 3 个配置竞品 + 开放词表命中），前端只展示 5 行是为了可读性。
+- 声量份额、平均提及位置与提及率排名的分母 / 比较范围都是全部纳入品牌（目标 + 3 个配置竞品 + 开放词表命中），前端只展示 5 行是为了可读性。
 - 交付前必须跑 `verify_report_data.py` 且退出码为 0，它是对指标口径的独立复算。
 
 ## 跨 Skill 路径
