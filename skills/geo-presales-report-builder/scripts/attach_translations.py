@@ -70,9 +70,12 @@ def main() -> int:
         details[key]["answer_zh_html"] = markdown_to_html(value)
         filled += 1
 
-    # 截断门禁：翻译代理截断长回答后键仍齐全，只有长度比能暴露
-    # （Bewinch 案例：8 条 5-7.5K 字符回答被截到约 55-65%，正常条目
-    # 译文/原文 HTML 长度比中位约 0.5，截断条目掉到 0.29 附近）。
+    # 截断门禁(Bewinch 2026-09-17 校准):长回答译文/原文 HTML 长度比
+    # < 全批中位的 60% 即列疑似。该信号召回可靠(实测 6 中 4 真,含只翻 16%、
+    # 断尾+乱码、链接全丢),但纯散文的完整中译也会天然压到 ~0.3(英文词
+    # ≈1.7 汉字),因此默认只警告,清单必须人工复核:对照原文核 URL 集合、
+    # 数字锚点与末段是否语义对齐。机械化 URL/pill 比对已试过并否决——
+    # 实测 155/379 条译文存在正常的链接省略,误报远高于截断本身。
     ratios = {key: len(details[key]["answer_zh_html"]) / len(details[key]["answer_html"])
               for key in translated
               if details[key].get("answer_html") and len(details[key]["answer_html"]) >= 1500}
@@ -86,14 +89,14 @@ def main() -> int:
             for key in suspected[:10]:
                 print(f"  {key}: ratio={ratios[key]:.2f}, 原文 {len(details[key]['answer_html'])} 字符")
             if args.strict_length:
-                raise SystemExit("疑似截断（--strict-length），请重翻上述条目后重跑")
-            print("  复核无误可忽略；重翻后重跑本命令覆盖。")
+                raise SystemExit("疑似截断（--strict-length），请逐条复核/重翻后重跑")
+            print("  人工复核:对照原文核 URL 集合、数字锚点、末段语义对齐;纯散文低比例可为正常。重翻后重跑覆盖。")
 
     report["details"] = details
     meta = report.setdefault("meta", {})
     meta["translation_status"] = "complete" if not missing else f"partial ({len(missing)} missing)"
-    if suspected:
-        meta["translation_length_suspects"] = suspected
+    # 无论有无疑似都要写：只在有疑似时写会让上一轮的清单残留在 meta 里
+    meta["translation_length_suspects"] = suspected
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     chars = sum(len(value) for value in translated.values())

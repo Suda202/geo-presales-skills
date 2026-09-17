@@ -1408,16 +1408,40 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
     i = 0
     list_stack: list[str] = []
 
+    # 先收集脚注定义（[N]: url "标题"），供正文引用 pill 链接；定义行本身仍从正文移除
+    footnotes: dict[str, str] = {}
+    for _line in lines:
+        m = _re.match(r"^\[(\d+)\]:\s*(\S+)", _line.strip())
+        if m:
+            footnotes[m.group(1)] = m.group(2)
+
     def close_lists() -> None:
         while list_stack:
             out.append(f"</{list_stack.pop()}>")
+
+    def _pill(match: "_re.Match[str]") -> str:
+        name, num = match.group(1).strip(), match.group(2)
+        url = footnotes.get(num, "")
+        label = f'<span class="cite-pill-num">{num}</span>'
+        if url:
+            return (f'<a class="cite-pill" href="{url}" target="_blank" '
+                    f'rel="noopener noreferrer" title="{name}">{name}{label}</a>')
+        return f'<span class="cite-pill" title="{name}">{name}{label}</span>'
 
     def inline(chunk: str) -> str:
         chunk = _re.sub(r"`([^`]+)`", r"<code>\1</code>", chunk)
         chunk = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", chunk)
         chunk = _re.sub(r"(?<![\*\w])\*([^*\n]+)\*(?![\*\w])", r"<em>\1</em>", chunk)
-        chunk = _re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>', chunk)
+        # 引用 pill：([来源名][N]) 或 [来源名][N]，链接到脚注 URL。要在普通链接之前处理。
+        chunk = _re.sub(r"\(\[([^\]\[]+)\]\[(\d+)\]\)", _pill, chunk)
+        chunk = _re.sub(r"\[([^\]\[]+)\]\[(\d+)\]", _pill, chunk)
+        # URL 里允许一层括号（如 .../product(tk-cs200-hma)?utm=...），否则链接在首个 ) 提前闭合，
+        # 尾巴 `?utm_source=...)` 会漏成可见文本。
+        chunk = _re.sub(r"\[([^\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)",
+                        r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>', chunk)
         chunk = _re.sub(r"(?<![\"'=])(https?://[^\s<]+)", r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>', chunk)
+        # 成对加粗已转换，剩下的连续星号都是跨单元格断裂的碎片（**LG…/…Wa**），删掉
+        chunk = _re.sub(r"\*{2,}", "", chunk)
         return _highlight_text_only(chunk, highlight or [])
 
     while i < len(lines):
@@ -1432,12 +1456,24 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
             while i < len(lines) and _re.match(r"^\|.*\|\s*$", lines[i].strip()):
                 rows.append([cell.strip() for cell in lines[i].strip().strip("|").split("|")])
                 i += 1
-            # 行对齐表头列数。列数**多于**表头说明源行被未转义的 `|`（URL 里常见）
-            # 切碎了——实测一行 9 格、表头 6 格，截断会把价格塞进「picture」列造成错位。
-            # 这种行整行丢弃，宁可少一行也不显示错位数据；少列的行补空即可。
+            # 行对齐表头列数。列数**多于**表头说明源行含未转义的 `|`（URL、
+            # AIO 的 run-on 长单元格都常见）。整行丢弃会静默吞内容——实测一条
+            # AIO 回答 80% 的正文都在一个 6 格的超宽行里。改为把溢出格合并进
+            # 最后一列：前 width-1 列对齐保持正确，内容一个字不丢；少列的行补空。
             width = len(header)
-            rows = [r for r in rows if len(r) <= width]
-            rows = [(row + [""] * width)[:width] for row in rows]
+            aligned = []
+            for row in rows:
+                if len(row) > width:
+                    row = row[: width - 1] + [" | ".join(row[width - 1:])]
+                aligned.append((row + [""] * width)[:width])
+            rows = aligned
+            # 商品卡空位在源数据里是「****」「⭐ 0.0」占位行，整行没有实义内容，
+            # 显示出来像乱码。所有格子都只含星号/评分符号/短数字的行直接丢弃。
+            def _placeholder_row(row: list[str]) -> bool:
+                if any(len(cell) >= 12 for cell in row):
+                    return False
+                return all(_re.fullmatch(r"[\*⭐☆\s\d.%-]*", cell) for cell in row)
+            rows = [row for row in rows if not _placeholder_row(row)]
             # 整列为空的丢掉：回答里的商品表常有 picture 之类全空列，
             # 剥掉图片后它只剩个空表头，看起来像数据缺失。
             if rows:
@@ -1446,10 +1482,17 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
                 if keep and len(keep) < len(header):
                     header = [header[idx] for idx in keep]
                     rows = [[row[idx] if idx < len(row) else "" for idx in keep] for row in rows]
-            # 丢掉损坏行后，有些表只剩评分占位符（`****`、`0.0`）之类的空壳。
-            # 没有任何一格是有实质内容的（≥12 字）就整表不要，留着只是噪声。
+            # 有些表只剩评分占位符（`****`、`0.0`）之类的空壳。
+            # 没有任何一格 ≥12 字且总内容极少才整表丢弃；内容多而无长单元格
+            # 的表降级为段落输出——降级难看但无损，静默丢弃才是事故。
             substantive = [row for row in rows if any(len(cell) >= 12 for cell in row)]
             if not substantive:
+                total_chars = sum(len(cell) for row in rows for cell in row)
+                if total_chars >= 120:
+                    for row in rows:
+                        line_text = " | ".join(cell for cell in row if cell)
+                        if line_text:
+                            out.append(f"<p>{inline(line_text)}</p>")
                 continue
             table = ["<table class=\"answer-table\"><thead><tr>"]
             table += [f"<th>{inline(cell)}</th>" for cell in header]
