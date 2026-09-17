@@ -17,12 +17,16 @@
 
 按采集文件实际字段核验（`自建爬虫/四平台HTML字段与采集边界.md`，2026-09-11）。
 
-| 平台 | 回答正文 | 正文引用元数据 | 检索字段 | 来源面板 |
-|---|---|---|---|---|
-| `chatgpt` | `task_result.result_text` | `content_references` | `search_result`、`links`、`sse_data` | 未单独保存 |
-| `gemini` | `task_result.result_text`（`rawtext` 供对照） | `citations` | 未公开独立字段 | `citations` |
-| `aimode` | `task_result.result_md`（`result_text` 供对照） | `citations` | 本批多为空 | `citations`；另有 `result_html` 可做 DOM 核验 |
-| `overview` | `task_result.content`（`rawtext` 供对照） | `source` | `web_source`（不直接用于引用统计） | `source` |
+| 平台 | 回答正文 | 正文引用 `citation_pills` | 正文引用元数据 | 检索字段 | 来源面板 |
+|---|---|---|---|---|---|
+| `chatgpt` | `task_result.result_text` | 额外字段，现阶段自己识别 | `content_references` | `search_result`、`links`、`sse_data` | 未单独保存 |
+| `gemini` | `task_result.result_text`（`rawtext` 供对照） | 额外字段，现阶段自己识别 | `citations` | 未公开独立字段 | `citations` |
+| `aimode` | `task_result.result_md`（`result_text` 供对照） | 额外字段，现阶段自己识别 | `citations` | 本批多为空 | `citations`；另有 `result_html` 可做 DOM 核验 |
+| `overview` | `task_result.content`（`rawtext` 供对照） | 额外字段，现阶段自己识别 | `source` | `web_source`（不直接用于引用统计） | `source` |
+
+**`citation_pills`（正文引用标记，含关联 url 与引用次数）四个平台都不是供应商给的字段，现阶段由我们从正文自己识别**（Suda 2026-09-17 确认）。引用次数按标记出现次数计、不去重；来源数按规范化 URL 去重后计，见下节。
+
+**Gemini 注意**：同一个 url 的不同片段会分成多个链接，来源数必须按规范化 URL 归并，不能按右侧链接条数计，否则同一页面被算成多个来源。
 
 `related_queries`、`search_model_queries`、`ads`、`products` 都不是来源列表。
 
