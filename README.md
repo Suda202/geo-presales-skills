@@ -12,7 +12,7 @@
   -> Prompt Builder       Case -> v8 英文监测题库
 ```
 
-竞品核验不单独做：正式竞品不足 3 个或候选待核验时，由 Eval Case Builder 内部委派 `overseas-geo-competitor-research` 联网核验并冻结 3 个同一购买集合的正式竞品。
+竞品核验可以单独跑（`overseas-geo-competitor-research`），也常在 Eval Case Builder 里一并完成：正式竞品不足 3 个或候选待核验时，Case Builder 会内部委派它联网核验并冻结 3 个同一购买集合的正式竞品。
 
 ## 对号入座：三类任务
 
