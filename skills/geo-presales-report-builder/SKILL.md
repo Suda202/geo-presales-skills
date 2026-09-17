@@ -107,13 +107,13 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
    python3 scripts/export_translations.py --collect <采集目录> --regions MY,SG      --batch-size 40 --out-dir <输出>/translation-batches
    ```
 
-   分批翻译成 `<批次>-zh.json`，格式 `{"<key>": "<中文 markdown>"}`。翻译要求：保留 markdown 结构、品牌名与型号保留英文、URL 与数值原样、商品清单表格照原样不填空单元格、不增删信息。回填：
+   分批翻译成 `<批次>-zh.json`，格式 `{"<key>": "<中文 markdown>"}`。翻译要求：保留 markdown 结构、品牌名与型号保留英文、URL 与数值原样、商品清单表格照原样不填空单元格、不增删信息。派翻译子代理时让它**每翻完一条立即落盘**（一次性写大 JSON 失败过）。回填：
 
    ```bash
    python3 scripts/attach_translations.py --report <输出>/report-data.json      --batches <输出>/translation-batches --out <输出>/report-data.json
    ```
 
-   缺条目会直接报错，确需部分交付加 `--allow-partial`。**译文体积大致翻倍**，加入后单文件 HTML 会明显变大。
+   缺条目会直接报错，确需部分交付加 `--allow-partial`。回填时会做**截断门禁**：长回答的译文/原文长度比显著低于全批中位时列出疑似截断条目（Bewinch 案例：8 条 5-7.5K 字符回答被翻译代理截到约六成、键齐全静默入库），默认警告并写入 `meta.translation_length_suspects`，加 `--strict-length` 升级为阻断；疑似条目重翻后重跑本命令覆盖。**译文体积大致翻倍**，加入后单文件 HTML 会明显变大。
 
 7. **校验**：
 
@@ -131,7 +131,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
    渲染前会做 JavaScript 语法检查；语法错误会直接中断，不产出白页。
 
-9. **浏览器验证**：打开产物，逐个切国家 / 平台 / 主题，确认各模块有数、无空白、无变形。改了 JS 或 CSS 后必须重做这一步。
+9. **浏览器验证**：打开产物，逐个切国家 / 平台 / 主题，确认各模块有数、无空白、无变形。改了 JS 或 CSS 后必须重做这一步。脚本化遍历的已知坑：tab 按钮每次切换都被 `buildTabs()` 用 innerHTML 重建，**开头缓存的按钮引用第一次点击后即失效、后续点击静默无效**（Bewinch 案例两轮「45 切片全通过」实际只反复测了一个切片）——每次点击前必须重新 querySelector。
 
 ## 指标口径
 

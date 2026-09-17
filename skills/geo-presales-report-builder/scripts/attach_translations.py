@@ -35,6 +35,8 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--allow-partial", action="store_true",
                         help="允许部分条目缺译文，缺的保持原文回退")
+    parser.add_argument("--strict-length", action="store_true",
+                        help="疑似截断从警告升级为报错")
     args = parser.parse_args()
 
     markdown_to_html = load_markdown_converter()
@@ -68,9 +70,30 @@ def main() -> int:
         details[key]["answer_zh_html"] = markdown_to_html(value)
         filled += 1
 
+    # 截断门禁：翻译代理截断长回答后键仍齐全，只有长度比能暴露
+    # （Bewinch 案例：8 条 5-7.5K 字符回答被截到约 55-65%，正常条目
+    # 译文/原文 HTML 长度比中位约 0.5，截断条目掉到 0.29 附近）。
+    ratios = {key: len(details[key]["answer_zh_html"]) / len(details[key]["answer_html"])
+              for key in translated
+              if details[key].get("answer_html") and len(details[key]["answer_html"]) >= 1500}
+    suspected = []
+    if len(ratios) >= 10:
+        median = sorted(ratios.values())[len(ratios) // 2]
+        suspected = sorted((k for k, r in ratios.items() if r < median * 0.6),
+                           key=lambda k: ratios[k])
+        if suspected:
+            print(f"⚠ {len(suspected)} 条译文疑似截断（长度比 < 全批中位 {median:.2f} 的 60%）：")
+            for key in suspected[:10]:
+                print(f"  {key}: ratio={ratios[key]:.2f}, 原文 {len(details[key]['answer_html'])} 字符")
+            if args.strict_length:
+                raise SystemExit("疑似截断（--strict-length），请重翻上述条目后重跑")
+            print("  复核无误可忽略；重翻后重跑本命令覆盖。")
+
     report["details"] = details
     meta = report.setdefault("meta", {})
     meta["translation_status"] = "complete" if not missing else f"partial ({len(missing)} missing)"
+    if suspected:
+        meta["translation_length_suspects"] = suspected
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     chars = sum(len(value) for value in translated.values())

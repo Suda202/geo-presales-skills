@@ -72,4 +72,4 @@ python3 scripts/prep_sentiment_handoff.py check-claims \
   --claims-dir <输出>/sentiment-claims
 ```
 
-`attach_sentiment.py` 按切片过滤成员并重算计数;缺 claims 文件时回落到「句子前 24 字当标签」的旧行为,不报错——所以门禁必须在此前拦住格式问题。
+`attach_sentiment.py` 按切片过滤成员并重算计数;它**没有 `--claims-dir` 参数**,claims 目录固定从 `--labels-dir` 的父目录找 `sentiment-claims/`(即上面布局中的兄弟目录),不可配置。缺 claims 文件时回落到「句子前 24 字当标签」的旧行为,不报错——所以门禁必须在此前拦住格式问题。当前版本只消费**目标品牌**的 claims(竞品情感矩阵只用计数);竞品 claims 仍须过门禁,它们是归档产物,未来消费方会依赖契约合规。
