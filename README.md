@@ -1,21 +1,34 @@
 # GEO 售前 Skills
 
-海外 GEO 售前诊断的 8 个 Skill。先按你手头的任务对号入座，再查完整清单。
+海外 GEO 售前诊断的 8 个 Skill：前期工作建 Case 和题库，之后按三类任务对号入座，细节查完整清单。
+
+## 前期工作：建 Case 和题库
+
+三类任务都依赖两份输入——Case（品牌归一化档案）和 v8 题库。没有就先走这条链：
+
+```text
+品牌资料
+  -> Eval Case Builder    品牌资料归一成 Case（含 2 个监测主题），写飞书 Base
+  -> Prompt Builder       Case -> v8 英文监测题库
+```
+
+竞品核验不单独做：正式竞品不足 3 个或候选待核验时，由 Eval Case Builder 内部委派 `overseas-geo-competitor-research` 联网核验并冻结 3 个同一购买集合的正式竞品。
 
 ## 对号入座：三类任务
 
 ### 任务一 · 从第三方爬虫数据做指标统计
 
+前置：已完成前期工作，手上有 Case 和题库。
 输入：第三方采集目录（`<collect>/scraper.<platform>/<REGION>/<NNNN>.json`）+ 题库 + Case。
-输出：提及率、提及率排名、声量份额、平均提及位置、可见度、正向情感占比。
+输出：可见度与引用类指标（提及率、提及率排名、声量份额、平均提及位置、可见度、引用次数）；需要情感指标时另加「正向情感占比」。
 
 按顺序用这三个：
 
 | 步骤 | Skill | 干什么 |
 | --- | --- | --- |
 | 1 | `geo-presales-crawl-integrity` | 先校验这份采集能不能当输入用，不把采集缺陷当成品牌表现 |
-| 2 | `geo-presales-report-builder` | 算全部统计指标（复用 `geo_presales_core` 口径），产出 `report-data.json` |
-| 3 | `geo-presales-sentiment-judge` | 需要句级正/负句和「正向情感占比」时用它 |
+| 2 | `geo-presales-report-builder` | 算可见度与引用类指标（复用 `geo_presales_core` 口径），产出 `report-data.json`；**不算情感指标** |
+| 3 | `geo-presales-sentiment-judge` | 可选。算「正向情感占比」并产出句级正/负句明细，情感指标只有它算 |
 
 ```bash
 cd skills/geo-presales-report-builder
@@ -48,20 +61,12 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 > 指标口径只有一个实现：`geo-presales-report-editor/scripts/geo_presales_core/`。Report Builder、Report Audit、Crawl Integrity 都引用它算数，自己不另写指标。
 
-## 输入准备（任务开始前）
-
-| 我想做的事 | 用哪个 Skill |
-| --- | --- |
-| 正式竞品不足 3 个，或候选竞品要核验 | `overseas-geo-competitor-research` |
-| 把品牌资料归一成 Case、写飞书 Base | `geo-presales-eval-case-builder` |
-| 已有 Case，要生成英文 AI 搜索监测题库 | `geo-presales-prompt-builder` |
-
 ## 完整清单（8 个 Skill）
 
 | Skill | 链条 | 什么时候用 | 产出 | 不做什么 |
 | --- | --- | --- | --- | --- |
 | `geo-presales-crawl-integrity` | A | 算任何指标之前，先确认采集能不能当输入用 | 缺陷清单 + 退出码（`0` 可用 / `1` 警告 / `2` 阻断） | 不算提及率、声量、排名、引用份额，不判情绪，不纠品牌 |
-| `geo-presales-report-builder` | A | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 全部统计指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不另写指标口径（复用 `geo_presales_core`），不出上传 CSV，不纠品牌识别，不做采集校验 |
+| `geo-presales-report-builder` | A | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 可见度与引用类指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不算情感指标（归 sentiment-judge），不另写指标口径（复用 `geo_presales_core`），不出上传 CSV，不纠品牌识别，不做采集校验 |
 | `geo-presales-sentiment-judge` | A | 需要句级正负句和正向情感占比 | 逐句 CSV + 正向情感占比，按品牌、意图、平台分层 | 只算「正向情感占比」一个指标；不回写后端 `sentiment` 字段，不判竞品胜负，不算可见度 |
 | `geo-presales-report-audit` | B（跨链） | 品牌提及识别或正文首现排序需要审核和修正 | 修正后的 `brand_rankings`、安全补丁、可复现的问题说明与 Bad Case 草稿 | 不改客户结论，不审情绪，不做竞品研究或出题 |
 | `geo-presales-report-editor` | B | 底层结果已确认，要改客户结论并出上传件 | 更新后的客户结论、可上传 CSV | 不重算底层，不渲染 HTML，不操作报告页面 |
