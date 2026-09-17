@@ -21,7 +21,7 @@
 
 | 平台 | 回答正文 | 正文引用 `citation_pills` | 正文引用元数据 | 检索字段 | 来源面板 |
 |---|---|---|---|---|---|
-| `chatgpt` | `task_result.result_text` | 额外字段，现阶段自己识别 | `content_references` | `search_result`、`links`、`sse_data` | 未单独保存 |
+| `chatgpt` | `task_result.result_text` | 额外字段，现阶段自己识别 | `content_references` | `search_result`、`links`、`sse_data` | `content_references`（引用）+ `search_result`（来源），两个字段拼 |
 | `gemini` | `task_result.result_text`（`rawtext` 供对照） | 额外字段，现阶段自己识别 | `citations` | 未公开独立字段 | `citations` |
 | `aimode` | `task_result.result_md`（`result_text` 供对照） | 额外字段，现阶段自己识别 | `citations` | 本批多为空 | `citations`；另有 `result_html` 可做 DOM 核验 |
 | `overview` | `task_result.content`（`rawtext` 供对照） | 额外字段，现阶段自己识别 | `source` | `web_source`（不直接用于引用统计） | `source` |
@@ -34,7 +34,7 @@
 
 - 「正文引用元数据」= `[N] → url` 的编号映射，支撑正文 `citation_pills` 的编号解析。
 - 「来源面板」= 回答右侧展示的来源卡片 / 来源列表（带标题等展示信息）。
-- **来源面板取数：AI Mode 与 Gemini 取 `citations`，AIO 取 `source`**；ChatGPT 未单独保存。这三家的「正文引用元数据」与「来源面板」取自同一字段。
+- **来源面板取数：AI Mode 与 Gemini 取 `citations`，AIO 取 `source`**；**ChatGPT 没有单装来源面板的字段，需要 `content_references`（引用）与 `search_result`（来源）两个字段一起拼**。
 - **取数时按用途区分，不因字段相同互相替代。**
 
 `related_queries`、`search_model_queries`、`ads`、`products` 都不是来源列表。
