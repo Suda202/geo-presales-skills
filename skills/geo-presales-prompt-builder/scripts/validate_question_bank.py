@@ -194,10 +194,10 @@ V8_CSV_TAGS_MAX_LENGTH = 200
 V8_CSV_QUESTION_TYPES = {
     "discovery": "visibility,sentiment",
     "competitor": "sentiment",
-    "verification": "visibility,sentiment",
-    "accuracy": "visibility,sentiment",
+    "verification": "visibility",
+    "accuracy": "visibility",
     "evaluation": "sentiment",
-    "category_awareness": "visibility,sentiment",
+    "category_awareness": "visibility",
 }
 V6_EVALUATION_META_TOPIC = re.compile(r"\btopic\b", re.IGNORECASE)
 V5_SCHEMA_VERSION = "overseas-geo-question-bank/v5"

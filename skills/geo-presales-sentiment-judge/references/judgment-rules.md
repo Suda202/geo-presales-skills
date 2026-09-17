@@ -37,7 +37,7 @@
 
 ## 已验证基准（YOUKU 泰国，2026-09-16）
 
-首个按本规则完成的案例，可作判读校准参照：96 条情绪样本 → 71 条提及 → 37 条含正负句 → 92 句（正 71 / 负 21），正向率 77.2%；Competitor 负面 13/21；Gemini 61.1% vs ChatGPT 87.5%。逐句明细见 `01-海外GEO售前/评测数据/YOUKU/thai-metrics/youku-thai-sentiment.csv`。
+首个按本规则完成的案例，可作判读校准参照：96 条情绪样本 → 71 条提及 → 37 条含正负句 → 92 句（正 71 / 负 21），正向率 77.2%；Competitor 负面 13/21；Gemini 61.1% vs ChatGPT 87.5%。逐句明细见 `10-售前诊断报告/评测数据/YOUKU/thai-metrics/youku-thai-sentiment.csv`。
 
 ## 边界裁决（2026-09-16 补，跨品牌统一口径）
 

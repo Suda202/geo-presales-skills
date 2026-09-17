@@ -3,7 +3,7 @@ name: geo-presales-prompt-builder
 description: Use when generating, rewriting, auditing, or validating an English AI-search Prompt bank from an overseas GEO evaluation Case, including Attribute-by-Topic planning and free Tags for diagnostic intent, Branded or Non-Branded scope, Attributes, and custom analysis. Do not use it to create Topics, select competitors, crawl answers, calculate metrics, or write report conclusions.
 metadata:
   author: Overseas GEO Project
-  version: "4.7.0"
+  version: "4.8.0"
 ---
 
 # GEO Presales Prompt Builder
@@ -76,7 +76,7 @@ Accuracy 默认配额为 0，不读取或要求上游事实包。不得从旧评
 
 - 每 Topic 固定输出 25 条 Prompt，按适用竞品数 `n` 执行 `23-2n / n / 0 / 0 / 1+n / 1`配额；同时输出 `attribute_plan`、实际 Topic 配额、Case 字段覆盖、按 Topic 的竞品 Competitor 与 Evaluation 覆盖、Tags 汇总和失败/重写原因。
 - 每题包含 `question_id / topic_id / tags / analysis_type / formal_visibility_eligible / intent_key / user_question / zh_translation / monitoring_prompt / quality_checks`；不包含 `diagnosis_intent` 或单独的 `attributes`。
-- 默认题库不含 Verification 题与 `validation_items`、Accuracy 题或事实包字段；上传 CSV 固定字段顺序为 `query,question_zh,topic,diagnosis_intent,tags,question_types,purchase_intent,persona_name,scene_name`。`diagnosis_intent` 从 JSON 唯一默认 Intent Tag 转写为 `discovery / competitor / verification / accuracy / evaluation / category_awareness`。`tags` 为上传适配列：允许留空；如果填写，必须是短于 200 字符的字符串，并使用英文逗号、中文逗号或换行分隔，优先保留可上传的最小化摘要，不要把 JSON 里的完整 Attribute 列表直接搬进来。`question_types` 按上传合同填写：Discovery、Verification、Accuracy 与 Category Awareness 为 `visibility,sentiment`，Competitor 与 Evaluation 为 `sentiment`。`purchase_intent / persona_name / scene_name` 没有可靠来源时留空，不臆造。JSON 仍不生成独立 `diagnosis_intent` 或 `question_type` 字段；这两个 CSV 字段只由上传适配器导出。
+- 默认题库不含 Verification 题与 `validation_items`、Accuracy 题或事实包字段；上传 CSV 固定字段顺序为 `query,question_zh,topic,diagnosis_intent,tags,question_types,purchase_intent,persona_name,scene_name`。`diagnosis_intent` 从 JSON 唯一默认 Intent Tag 转写为 `discovery / competitor / verification / accuracy / evaluation / category_awareness`。`tags` 为上传适配列：允许留空；如果填写，必须是短于 200 字符的字符串，并使用英文逗号、中文逗号或换行分隔，优先保留可上传的最小化摘要，不要把 JSON 里的完整 Attribute 列表直接搬进来。`question_types` 按上传合同填写：Discovery 为 `visibility,sentiment`，Competitor 与 Evaluation 为 `sentiment`，Verification、Accuracy 与 Category Awareness 为 `visibility`——这三类不得带 `sentiment`，否则下游 `geo-presales-sentiment-judge` 会把它们错误纳入情绪样本（样本口径见 `../shared/canonical-intent-mapping.md`）。`purchase_intent / persona_name / scene_name` 没有可靠来源时留空，不臆造。JSON 仍不生成独立 `diagnosis_intent` 或 `question_type` 字段；这两个 CSV 字段只由上传适配器导出。
 
 ```bash
 python3 scripts/validate_question_bank.py /absolute/path/question-bank.json

@@ -3,7 +3,7 @@ name: geo-presales-report-audit
 description: This skill should be used when auditing or correcting brand mention recognition and first-appearance rankings in GEO presales results, at either layer — raw crawler output (answer text that has no brand_rankings yet) or the assembled report JSON. It produces safe brand-ranking corrections and Bad Case evidence, not customer-facing analytical conclusions, metric aggregation, or sentiment changes.
 metadata:
   author: 海外 GEO 项目
-version: "2.5.0"
+  version: "2.5.0"
 ---
 
 # GEO 售前报告质量审计
@@ -66,7 +66,21 @@ version: "2.5.0"
 
 ## 确定性辅助工具
 
-`structured_result_audit.py` 负责引用清洗、结构校验和 `brand_rankings` 审核补丁安全写回；`prepare_badcase_draft.py` 负责 Bad Case 草稿格式；`annotate_evidence_screenshot.py` 负责确定性证据标注。参数与语义边界见结构化审计和 Bad Case 交付参考。三者都不替代开放式品牌发现、句子级情绪、竞品胜负或 Attribute 关联判断，也不直接写入飞书。
+`structured_result_audit.py` 负责引用清洗、结构校验和 `brand_rankings` 审核补丁安全写回；`prepare_badcase_draft.py` 负责 Bad Case 草稿格式；`annotate_evidence_screenshot.py` 负责确定性证据标注。参数与语义边界见结构化审计和 Bad Case 交付参考。三者都不替代开放式品牌发现、句子级情绪、竞品胜负或 Attribute 关联判断，也不直接写入飞书。典型命令：
+
+```bash
+# 报告 JSON 层：生成去引用审核包 → 审核后校验（可对比改前版本）→ 安全写回补丁
+python3 scripts/structured_result_audit.py prepare --input <结构化结果.json> --output <审核包.json> [--target-brand <品牌>]
+python3 scripts/structured_result_audit.py validate --input <结构化结果.json> [--before <改前.json>]
+python3 scripts/structured_result_audit.py apply --input <结构化结果.json> --patch <补丁.json> --output <输出.json> [--backup <备份.json>]
+
+# Bad Case 草稿与证据截图
+python3 scripts/prepare_badcase_draft.py new --task <Task编号> --record <记录编号> --summary "<一句话问题>" --output <草稿.json>
+python3 scripts/prepare_badcase_draft.py validate --input <草稿.json>
+python3 scripts/annotate_evidence_screenshot.py --input <截图.png> --output <标注.png> --title "<问题说明>" --box <x,y,w,h>
+```
+
+各子命令的完整参数以 `--help` 为准；原始采集层 `de_cite_crawl.py` 与 `verify_brand_extraction.py` 的完整命令见 [原始爬虫层品牌抽取](references/raw-crawl-extraction.md)。
 
 原始采集层另有两个：
 
@@ -75,7 +89,7 @@ version: "2.5.0"
 | `de_cite_crawl.py` | 把采集目录规范化为去引用正文，产出 `normalized-answers.jsonl`（含清空 merchants 列的 `body_ranking`） | 识别品牌、判情绪 |
 | `verify_brand_extraction.py` | 品牌抽取的独立复核：名称在正文、首现顺序、标准名一致性、词典召回 | 生成品牌序列本身 |
 
-标准品牌别名表放 `assets/brand_lexicon.<case>.json`，键为标准名、值为正文中出现的写法。**分片抽取回收后必须先归一标准名再算排名**，`verify_brand_extraction.py` 的第 3 项检查会拦截漏归一的写法。
+标准品牌别名表放 `assets/brand_lexicon.<case>.json`，键为标准名、值为正文中出现的写法；`geo-presales-report-builder` 与 `geo-presales-sentiment-judge` 均可直接读取该 dict 格式（`_` 开头的键视为元数据）。**分片抽取回收后必须先归一标准名再算排名**，`verify_brand_extraction.py` 的第 3 项检查会拦截漏归一的写法。
 
 修改触发描述、审计规则或脚本后，重新运行 `evals/trigger_cases.json`、`evals/execution_cases.json`、`scripts/run_structured_result_evals.py` 和 `tests/test_scripts.py`，并把门禁结果更新到 `reports/`。
 

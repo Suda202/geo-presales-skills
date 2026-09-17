@@ -94,6 +94,17 @@ def load_lexicon(path: str) -> list[dict]:
     """
     data = json.load(open(path))
     brands = data.get("brands") if isinstance(data, dict) else None
+    if brands is None and isinstance(data, dict):
+        # 兼容「标准名 → 别名 list」的 dict 型词表（report-audit / shared 落点）。
+        # `_` 开头的键（_comment/_canonical 等）是元数据；标准名自身也算一个别名。
+        converted = [
+            {"name": key, "aliases": [key, *value]}
+            for key, value in data.items()
+            if not key.startswith("_") and key not in {"uncertain", "stopwords"}
+            and isinstance(value, list)
+        ]
+        if converted:
+            brands = converted
     if not isinstance(brands, list) or not brands:
         raise SystemExit(f"词表 {path} 缺少非空的 brands 数组")
     compiled: list[dict] = []

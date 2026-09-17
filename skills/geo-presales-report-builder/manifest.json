@@ -1,0 +1,15 @@
+{
+  "name": "geo-presales-report-builder",
+  "version": "1.0.0",
+  "owner": "海外 GEO 项目",
+  "updated_at": "2026-09-17",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "review_cadence": "per-release",
+  "entrypoint": "SKILL.md",
+  "summary": "从 Scrapeless 采集数据 + Case 记录生成客户可看的单文件 HTML 售前诊断报告，指标口径复用 geo-presales-report-editor 的 geo_presales_core。",
+  "target_platforms": ["openai", "claude", "generic", "agent-skills-compatible"],
+  "factory_components": ["references", "scripts", "assets", "tests", "reports"]
+}

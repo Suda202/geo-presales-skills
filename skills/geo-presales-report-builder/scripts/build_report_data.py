@@ -183,10 +183,15 @@ PLATFORM_INTERNAL_HOSTS = {
 }
 
 # 题库 diagnosis_intent -> 后端 diagnostic_intent（意图口径 shared/canonical-intent-mapping.md）
+# 题库 diagnosis_intent -> 后端 diagnostic_intent。
+# 键取 shared/canonical-intent-mapping.md 的全集，两种拼写都收：规范表写的是
+# `Intent: Verification`，但题库实际用的是 `verification`，缺了会直接中断构建
+# （Bewinch 题库只有 4 种意图，换到 edgelight 的 6 种才暴露）。
 CSV_INTENT_MAP = {
     "discovery": "discovery",
     "competitor": "competitor",
     "validation": "validation",
+    "verification": "validation",
     "accuracy": "accuracy",
     "evaluation": "sentiment",
     "sentiment": "sentiment",
@@ -394,8 +399,18 @@ def load_lexicon(path) -> tuple[list[dict], set[str], str]:
     elif isinstance(raw, list):
         source = raw
     elif isinstance(raw, dict):
-        source = [dict(value, name=key) if isinstance(value, dict) else {"name": key}
-                  for key, value in raw.items() if key not in {"uncertain", "stopwords"}]
+        # 兼容「标准名 → 别名 list」的 dict 型词表（report-audit / shared），别名必须保留；
+        # 以 `_` 开头的键（_comment/_canonical 等）是元数据，不是品牌。
+        source = []
+        for key, value in raw.items():
+            if key in {"uncertain", "stopwords"} or key.startswith("_"):
+                continue
+            if isinstance(value, dict):
+                source.append(dict(value, name=key))
+            elif isinstance(value, list):
+                source.append({"name": key, "aliases": [key, *value]})
+            else:
+                source.append({"name": key})
     else:
         return [], set(), "unsupported-shape"
 
@@ -547,7 +562,8 @@ def build_question_bank(rows: list[dict], config: dict, topics: list[str]) -> di
         if topic not in topic_index:
             raise SystemExit(f"题库第 {index} 行主题 {topic!r} 不在 Case 主题内：{topics}")
         csv_intent = str(row.get("diagnosis_intent") or "").strip()
-        backend_intent = CSV_INTENT_MAP.get(csv_intent)
+        backend_intent = CSV_INTENT_MAP.get(
+            str(csv_intent).strip().casefold().removeprefix("intent:").strip())
         if not backend_intent:
             raise SystemExit(f"题库第 {index} 行诊断意图无法映射：{csv_intent!r}")
         # analysis_type 取题库 question_types（Discovery 为 visibility,sentiment）
@@ -1341,10 +1357,41 @@ def normalize_answer_html(text: str) -> str:
     value = _HTML_PLATFORM_BLOCK.sub("", value)
     value = _HTML_ENTITY_CARD.sub(r"\1", value)
     value = _HTML_ENTITY_CARD_BARE.sub("", value)
+    # 表格单元格里的 <br> 不能换成换行——会把一行表格拆成多行导致解析失败。
+    # 换成「 / 」分隔符，保留多链接可读性。
+    lines = value.split("\n")
+    lines = [
+        _HTML_BR.sub(" / ", line) if line.strip().startswith("|") else line
+        for line in lines
+    ]
+    value = "\n".join(lines)
     value = _HTML_BR.sub("\n", value)
     value = _HTML_UNWRAP.sub("", value)
     value = _HTML_LEFT.sub("", value)      # 兜底：任何残留标签
     return value
+
+
+_HTML_TAG_SPLIT = re.compile(r"(<[^>]+>)")
+
+
+def _highlight_text_only(html_chunk: str, names: list[str]) -> str:
+    """只给**文本**加品牌高亮，绝不碰标签属性。
+
+    高亮原先作用在整串上，结果把 `<span>` 插进了 href 里：
+    `<a href="https://<span class="brand-hl">Coway</span>-new.com/...">`——
+    href 被截断，浏览器把后半段当正文显示。凡 URL 里含品牌名都会中招。
+    """
+    if not names:
+        return html_chunk
+    heads = [re.escape(name.split()[0]) for name in names if name]
+    if not heads:
+        return html_chunk
+    pattern = re.compile(r"(?<![\w>])(" + "|".join(heads) + r")(?![\w<])", re.IGNORECASE)
+    parts = _HTML_TAG_SPLIT.split(html_chunk)
+    return "".join(
+        part if part.startswith("<") else pattern.sub(r'<span class="brand-hl">\1</span>', part)
+        for part in parts
+    )
 
 
 def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
@@ -1371,11 +1418,7 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
         chunk = _re.sub(r"(?<![\*\w])\*([^*\n]+)\*(?![\*\w])", r"<em>\1</em>", chunk)
         chunk = _re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>', chunk)
         chunk = _re.sub(r"(?<![\"'=])(https?://[^\s<]+)", r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>', chunk)
-        for name in highlight or []:
-            head = _html.escape(name.split()[0])
-            chunk = _re.sub(rf"(?<![\w>]){_re.escape(head)}(?![\w<])",
-                            f'<span class="brand-hl">{head}</span>', chunk, flags=_re.IGNORECASE)
-        return chunk
+        return _highlight_text_only(chunk, highlight or [])
 
     while i < len(lines):
         line = lines[i]

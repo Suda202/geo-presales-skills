@@ -1,6 +1,6 @@
-# 四 Skill 共享：诊断意图规范映射表
+# 跨 Skill 共享：诊断意图规范映射表
 
-本文件是 geo-presales-eval-case-builder / geo-presales-prompt-builder / geo-presales-report-editor / geo-presales-report-audit 的唯一权威词表。四个 skill 的"开始前读取"均指向本文件。各 skill 内部不得另行定义同概念的别名。
+本文件是售前 skill 家族的唯一权威词表。消费方共六个：geo-presales-eval-case-builder / geo-presales-prompt-builder / geo-presales-report-editor / geo-presales-report-audit / geo-presales-report-builder / geo-presales-sentiment-judge，各自的"开始前读取"均指向本文件。各 skill 内部不得另行定义同概念的别名。
 
 ## 完整映射
 
@@ -56,4 +56,4 @@ Report Editor 的后端输入字段 `target_attributes` 由**后端摄入层**�
 | M08 | 购买框架（品类认知 / Market Perception） | `market_perception_diagnostics` |
 | M10 | 最终摘要 | M01–M08 |
 
-模块编号按事实来源分配，与诊断意图编号无关。验证、准确性没有对应模块：它们只作为诊断输入进入上表模块（验证 → M04 与 M01，准确性 → M05）。完整职责与依赖见 `geo-presales-report-editor/references/backend-report-task-contract.md`。
+模块编号按事实来源分配，与诊断意图编号无关。**M09 是未使用的编号**（后端从未定义过该模块，编号从 M08 直接跳到 M10），不是本表遗漏。验证、准确性没有对应模块：它们只作为诊断输入进入上表模块（验证 → M04 与 M01，准确性 → M05）。完整职责与依赖见 `geo-presales-report-editor/references/backend-report-task-contract.md`。

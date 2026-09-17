@@ -1,3 +1,9 @@
+"""DEPRECATED（2026-09-17）：遗留实现，仅供只读参考，不得用于正式交付。
+
+正式指标口径的唯一实现是 geo-presales-report-editor/scripts/geo_presales_core/
+（prepare_answers / compute_metrics），报告生成走 geo-presales-report-builder。
+本脚本的口径与 core 未对齐，端到端结果已确认不等价（见文内注释）。
+"""
 """把采集审计的产物渲染成一份可交付的 Markdown 报告。
 
 跨 skill 共用：输入是同一个采集任务目录下的确定性产物，数据集特有的叙述放在

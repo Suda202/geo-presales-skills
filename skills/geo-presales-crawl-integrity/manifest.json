@@ -1,0 +1,15 @@
+{
+  "name": "geo-presales-crawl-integrity",
+  "version": "1.0.0",
+  "owner": "海外 GEO 项目",
+  "updated_at": "2026-09-17",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "review_cadence": "per-release",
+  "entrypoint": "SKILL.md",
+  "summary": "在计算任何售前指标前，校验原始采集目录的可信度：字段层混用、参考定义丢失、引用字段为空、失败回答，逐条定位到平台与文件。",
+  "target_platforms": ["openai", "claude", "generic", "agent-skills-compatible"],
+  "factory_components": ["references", "scripts"]
+}

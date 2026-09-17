@@ -1,0 +1,24 @@
+{
+  "name": "geo-presales-sentiment-judge",
+  "version": "1.2.0",
+  "owner": "海外 GEO 项目",
+  "updated_at": "2026-09-17",
+  "status": "active",
+  "maturity_tier": "production",
+  "lifecycle_stage": "production",
+  "context_budget_tier": "production",
+  "review_cadence": "per-release",
+  "entrypoint": "SKILL.md",
+  "summary": "从售前爬虫回答中按品牌提取正负句并计算正向率，支持单品牌与多品牌词表两种模式，产物独立于后端 sentiment 字段。",
+  "target_platforms": [
+    "openai",
+    "claude",
+    "generic",
+    "agent-skills-compatible"
+  ],
+  "factory_components": [
+    "references",
+    "scripts",
+    "tests"
+  ]
+}

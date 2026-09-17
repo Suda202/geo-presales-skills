@@ -3,7 +3,7 @@ name: geo-presales-crawl-integrity
 description: This skill should be used before computing any overseas GEO presales metric, to verify that a raw crawler collection directory (Scrapeless scraper.<platform>/<REGION>/<NNNN>.json) is trustworthy input — detecting field-layer mixing, lost reference definitions, empty citation fields and failed answers, and naming the exact platform + file for each. Do not use it to compute visibility or citation metrics, to correct brand rankings, or to judge sentiment.
 metadata:
   author: 海外 GEO 项目
-version: "1.0.0"
+  version: "1.0.0"
 ---
 
 # 采集数据可信性前置校验
@@ -47,9 +47,11 @@ version: "1.0.0"
 
    | 退出码 | 含义 | 处理 |
    |---|---|---|
-   | `0` | 无缺陷 | 可进入指标计算 |
-   | `1` | 只有警告（D2/D3/D4） | 按缺陷目录的修复规则补齐后再算指标 |
-   | `2` | 有阻断缺陷（D1/D5） | **先修采集或显式降级口径，不得直接算指标** |
+   | `0` | 无缺陷、无警告 | 可进入指标计算 |
+   | `1` | 只有警告（D2/D3/D6） | 按缺陷目录的修复规则补齐后再算指标 |
+   | `2` | 有阻断缺陷（D1/D5/D7） | **先修采集或显式降级口径，不得直接算指标** |
+
+   D4（`CITATION_UNITS` 计数单位说明）只进 `infos`，不影响退出码。脚本的判定规则：有任何 defect 即 `2`，否则有任何 warning 即 `1`，否则 `0`。
 
 4. **按缺陷码分派**：
    - `MENTION_FLAG_LAYER_MIXING`、`FAILED_ANSWER`、`EMPTY_ANSWER` → 阻断。提及率与分母必须改用正文口径重算，并在交付里写明原始标记与真实口径的差异。
@@ -59,16 +61,16 @@ version: "1.0.0"
    - `TEXT_CORRUPTION` → 警告。受影响条目的**原文与译文不得直接交付客户**，须先校正或在报告里标注采集异常。新损坏词追加进 `KNOWN_TEXT_CORRUPTION` 清单，不要改成启发式匹配。
    - `PLATFORM_MARKUP_IN_BODY` → 不是缺陷。平台自带标记（`<Elicitation>`、`<FollowUp>`）混在正文里属正常输出形态，下游做句子切分、翻译与引用解析前要先剥掉。
    - `UNKNOWN_PLATFORM_CONTRACT` → **阻断**。有平台目录没登记契约，该平台整批未被审计；补 `references/platform-contract.json` 后重跑，不得据此宣称采集可信。
-   - `TARGET_IN_RETRIEVAL_ONLY` → 不是缺陷。这是「被检索但未被提及」的内容机会，单独统计并交给内容侧。
+   - `TARGET_OUTSIDE_BODY_ONLY` → 不是缺陷。这是「被检索但未被提及」的内容机会，单独统计并交给内容侧。
 
-5. **交下游前对齐口径**：品牌分母、引用计数单位（次数 vs 去重来源）在 `geo-presales-report-builder` 里已有定义，本 skill 不另立一套。两处不一致时以 builder 为准。
+5. **交下游前对齐口径**：品牌分母、引用计数单位（次数 vs 去重来源）的唯一权威实现是 `geo-presales-report-editor/scripts/geo_presales_core/`（`geo-presales-report-builder` 复用该实现），本 skill 不另立一套。两处不一致时以 core 的定义为准。
 
 ## 交付门槛
 
 - `audit_crawl_integrity.py` 的退出码与结论一致；退出码非 0 时不得宣称采集可信。
 - 每类缺陷都给出完整的 `平台 + 文件` 清单，不得只报数量或少量示例。
 - 阻断缺陷必须在结论里给出「原始口径 → 修正口径」的前后数字。
-- 缺陷报告归档到 `01-海外GEO售前/评测数据/<品牌名>/` 对应任务目录，与指标产出并列。
+- 缺陷报告归档到 `10-售前诊断报告/评测数据/<品牌名>/` 对应任务目录，与指标产出并列。
 - 若把缺陷反馈给采集供应商，附上可复跑命令与该条记录的字段证据，不复述推测。
 
 ## 已知边界

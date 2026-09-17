@@ -3,7 +3,7 @@ name: geo-presales-sentiment-judge
 description: This skill should be used when computing sentence-level brand sentiment (positive/negative sentence extraction and positive rate) for a target brand or for a whole brand lexicon (target + configured/open competitors) from overseas GEO presales crawler answers, judged against the v8 question bank sentiment sample scope. It does not modify backend JSON sentiment fields, judge competitor win rates, or compute visibility metrics.
 metadata:
   author: 海外 GEO 项目
-version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # GEO 售前句子级情绪判读
@@ -32,7 +32,7 @@ version: "1.1.0"
 
 1. **确认输入**：题库（v8 JSON 或 upload CSV）、采集目录（`scraper.*/<区域>/NNNN.json`）、品牌来源。品牌来源二选一：
    - 单品牌：`--aliases 'YOUKU,优酷,ยูคุ,ยูคู'`（须含当地文字转写，漏转写会系统性漏提；可加 `--brand` 指定写入 `brand` 字段的名称）。
-   - 多品牌：`--lexicon <品牌词表.json>`，读 `brands[].name/aliases/type`，每条单元带 `brand` 与 `brand_type`，用于竞品情感矩阵。两种模式共用同一别名匹配（大小写、词边界处理一致）。
+   - 多品牌：`--lexicon <品牌词表.json>`，每条单元带 `brand` 与 `brand_type`，用于竞品情感矩阵。词表两种格式均可：`brands[].name/aliases/type` 数组（report-builder 落点，首选），或「标准名 → 别名 list」dict（report-audit / shared 落点，`_` 开头的键视为元数据，标准名自身自动算一个别名，`type` 缺省为空）。两种模式共用同一别名匹配（大小写、词边界处理一致）。
 2. **确定性抽取**：
 
    ```bash
@@ -72,7 +72,7 @@ version: "1.1.0"
 - 必须交付逐句 CSV（platform、region、idx、question_id、intent、brand、sentiment、原句），让用户能按 `G` 筛出全部负面句抽查，也能按 region 切市场维度。
 - 结论中必须写明"正向率说明被评价时的褒贬比，不代表全部回答的正面占比"。
 - 判读中执行过的边界裁决（如某句按纯事实不提取）在交付时点名说明，供用户复核；用户改判后只改 `labels.json` 重跑 `compute`，不动抽取。
-- 产物归档到 `01-海外GEO售前/评测数据/<品牌名>/` 对应任务目录，与可见度统计并列。
+- 产物归档到 `10-售前诊断报告/评测数据/<品牌名>/` 对应任务目录，与可见度统计并列。
 
 ## 修改本 skill 后
 

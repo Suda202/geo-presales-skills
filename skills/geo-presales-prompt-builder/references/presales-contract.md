@@ -48,6 +48,7 @@ v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_ob
 - P1 每项恰好包含 `attribute / source_field / source_value / decision_reason / verification_statement`；P2/P3 不包含 `verification_statement`。
 - `excluded` 可为空；每项包含 `candidate / source_field / source_value / reason / route`，`route` 只允许 `exclude` 或 `accuracy_only`。
 - 当前 Topic 的 `validation_items` 和 Verification 的 Attribute Tags 与 P1 的强绑定已随 Verification 配额归 0 暂停使用；完整示例见 [属性规划](attribute-planning.md)。
+- **下游后果**：后端 `attribute_diagnostics` 原本依赖 Validation 样本，配额归 0 后 `validation_question_ids` 为空，只能从配对 Discovery（「是否被主动推荐」）与 Evaluation（「是否知道」）派生；派生不出时后端须提交全 `unknown`。这是采集端与后端的事实来源，本 Skill 只负责让题库如实反映「没有 Verification 题」，不补题、不在题库里预留 Validation 字段。
 
 ## Case / Topic 示例骨架
 
@@ -195,7 +196,7 @@ v8 的 `config` 是闭合合同，只允许 `case_fields / brand_name / brand_ob
 | `topic` | 对应评测集 `主题 n（宽泛/细分）` 的原始中文值 |
 | `diagnosis_intent` | 从 JSON 唯一默认 Intent Tag 转写：`discovery / competitor / verification / accuracy / evaluation / category_awareness` |
 | `tags` | 上传适配列：允许留空；若填写必须短于 200 字符，并使用英文逗号、中文逗号或换行分隔，且优先保留可上传的最小化摘要，不把 JSON 里的完整 Attribute 列表直接搬进来 |
-| `question_types` | `visibility,sentiment / sentiment`；Discovery、Verification、Accuracy 与 Category Awareness 填 `visibility,sentiment`，Competitor 与 Evaluation 填 `sentiment` |
+| `question_types` | `visibility,sentiment / sentiment / visibility`；Discovery 填 `visibility,sentiment`，Competitor 与 Evaluation 填 `sentiment`，Verification、Accuracy 与 Category Awareness 填 `visibility`（不得带 `sentiment`，否则会被下游情绪判读错误纳入样本） |
 | `purchase_intent` | 可空或 `0 / 1 / 2 / 3`，分别表示无、推荐、比较、决策 |
 | `persona_name` | 可空，最多 200 字符 |
 | `scene_name` | 可空，最多 200 字符 |

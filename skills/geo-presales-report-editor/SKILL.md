@@ -16,13 +16,13 @@ metadata:
 
 ## 底层的归属与变更纪律
 
-`scripts/geo_presales_core/`（含 `metrics.py`、`deterministic.py`、`config.py`）**归本 skill 所有**，是四个 skill 共用的指标口径实现——`geo-presales-report-builder`、`geo-presales-report-audit`、`geo-presales-crawl-integrity` 都直接引用它。
+`scripts/geo_presales_core/`（含 `metrics.py`、`deterministic.py`、`config.py`）**归本 skill 所有**，是四个 skill 共用的指标口径实现——`geo-presales-report-builder` 全面复用它的 `prepare_answers` 与 `compute_metrics` 做指标计算；`geo-presales-report-audit` 与 `geo-presales-crawl-integrity` 只引用它的 `answer_validity` 做答案有效性判断，不调用指标计算。
 
 **其他 skill 对本目录只读。** 需要改口径时，改在本 skill 里，不在下游复制一份；下游需要不同口径时在自身的适配层做显式转换，并在产物里标注口径来源。
 
 **改本目录之前**：
 
-1. 跑 `python3 -m unittest discover -s tests`，全部通过才算改完。
+1. 跑 `python3 -m unittest discover -s scripts/tests`（本 skill 的测试在 `scripts/tests/`，不在顶层 `tests/`），全部通过才算改完。
 2. 在改动说明里写明**受影响的下游 skill 与指标**——同一个函数改了，四份报告的同一列数字会一起变。
 3. 口径判据（哪一类样本进哪个指标）改动必须先取得确认，不能只按注释里的假设改。
 

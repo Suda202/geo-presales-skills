@@ -1,6 +1,9 @@
 ---
 name: overseas-geo-competitor-research
 description: 用于为海外 GEO 售前诊断联网发现、核验和冻结三个处于同一购买集合的正式竞品。支持未提供竞品时从零发现，也支持核验用户填写的一个至三个候选并补足；需要验证竞品名称、官网、同次购买可替代性与市场地位证据时使用。
+metadata:
+  author: 海外 GEO 项目
+  version: "0.5.0"
 ---
 
 # 海外 GEO 售前竞品研究

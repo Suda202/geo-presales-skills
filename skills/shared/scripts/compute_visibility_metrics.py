@@ -1,3 +1,9 @@
+"""DEPRECATED（2026-09-17）：遗留实现，仅供只读参考，不得用于正式交付。
+
+正式指标口径的唯一实现是 geo-presales-report-editor/scripts/geo_presales_core/
+（prepare_answers / compute_metrics），报告生成走 geo-presales-report-builder。
+本脚本的口径与 core 未对齐，端到端结果已确认不等价（见文内注释）。
+"""
 """从审计目录的抽取结果计算可见度指标（提及率 / 提及率排名 / 声量份额 / 平均提及位置）。
 
 跨 skill 共用：不写死任何数据集，题库、词典、引擎路径都从参数来。
