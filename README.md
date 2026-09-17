@@ -68,7 +68,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 | --- | --- | --- | --- | --- |
 | `geo-presales-crawl-integrity` | A | 算任何指标之前，先确认这份采集能不能用：每条回答是正文明说了品牌，还是只是被检索到 | 分层判定 + 问题清单，指明涉及的平台和文件 | 不算提及率、声量、排名、引用份额，不判情绪，不纠品牌 |
 | `geo-presales-report-builder` | A | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 可见度与引用类指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不做情感判读（归 sentiment-judge，只汇总其结果），不另写指标口径（复用全库统一实现），不出上传 CSV，不纠品牌识别，不做采集校验 |
-| `geo-presales-sentiment-judge` | A | 需要句级正负句和正向情感占比 | 逐句 CSV + 正向情感占比，按品牌、意图、平台分层 | 只算「正向情感占比」一个指标；不回写后端 `sentiment` 字段，不判竞品胜负，不算可见度 |
+| `geo-presales-sentiment-judge` | A | 需要句级正负句和正向情感占比 | 逐句 CSV + 正向情感占比，按品牌、意图、平台分层 | 只算「正向情感占比」一个指标；不改后端已有的情绪字段，不判竞品胜负，不算可见度 |
 | `geo-presales-report-audit` | B（跨链） | 品牌提及识别或正文首现排序需要审核和修正 | 修正后的品牌提及识别与首现排序、安全补丁、可复现的问题说明与 Bad Case 草稿 | 不改客户结论，不审情绪，不做竞品研究或出题 |
 | `geo-presales-report-editor` | B | 底层结果已确认，要改客户结论并出上传件 | 更新后的客户结论、可上传 CSV | 不重算底层，不渲染 HTML，不操作报告页面 |
 | `overseas-geo-competitor-research` | 共用 | 正式竞品不足 3 个，或用户填的候选需要核验 | 3 个通过同一购买集合硬门槛的正式竞品 + 选择证据 | 不建 Case、不出题、不采集 |
