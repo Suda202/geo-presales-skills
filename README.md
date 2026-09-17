@@ -33,9 +33,10 @@
 ```bash
 cd skills/geo-presales-report-builder
 python3 scripts/build_report_data.py --collect <采集目录> --questions <题库.csv> \
-  --case <Case.json> --lexicon assets/brand_lexicon.<品类>.json \
-  --domain-cache assets/domain-categories.json --out <输出>/report-data.json
+  --case <Case.json> --out <输出>/report-data.json
 ```
+
+补上 `--lexicon assets/brand_lexicon.<品类>.json --domain-cache assets/domain-categories.json` 才完整：**省略时开放品牌不进指标，声量份额与提及率排名的分母只有 Case 里的配置品牌，数字偏小**。这两个文件用 `mine_brand_lexicon.py` 和 `collect_domain_candidates.py` 生成（见 [SKILL.md](skills/geo-presales-report-builder/SKILL.md) 步骤 2–3）。
 
 ### 任务二 · 指标统计 + 生成 HTML 报告
 
