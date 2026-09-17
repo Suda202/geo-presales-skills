@@ -169,9 +169,11 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 ## 交付门槛
 
+- **源码真相在本 skill,客户 HTML 只是产物**:任何修订都改 `scripts/` 与 `assets/` 后完整重跑数据层链路(build → attach_sentiment → attach_translations → verify → render),不得手改已渲染的单页 HTML——手改产物会在下次重渲染时被静默覆盖,且让产物与 `report-data.json` 脱钩。
 - `verify_report_data.py` 退出码为 0，且突变测试全部检出。
 - 在浏览器里逐层切过 tab，确认没有空白模块或错位。
 - 报告里出现的每个数字都能在 `report-data.json` 里定位到，不得有前端临时计算的指标。
+- `meta.questions` 每题必须带 `intent`(从题库 `diagnostic_intent` 映射的中文标签):明细表的情感列、切片过滤都靠它,缺失时明细正向情感列会整列显示「—」(Bewinch 实例)。
 - 情感板块若尚无判读数据，必须在 `meta.sentiment_claims_status` 标 `pending`，不允许用占位数字冒充。
 - 产物归档到 `10-售前诊断报告/评测数据/<品牌名>/` 对应任务目录，与可见度统计并列。
 

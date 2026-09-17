@@ -1,5 +1,5 @@
 {
-  "_note": "平台字段契约的外部扩展点。这里的条目会按平台名覆盖脚本内置默认值；新增平台只需在此追加，不必改代码。每个平台必须指明四层数据各自落在哪个字段：answer=回答正文，body_citations=正文引用元数据（[N] → url 映射），retrieval=检索结果，answer_sources=随回答返回的来源列表。",
+  "_note": "平台字段契约的外部扩展点。这里的条目会按平台名覆盖脚本内置默认值；新增平台只需在此追加，不必改代码。每个平台必须指明四层数据各自落在哪个字段：answer=回答正文，body_citations=正文引用/来源卡片，retrieval=检索结果，answer_sources=随回答返回的来源列表。",
   "perplexity": {
     "answer": ["result_text"],
     "body_citations": ["web_results"],

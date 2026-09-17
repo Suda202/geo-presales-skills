@@ -1072,7 +1072,9 @@ def build_sources(metrics: dict, answers: list[dict]) -> dict:
     for entry in metrics["citations"]["top_domains"]:
         counter = domain_types.get(entry["domain"])
         bucket = SOURCE_BUCKET.get(counter.most_common(1)[0][0], ("其他", ""))[0] if counter else "其他"
-        domain_rows.append([entry["domain"], str(entry["answer_count"]), bucket])
+        # 引用份额是百分比，与类别、页面两级一致
+        share = entry["answer_count"] / raw_total if raw_total else None
+        domain_rows.append([entry["domain"], fmt_pct(share) if share is not None else "—", bucket])
 
     page_rows = []
     for entry in metrics["citations"]["top_pages"]:
@@ -1265,13 +1267,15 @@ def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
 
     questions = []
     for index, row in enumerate(rows, 1):
-        backend = CSV_INTENT_MAP.get(str(row.get("diagnosis_intent") or "").strip())
+        raw_intent = str(row.get("diagnosis_intent") or "").strip()
+        backend = CSV_INTENT_MAP.get(raw_intent.casefold()) or CSV_INTENT_MAP.get(raw_intent)
         questions.append({
             "qid": index,
             "en": str(row["query"]).strip(),
             "zh": str(row.get("question_zh") or "").strip(),
             "topic": str(row.get("topic") or "").strip(),
             "intent": INTENT_LABEL.get(backend, ""),
+            "diagnostic_intent": backend,
             "tag": "、".join(readable_tags(str(row.get("tags") or "").split(","))) or "—",
         })
 
@@ -1343,6 +1347,10 @@ _HTML_UNWRAP = re.compile(
     r"|ProductComparisonTable)\b[^>]*>", re.I)
 _HTML_BR = re.compile(r"<\s*br\s*/?\s*>", re.I)
 _HTML_LEFT = re.compile(r"<\s*/?\s*[a-zA-Z][a-zA-Z0-9]*\b[^>]*>")
+# ChatGPT 正文里的商品占位符（product["turn0product7","名称",{"render_as":"hero"}] /
+# entity["turn0product5","名称"]），不是回答内容；与 EntityCard 同法保留品名文本
+_CHATGPT_PRODUCT_TOKEN = re.compile(
+    r"\b(?:product|entity)\[\"turn\d+\w*\",\"([^\"]*)\"(?:,\{[^}]*\})?\]")
 
 
 def normalize_answer_html(text: str) -> str:
@@ -1357,6 +1365,7 @@ def normalize_answer_html(text: str) -> str:
     value = _HTML_PLATFORM_BLOCK.sub("", value)
     value = _HTML_ENTITY_CARD.sub(r"\1", value)
     value = _HTML_ENTITY_CARD_BARE.sub("", value)
+    value = _CHATGPT_PRODUCT_TOKEN.sub(r"\1", value)
     # 表格单元格里的 <br> 不能换成换行——会把一行表格拆成多行导致解析失败。
     # 换成「 / 」分隔符，保留多链接可读性。
     lines = value.split("\n")
@@ -1456,6 +1465,58 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
             while i < len(lines) and _re.match(r"^\|.*\|\s*$", lines[i].strip()):
                 rows.append([cell.strip() for cell in lines[i].strip().strip("|").split("|")])
                 i += 1
+
+            # ChatGPT 商品卡表格（header 含 id/goods/price/rating）不走表格渲染，
+            # 转成卡片组件——图片 + 名称 + 价格 + 评分，跟原平台视觉一致。
+            header_lower = [h.lower() for h in header]
+            is_product_card_table = (
+                "goods" in header_lower and "price" in header_lower and "rating" in header_lower
+            )
+            if is_product_card_table:
+                cards = []
+                for row in rows:
+                    if len(row) < 5:
+                        continue
+                    # 列映射：id | goods | price | rating | merchants | picture
+                    col = {h.lower(): (row[idx] if idx < len(row) else "") for idx, h in enumerate(header)}
+                    goods = col.get("goods", "").strip()
+                    price = col.get("price", "").strip()
+                    rating = col.get("rating", "").strip()
+                    merchants = col.get("merchants", "").strip()
+                    picture = col.get("picture", "").strip()
+                    # 跳过占位行
+                    if not goods or goods in ("****", ""):
+                        continue
+                    # goods 里的 markdown 加粗剥掉
+                    goods_text = _re.sub(r"\*\*(.+?)\*\*", r"\1", goods)
+                    # merchants 里的链接剥掉标签只留文本
+                    merchants_text = _re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", merchants)
+                    # picture 里提取 img src
+                    img_src = ""
+                    img_match = _re.search(r'src="([^"]+)"', picture)
+                    if img_match:
+                        img_src = img_match.group(1)
+                    # 商品卡 HTML
+                    card = ['<div class="product-card">']
+                    if img_src:
+                        card.append(f'<div class="product-card-img"><img src="{img_src}" alt="" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>')
+                    card.append('<div class="product-card-body">')
+                    card.append(f'<div class="product-card-title">{goods_text}</div>')
+                    meta_parts = []
+                    if price:
+                        meta_parts.append(f'<span class="product-card-price">{price}</span>')
+                    if rating and rating != "⭐ 0.0":
+                        meta_parts.append(f'<span class="product-card-rating">{rating}</span>')
+                    if meta_parts:
+                        card.append('<div class="product-card-meta">' + " · ".join(meta_parts) + "</div>")
+                    if merchants_text:
+                        card.append(f'<div class="product-card-merchant">{merchants_text}</div>')
+                    card.append("</div></div>")
+                    cards.append("".join(card))
+                if cards:
+                    out.append('<div class="product-cards">' + "".join(cards) + "</div>")
+                continue
+
             # 行对齐表头列数。列数**多于**表头说明源行含未转义的 `|`（URL、
             # AIO 的 run-on 长单元格都常见）。整行丢弃会静默吞内容——实测一条
             # AIO 回答 80% 的正文都在一个 6 格的超宽行里。改为把溢出格合并进
@@ -1484,6 +1545,13 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
                 if keep and len(keep) < len(header):
                     header = [header[idx] for idx in keep]
                     rows = [[row[idx] if idx < len(row) else "" for idx in keep] for row in rows]
+            # 商品表的 id 列是内部追踪 ID（19 位数字），不是给客户看的。检测到
+            # header 含 "id" 且该列所有值都是纯数字时，隐藏该列。
+            if rows and header and header[0].strip().lower() in ("id", "product_id"):
+                id_col = [row[0] for row in rows if len(row) > 0]
+                if id_col and all(_re.fullmatch(r"\d{10,}", cell.strip()) for cell in id_col if cell.strip()):
+                    header = header[1:]
+                    rows = [row[1:] for row in rows]
             # 有些表只剩评分占位符（`****`、`0.0`）之类的空壳。
             # 没有任何一格 ≥12 字且总内容极少才整表丢弃；内容多而无长单元格
             # 的表降级为段落输出——降级难看但无损，静默丢弃才是事故。
@@ -1599,8 +1667,7 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                 definitions, occurrences = _body_citation_occurrences(answer)
                 own_occurrences = 0
                 citations = []
-                # 注意：这里不能用 label 作循环变量——外层循环的 label 是平台标签，
-                # 遮蔽后会把平台标签写成引用来源名。
+                seen_urls = set()  # 同一 URL 只显示一次（Gemini 会把同一页面拆成多条）
                 for source_name, number, _position in occurrences:
                     definition = definitions.get(number) or {}
                     raw_url = definition.get("url") or ""
@@ -1609,9 +1676,13 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                     if host and any(domain_matches(host, domain) for domain in target_domains):
                         own_occurrences += 1
                     if normalized:
+                        canonical = normalized["canonical_url"]
+                        if canonical in seen_urls:
+                            continue
+                        seen_urls.add(canonical)
                         citations.append({
                             "title": str(definition.get("title") or "").strip() or normalized["host"],
-                            "url": normalized["canonical_url"],
+                            "url": canonical,
                             "host": normalized["host"],
                             "source_name": source_name,
                         })

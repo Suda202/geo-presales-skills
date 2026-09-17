@@ -39,18 +39,31 @@ PLATFORM_INTERNAL = {
     "Perplexity": "perplexity",
 }
 
-# 竞品情感矩阵的行（属性点）。取自 Case 的产品特性与差异化优势，
-# 是客户真正拿来横向比较的维度。
-ATTRIBUTE_KEYWORDS = {
-    "免安装": ["no plumbing", "no installation", "plug-and-play", "plug and play", "免安装", "免接水管",
-             "without plumbing", "installation-free"],
-    "机身深度": ["26 cm", "26cm", "slim", "shallow", "depth", "compact footprint", "narrow counter",
-              "space-saving", "footprint"],
-    "即热控温": ["instant hot", "temperature", "heating", "hot water", "temperature settings", "boiling"],
-    "RO 过滤": ["reverse osmosis", "filtration", "filter", "purification", "ro system"],
-    "矿化": ["mineral", "remineral", "alkaline", "mineralization"],
-    "容量水箱": ["tank", "litre", "liter", "capacity", "reservoir"],
+# 竞品情感矩阵的行（Theme）。Theme 从各品牌 claims 的 label 归一，
+# 取客户真正拿来横向比较的产品属性维度；匹配不到关键词的 label 归入「其他」，
+# 「其他」不进入矩阵展示（含综合推荐、口碑、营销等非属性维度）。
+THEME_KEYWORDS = {
+    "安装与部署": ["免安装", "零管线", "需接管道", "安装受限", "免接管", "接管", "安装"],
+    "体积与空间": ["机身超薄", "省空间", "机身深度", "体积笨重", "机身过深", "紧凑",
+                 "纤薄", "超薄", "占空间", "深度", "空间", "体积", "机身", "摆放", "小户型"],
+    "过滤与水质": ["过滤", "净水", "矿化", "净化", "滤芯", "ro", "去除矿物质", "碱性",
+                 "口感", "水质", "矿物质"],
+    "温控与出水": ["控温", "温控", "即热", "热水", "出水", "多温", "冷热", "冲奶"],
+    "成本与价格": ["成本", "价格", "滤芯成本", "租赁成本", "价格透明", "实惠", "耗材",
+                 "负担", "性价比", "加水"],
+    "服务与售后": ["服务", "售后", "维护", "提醒"],
 }
+THEMES = list(THEME_KEYWORDS.keys())
+
+
+def theme_of(label: str) -> str:
+    """按关键词把 claims 的 label 归一到 Theme；匹配不到归入「其他」（不入矩阵）。"""
+    lowered = (label or "").casefold()
+    for theme in THEMES:
+        for keyword in THEME_KEYWORDS[theme]:
+            if keyword.casefold() in lowered:
+                return theme
+    return "其他"
 
 
 def load_labels(labels_dir: Path, brand: str) -> dict:
@@ -141,27 +154,56 @@ def excerpt(sentence: str, keywords: list[str], width: int = 46) -> str:
 
 def build_brand_table(units: list[dict], merged: dict, brands: list[str], counts: dict,
                       predicate) -> dict:
-    """竞品情感对比表。
+    """顶部「竞品情感占比」数据：每个品牌在给定切片下的正向情感占比。
 
-    不做「属性 × 品牌」矩阵：判读是按整句给方向的，没有逐句的属性标注，
-    按关键词把长句切到属性格子里会同时错配品牌与方向（例如把「Winner: Bewinch」
-    的片段填进竞品格），给客户看会误导。这里只按品牌汇总，代表证据句要求点名该品牌。
+    判读是按整句给方向的，没有逐句的属性标注；这里只按品牌汇总，
+    用于 04 板块顶部的迷你条形图，不做大数字表格。
     """
     return {
-        "columns": ["正向率", "正向句", "负向句"],
+        "columns": ["正向占比"],
         "rows": [
             {
                 "brand": brand,
                 "target": brand == "Bewinch",
-                "values": [
-                    rate(counts[brand][0], counts[brand][1]),
-                    str(counts[brand][0]),
-                    str(counts[brand][1]),
-                ],
+                "values": [rate(counts[brand][0], counts[brand][1])],
             }
             for brand in brands
         ],
     }
+
+
+def build_theme_matrix(all_claims: dict, brands: list[str], predicate) -> dict:
+    """竞品情感矩阵（Theme × 品牌）。
+
+    对每个品牌，把它的 claims 按 Theme 归一；用 sliced_claims 的过滤逻辑
+    统计当前切片内每个 Theme × 品牌的正负句数。「其他」不入矩阵。
+    每个单元格取该 Theme 下计数最高的 claim 标签作为代表描述，并记录其方向。
+    """
+    matrix: dict[str, dict[str, dict]] = {theme: {} for theme in THEMES}
+    for brand in brands:
+        groups = all_claims.get(brand) or {"pos": [], "neg": []}
+        for direction, key in (("pos", "pos"), ("neg", "neg")):
+            sliced = sliced_claims(groups[key], predicate)
+            for group in sliced:
+                theme = theme_of(group["label"])
+                if theme not in THEMES:
+                    continue
+                cell = matrix[theme].setdefault(brand, {
+                    "pos": 0, "neg": 0, "top_claim": "", "top_count": 0, "top_dir": "",
+                })
+                cell[direction] += group["count"]
+                # 取计数最高的 claim 作为该 Theme 的代表描述
+                if group["count"] > cell["top_count"]:
+                    cell["top_claim"] = group["label"]
+                    cell["top_count"] = group["count"]
+                    cell["top_dir"] = direction
+    for theme in THEMES:
+        for brand in brands:
+            cell = matrix[theme].setdefault(brand, {
+                "pos": 0, "neg": 0, "top_claim": "", "top_count": 0, "top_dir": "",
+            })
+            cell["rate"] = rate(cell["pos"], cell["neg"])
+    return {"themes": list(THEMES), "brands": list(brands), "matrix": matrix}
 
 
 def top_claims(units: list[dict], merged: dict, brand: str, direction: str, predicate, limit=3) -> list[dict]:
@@ -206,6 +248,18 @@ def load_claim_groups(claims_dir: Path, sentences_path: Path, brand: str) -> dic
     return out
 
 
+def load_all_claim_groups(claims_dir: Path, sentences_path: Path, brands: list[str]) -> dict:
+    """加载全部品牌的 claims 归纳；某品牌缺文件时给空组，不阻断其他品牌。"""
+    out = {}
+    for brand in brands:
+        claims_path = claims_dir / f"{brand}-claims.json"
+        if not claims_path.exists():
+            out[brand] = {"pos": [], "neg": []}
+            continue
+        out[brand] = load_claim_groups(claims_dir, sentences_path, brand)
+    return out
+
+
 def sliced_claims(groups: list[dict], predicate) -> list[dict]:
     """按当前切片过滤观点组，并用切片内的成员重算计数。
 
@@ -233,6 +287,67 @@ def sliced_claims(groups: list[dict], predicate) -> list[dict]:
 
 
 
+# details 里 brands 的名字可能带「★」目标标记，匹配时去掉
+STAR_SUFFIXES = (" ★", "★")
+
+
+def _strip_brand_star(name: str) -> str:
+    text = str(name or "").strip()
+    for suffix in STAR_SUFFIXES:
+        if text.endswith(suffix):
+            text = text[: -len(suffix)].strip()
+    return text
+
+
+def build_answer_sentiment(units: list[dict], merged: dict, brands: list[str],
+                           all_claims: dict, judged: dict,
+                           qid: str, region: str, platform_internal: str) -> dict:
+    """单条回答的品牌情感：该回答里每个被提及品牌的正/负标签与依据句。
+
+    units 的数组位置是全局下标；judged-sentences 里的 `idx` 也是全局下标，
+    claims 的 `indices` 指向「该品牌 judged-sentences 同方向数组」的下标。
+    映射链：unit 位置 → judged idx → (品牌, 方向, 数组内下标) → claims label。
+    """
+    judged_set = set(merged["positive"]) | set(merged["negative"])
+
+    # unit 位置 → (品牌, 方向, 品牌内下标)
+    position_map: dict[int, tuple[str, str, int]] = {}
+    for brand in brands:
+        payload = judged.get(brand) or {}
+        for direction, key in (("pos", "positive"), ("neg", "negative")):
+            for inner_idx, member in enumerate(payload.get(key) or []):
+                position_map[member.get("idx")] = (brand, direction, inner_idx)
+
+    # claims 组查 label：品牌 + 方向 + 品牌内下标 → label
+    label_of: dict[tuple[str, str, int], str] = {}
+    for brand in brands:
+        groups = (all_claims.get(brand) or {"pos": [], "neg": []})
+        for direction, key in (("pos", "pos"), ("neg", "neg")):
+            for group in groups.get(key) or []:
+                for inner_idx in group.get("indices") or []:
+                    label_of[(brand, direction, inner_idx)] = group.get("label") or ""
+
+    out_brands: dict[str, dict] = {}
+    for pos_i in sorted(judged_set):
+        unit = units[pos_i]
+        if (str(unit.get("question_id")) != qid
+                or unit.get("region") != region
+                or unit.get("platform") != platform_internal):
+            continue
+        brand, direction, inner_idx = position_map[pos_i]
+        sentence = clean_text(unit.get("unit"))
+        if not sentence:
+            continue
+        entry = out_brands.setdefault(brand, {"brand": brand, "pos_claims": [], "neg_claims": []})
+        label = label_of.get((brand, direction, inner_idx)) or "其他"
+        bucket = entry["pos_claims"] if direction == "pos" else entry["neg_claims"]
+        bucket.append({"label": label, "sentence": sentence})
+
+    ordered = [out_brands[b] for b in brands if b in out_brands]
+    return {"brands": ordered}
+
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="把情感判读结果接入报告数据")
     parser.add_argument("--report", type=Path, required=True)
@@ -252,12 +367,20 @@ def main() -> int:
 
     # question_id → 主题；units 里的 question_id 是补零字符串，meta.questions 用整数
     topic_of = {f"{int(q['qid']):04d}": q.get("topic") for q in meta.get("questions", [])}
+    # question_id → 后端 diagnostic_intent；情感列只回写「sentiment 适用范围」的题
+    # （口径 shared/canonical-intent-mapping.md：discovery / competitor / sentiment，
+    # 对应中文 发现 / 竞品 / 评价），验证 / 准确性 / 品类认知题显示「—」。
+    intent_of = {f"{int(q['qid']):04d}": q.get("diagnostic_intent")
+                 for q in meta.get("questions", [])}
+    SENTIMENT_INTENTS = {"discovery", "competitor", "sentiment"}
 
     claims_dir = args.labels_dir.parent / "sentiment-claims"
     sentences_path = claims_dir / "judged-sentences.json"
     target_groups = None
+    all_claims: dict = {}
     if sentences_path.exists():
         target_groups = load_claim_groups(claims_dir, sentences_path, args.target)
+        all_claims = load_all_claim_groups(claims_dir, sentences_path, brands)
 
     pos_sets = {b: set() for b in brands}
     neg_sets = {b: set() for b in brands}
@@ -303,6 +426,7 @@ def main() -> int:
                       else top_claims(units, merged, args.target, "negative", predicate),
             },
             "matrix": build_brand_table(units, merged, brands, counts, predicate),
+            "theme_matrix": build_theme_matrix(all_claims, brands, predicate) if all_claims else None,
             "by_brand": {
                 b: {"positive": counts[b][0], "negative": counts[b][1],
                     "pos_rate": rate(counts[b][0], counts[b][1])}
@@ -318,6 +442,64 @@ def main() -> int:
             {"positive": by_brand[args.target]["positive"],
              "negative": by_brand[args.target]["negative"]},
         )
+
+    # 明细表「正向情感占比」列：按切片口径聚目标品牌在该题下的正负句。
+    # 单 region+单平台切片 → 只算该 (region, platform, qid)；
+    # 混合切片（全部国家/全部平台）→ 对该 qid 的所有 units 做池化聚合。
+    from collections import defaultdict
+    by_rpq: dict[tuple[str, str, str], tuple[int, int]] = defaultdict(lambda: (0, 0))
+    by_qid: dict[str, tuple[int, int]] = defaultdict(lambda: (0, 0))
+    by_region_qid: dict[tuple[str, str], tuple[int, int]] = defaultdict(lambda: (0, 0))
+    by_platform_qid: dict[tuple[str, str], tuple[int, int]] = defaultdict(lambda: (0, 0))
+    for i in pos_sets[args.target]:
+        u = units[i]
+        r_, p_, q_ = u.get("region", ""), u.get("platform", ""), str(u.get("question_id", ""))
+        for d, k in ((by_rpq, (r_, p_, q_)), (by_qid, q_),
+                     (by_region_qid, (r_, q_)), (by_platform_qid, (p_, q_))):
+            pos_n, neg_n = d[k]
+            d[k] = (pos_n + 1, neg_n)
+    for i in neg_sets[args.target]:
+        u = units[i]
+        r_, p_, q_ = u.get("region", ""), u.get("platform", ""), str(u.get("question_id", ""))
+        for d, k in ((by_rpq, (r_, p_, q_)), (by_qid, q_),
+                     (by_region_qid, (r_, q_)), (by_platform_qid, (p_, q_))):
+            pos_n, neg_n = d[k]
+            d[k] = (pos_n, neg_n + 1)
+
+    filled_records = 0
+    for slice_key, slice_value in report["slices"].items():
+        region, platform_display, _ = (slice_key.split("|") + ["", "", ""])[:3]
+        internal = PLATFORM_INTERNAL.get(platform_display) if platform_display else None
+        for rec in slice_value.get("records", []):
+            qid_str = str(rec["qid"]).zfill(4)
+            if intent_of.get(qid_str) not in SENTIMENT_INTENTS:
+                rec["sentiment"] = None
+                continue
+            if region and internal:
+                pos_n, neg_n = by_rpq.get((region, internal, qid_str), (0, 0))
+            elif region:
+                pos_n, neg_n = by_region_qid.get((region, qid_str), (0, 0))
+            elif internal:
+                pos_n, neg_n = by_platform_qid.get((internal, qid_str), (0, 0))
+            else:
+                pos_n, neg_n = by_qid.get(qid_str, (0, 0))
+            if pos_n + neg_n > 0:
+                rec["sentiment"] = f"{pos_n * 100 / (pos_n + neg_n):.1f}%"
+                filled_records += 1
+            else:
+                rec["sentiment"] = None
+
+    # 抽屉「品牌情感」面板：按单条回答（region|平台显示名|qid）挂每个品牌的
+    # 正/负标签与依据句。judged-sentences 缺失时跳过，面板显示「无判读数据」。
+    if sentences_path.exists():
+        judged = json.loads(sentences_path.read_text(encoding="utf-8"))
+        for detail_key, detail_value in report.get("details", {}).items():
+            region, platform_display, qid = (detail_key.split("|") + ["", "", ""])[:3]
+            internal = PLATFORM_INTERNAL.get(platform_display) if platform_display else None
+            if not (region and internal and qid):
+                continue
+            detail_value["sentiment"] = build_answer_sentiment(
+                units, merged, brands, all_claims, judged, qid, region, internal)
 
     meta["sentiment_claims_status"] = "complete"
     meta["sentiment_brands"] = brands

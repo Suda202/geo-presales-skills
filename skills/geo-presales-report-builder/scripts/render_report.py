@@ -36,7 +36,7 @@ SECTIONS = [
 ]
 
 KPI_TIPS = [
-    ("提及率", "可见度问题中，监测对象被 AI 提及的比例。越高说明监测对象越容易进入相关回答。"),
+    ("提及率", "发现类问题中，监测对象被 AI 提及的比例。越高说明监测对象越容易进入相关回答。"),
     ("提及率排名", "按提及率由高到低在当前品牌集合中的位置。"),
     ("声量份额", "监测对象提及量 ÷ 全部纳入品牌的提及量之和。"),
     ("平均提及位置", "监测对象被提及时的平均位置。数值越小，表示位置越靠前。"),
@@ -104,9 +104,9 @@ def build_body(meta: dict) -> str:
     shared_filter = (
         '<div class="shared-filter" aria-label="数据筛选">'
         '<div class="shared-filter-head"><strong>数据筛选</strong>'
-        "<span>国家、平台和主题同时作用于 02 / 03 / 04 / 05 模块</span></div>"
+        "<span>地区、平台和主题同时作用于 02 / 03 / 04 / 05 模块</span></div>"
         '<div style="display:grid;gap:12px">'
-        '<div class="filter-tabs" id="regionTabs" aria-label="国家筛选"></div>'
+        '<div class="filter-tabs" id="regionTabs" aria-label="地区筛选"></div>'
         '<div class="filter-tabs" id="platformTabs" aria-label="平台筛选"></div>'
         '<div class="filter-tabs" id="topicTabs" aria-label="主题筛选"></div>'
         "</div></div>"
@@ -162,12 +162,12 @@ def build_body(meta: dict) -> str:
             body.append('<div class="section-body">')
             body.append(
                 '<div class="grid-2" style="gap:20px">'
-                + '<article class="panel"><div class="panel-head"><h3>官网引用页面</h3></div>'
+                + '<article class="panel"><div class="panel-head"><h3>官网引用页面</h3>' + share_badge + '</div>'
                 + '<div class="panel-body">'
                 + '<div class="page-list" id="officialPages">'
                 + '<div class="page-head"><span>页面</span><span>引用份额</span></div>'
                 + "</div></div></article>"
-                + '<article class="panel"><div class="panel-head"><h3>引用来源类别</h3>' + share_badge + "</div>"
+                + '<article class="panel"><div class="panel-head"><h3>引用来源类别</h3></div>'
                 + '<div class="panel-body"><div class="bar-list source-type-list" id="sourceTypes"></div></div></article>'
                 + "</div>"
             )
@@ -197,9 +197,15 @@ def build_body(meta: dict) -> str:
             )
             body.append(
                 '<article class="panel" style="margin-top:20px">'
+                '<div class="panel-head"><h3>竞品情感占比</h3>'
+                '<span class="tag">正向情感占比</span></div>'
+                '<div class="panel-body"><div id="sentimentOverviewBars"></div></div></article>'
+            )
+            body.append(
+                '<article class="panel" style="margin-top:20px">'
                 '<div class="panel-head"><h3>竞品情感矩阵</h3></div>'
                 '<div class="panel-body"><div class="table-wrap" style="padding:0;border:0;box-shadow:none">'
-                '<table class="attribute-matrix" id="sentimentMatrix"></table>'
+                '<table class="attribute-matrix theme-matrix" id="sentimentMatrix"></table>'
                 "</div></div></article>"
             )
             body.append("</div>")
@@ -217,10 +223,18 @@ def build_body(meta: dict) -> str:
                 '<div class="panel-body"><div id="thirdPartyPlan"></div></div></article>'
                 "</div>"
             )
+            body.append(insight_note("落地服务闭环", "opportunitiesInsight"))
+            body.append("</div>")
             body.append("</div>")
         elif section_id == "records":
             body.append('<div class="section-body">')
             body.append(
+                '<div class="records-toolbar">'
+                '<input class="records-search" id="recordSearch" type="search" placeholder="搜索编号或问题（中英文）" aria-label="搜索问题">'
+                '<select class="records-intent-select" id="recordIntentFilter" aria-label="按诊断意图筛选">'
+                '<option value="">全部意图</option>'
+                '</select>'
+                '</div>'
                 '<div class="table-wrap records">'
                 '<table class="records-table" id="recordTable" style="min-width:1080px"></table>'
                 "</div>"

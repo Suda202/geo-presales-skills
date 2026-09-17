@@ -31,8 +31,6 @@ PLATFORM_CONTRACT = {
         "answer": ["result_text"],
         "body_citations": ["content_references"],
         "retrieval": ["search_result", "links"],
-        # 没有独立来源面板字段：右侧分开展示 content_references（引用）与
-        # search_result（来源），不要为了"补齐"把 search_result 挪进本层。
         "answer_sources": [],
     },
     "gemini": {

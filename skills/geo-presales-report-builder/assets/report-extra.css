@@ -133,7 +133,7 @@
    markdown 渲染后必须关掉，否则标签之间的换行会被当成正文保留。 */
 .answer-md.answer-panel {
   white-space: normal;
-  padding: 18px 0;
+  padding: 18px 16px;
 }
 
 /* 抽屉：原型给右栏 minmax(380px,1fr)，在宽屏下占去四成，正文被压窄。
@@ -142,23 +142,24 @@
   grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
 }
 
-/* 回答里的表格：默认自适应容器宽度、单元格内正常换行。
-   回答里的商品表列多，横滑能看全但观感像"没显示完"，撑宽又会被压成一列一个词——
-   折中是缩小字号 + 给单元格一个较小的最小宽度，让列数多的表尽量挤进一屏。 */
+/* 回答里的表格：按内容自然宽度排布，宽表在容器内横向滚动（左右可拖），
+   单元格给 max-width 防止单列吃掉整行；窄表仍撑满容器宽度。 */
 .answer-table-wrap {
   overflow-x: auto;
   margin: 12px 0;
 }
 .answer-table-wrap .answer-table {
   margin: 0;
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
   font-size: 11.5px;
 }
 .answer-table th,
 .answer-table td {
   min-width: 56px;
-  padding: 5px 7px;
+  max-width: 340px;
+  padding: 5px 8px;
   overflow-wrap: anywhere;
 }
 
@@ -188,9 +189,9 @@
 }
 
 /* 回答正文里的引用 pill（([来源名][N]) 渲染结果） */
-.answer-md .cite-pill{display:inline-flex;align-items:center;gap:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:baseline;margin:0 2px;padding:1px 7px 1px 8px;border-radius:999px;background:rgba(192,90,54,.08);border:1px solid rgba(192,90,54,.22);font-size:11px;line-height:1.5;color:var(--gold-deep);text-decoration:none}
-.answer-md a.cite-pill:hover{background:rgba(192,90,54,.16)}
-.answer-md .cite-pill-num{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:14px;padding:0 3px;border-radius:999px;background:rgba(192,90,54,.18);font:700 9px/1 var(--mono)}
+.answer-md .cite-pill{display:inline-flex;align-items:center;gap:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:baseline;margin:0 2px;padding:1px 7px 1px 8px;border-radius:999px;background:rgba(192,90,54,.12);border:1px solid rgba(192,90,54,.28);font-size:11px;line-height:1.5;color:var(--gold-deep);text-decoration:none}
+.answer-md a.cite-pill:hover{background:rgba(192,90,54,.22)}
+.answer-md .cite-pill-num{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:14px;padding:0 3px;border-radius:999px;background:rgba(192,90,54,.25);font:700 9px/1 var(--mono);color:var(--gold-deep)}
 .answer-md td .cite-pill{max-width:120px}
 
 /* 官网引用页面：基础版 .page-head 缺 grid，两个列头连排；对齐到 .page-item 的两列 */
@@ -200,3 +201,176 @@
 /* 引用来源类别列头：列宽对齐 .source-type-list .bar-row（104px | 1fr | 46px） */
 .bar-head{display:grid;grid-template-columns:104px minmax(0,1fr) 46px;gap:11px;padding:0 0 8px;margin-bottom:10px;border-bottom:1px solid var(--line);color:var(--quiet);font:800 10px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
 .bar-head span:last-child{grid-column:3;text-align:right}
+
+/* 明细表工具栏 */
+.records-toolbar {
+  display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;
+}
+.records-search {
+  flex: 0 1 320px; padding: 7px 12px; border: 1px solid var(--line);
+  border-radius: 8px; font: 13px/1.4 var(--sans); color: var(--ink);
+  background: var(--paper); outline: none;
+}
+.records-search:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(192,90,54,.12); }
+.records-search::placeholder { color: var(--quiet); }
+.records-intent-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.intent-btn {
+  padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper); color: var(--ink-2); font: 500 12px/1.3 var(--sans);
+  cursor: pointer; transition: all .12s;
+}
+.intent-btn:hover { border-color: var(--gold); color: var(--gold-deep); }
+.intent-btn.active {
+  background: rgba(192,90,54,.1); border-color: rgba(192,90,54,.35);
+  color: var(--gold-deep); font-weight: 600;
+}
+
+/* 引用 pill 里的品牌高亮：pill 自带背景色，品牌高亮不需要再着色 */
+.cite-pill .brand-hl { background: transparent; font-weight: inherit; color: inherit; }
+
+/* 抽屉顶部：平台/国家切换 tab */
+.variant-tabs {
+  display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line); padding-bottom: 10px;
+}
+.variant-tab {
+  padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper); color: var(--ink-2); font: 500 12px/1.3 var(--sans);
+  cursor: pointer; transition: all .12s;
+}
+.variant-tab:hover { border-color: var(--gold); color: var(--gold-deep); }
+.variant-tab.active {
+  background: rgba(192,90,54,.1); border-color: rgba(192,90,54,.35);
+  color: var(--gold-deep); font-weight: 600;
+}
+
+/* 意图筛选下拉 */
+.records-intent-select {
+  padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px;
+  font: 13px/1.4 var(--sans); color: var(--ink); background: var(--paper);
+  outline: none; cursor: pointer;
+}
+.records-intent-select:focus { border-color: var(--gold); }
+
+/* 竞品情感矩阵：Theme × 品牌，单元格紧凑 */
+#sentimentMatrix { table-layout: fixed; }
+#sentimentMatrix th:first-child,
+#sentimentMatrix td:first-child { width: auto; }
+
+/* 04 顶部：竞品情感占比迷你条形图 */
+.sentiment-overview-bars { display: flex; flex-direction: column; gap: 12px; }
+.sentiment-overview-bar { display: flex; flex-direction: column; gap: 5px; }
+.sentiment-overview-bar .bar-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+}
+.sentiment-overview-bar .bar-brand {
+  font: 600 12.5px/1.3 var(--sans); color: var(--ink); letter-spacing: 0.01em;
+}
+.sentiment-overview-bar.is-target .bar-brand { color: var(--gold, #b8860b); }
+.sentiment-overview-bar .bar-value {
+  font: 700 12px/1 var(--sans); color: var(--quiet); font-variant-numeric: tabular-nums;
+}
+.sentiment-overview-bar .bar-track {
+  height: 8px; border-radius: 999px; background: var(--line, #e5e2da);
+  overflow: hidden;
+}
+.sentiment-overview-bar .bar-fill {
+  display: block; height: 100%; border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.sentiment-overview-bar .bar-fill.rate-good { background: #2f9e6e; }
+.sentiment-overview-bar .bar-fill.rate-mid  { background: #d9a514; }
+.sentiment-overview-bar .bar-fill.rate-bad  { background: #c65353; }
+.sentiment-overview-bar .bar-fill.rate-none { background: #c9c5bb; }
+
+/* Theme × 品牌 矩阵：Theme 列与各品牌表头统一黑色，目标品牌保持高亮 */
+.theme-matrix thead th {
+  color: var(--ink);
+  font: 700 12px/1.4 var(--sans);
+}
+.theme-matrix thead th.is-target {
+  color: var(--gold, #b8860b);
+}
+.theme-matrix tbody th {
+  color: var(--ink);
+  font: 600 12.5px/1.4 var(--sans);
+  text-align: left;
+}
+
+/* Theme × 品牌 矩阵单元格：正向绿、负向红，无数据也用黑色（不灰） */
+.theme-matrix td.theme-cell {
+  font: 500 12px/1.3 var(--sans);
+  padding: 8px 10px; text-align: center;
+}
+.theme-matrix td.theme-cell.dir-pos { color: #2a7d5a; }
+.theme-matrix td.theme-cell.dir-neg { color: #b04a4a; }
+.theme-matrix td.theme-cell.dir-none { color: var(--ink); }
+/* 最后一行不要底线 */
+.theme-matrix tbody tr:last-child td,
+.theme-matrix tbody tr:last-child th { border-bottom: 0; }
+
+
+/* 商品卡（替代 ChatGPT 商品表格） */
+.product-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 0;
+}
+.product-card {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--paper);
+  align-items: flex-start;
+}
+.product-card-img {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.product-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.product-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.product-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-card-meta {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-bottom: 4px;
+}
+.product-card-price {
+  font-weight: 600;
+  color: var(--ink);
+}
+.product-card-rating {
+  color: var(--gold-deep);
+}
+.product-card-merchant {
+  font-size: 11.5px;
+  color: var(--quiet);
+  line-height: 1.4;
+}

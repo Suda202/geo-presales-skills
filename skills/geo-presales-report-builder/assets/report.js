@@ -25,14 +25,14 @@
   }
   function logo(domain, size) {
     if (!domain) return "";
-    return '<img class="entity-logo" src="' + favicon(domain) + '" width="' + (size || 16) + '" height="' + (size || 16) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+    return '<img class="entity-logo" src="' + favicon(domain) + '" width="' + (size || 16) + '" height="' + (size || 16) + '" alt="" loading="lazy" onerror="this.remove()">';
   }
   function sliceKey(region, platform, topic) {
     return [region, platform, topic].join("|");
   }
   function currentSlice() {
     // 逐级降级：精确切片 → 同国家全平台全主题 → 首个国家的精确切片 → 首个国家的全量切片。
-    // 「全部国家」等合并切片由数据层产出；缺失时不能让整页空白。
+    // 「全部地区」等合并切片由数据层产出；缺失时不能让整页空白。
     var firstRegion = (META.regions || [])[0] || "";
     var candidates = [
       sliceKey(state.region, state.platform, state.topic),
@@ -88,7 +88,7 @@
   }
 
   function renderTabs() {
-    buildTabs("regionTabs", META.regions || [], state.region, "region", "全部国家", false);
+    buildTabs("regionTabs", META.regions || [], state.region, "region", "全部地区", false);
     buildTabs("platformTabs", META.platforms || [], state.platform, "platform", "全部平台", false);
     buildTabs("topicTabs", META.topics || [], state.topic, "topic", "全部主题", true);
   }
@@ -283,24 +283,61 @@
 
     var el = document.getElementById("sentimentRates");
     if (el) {
-      // #sentimentRates 本身就是 .sentiment-overview，h3/p 样式由原型提供
-      var intro = "<h3>" + esc((META.brand || "") + " 的正负向表达") + "</h3>" +
-        "<p>只提取明确的正负评价；纯事实、无明确倾向不产生信号。同一回答可同时包含正向和负向观点。</p>";
+      var intro = "<h3>" + esc((META.brand || "") + " 的正负向表达") + "</h3>";
       el.innerHTML = intro +
         bucket("正向", summary.pos_rate, "pos", claims.pos || []) +
         bucket("负向", summary.neg_rate, "neg", claims.neg || []);
       var first = (claims.pos || [])[0] || (claims.neg || [])[0] || null;
       showEvidence(first, first && (claims.pos || []).indexOf(first) >= 0 ? "pos" : "neg");
     }
+    renderSentimentOverview();
     renderSentimentMatrix();
+  }
+
+  function sentimentRateValue(text) {
+    var n = parseFloat(String(text || "").replace("%", ""));
+    return isFinite(n) ? n : null;
+  }
+
+  function sentimentRateClass(value) {
+    if (value == null) return "rate-none";
+    if (value >= 80) return "rate-good";
+    if (value >= 60) return "rate-mid";
+    return "rate-bad";
+  }
+
+  function renderSentimentOverview() {
+    var slice = currentSlice();
+    var byBrand = ((slice.sentiment || {}).by_brand) || {};
+    var el = document.getElementById("sentimentOverviewBars");
+    if (!el) return;
+    var brands = (META.sentiment_brands && META.sentiment_brands.length
+      ? META.sentiment_brands : Object.keys(byBrand));
+    if (!brands.length) {
+      el.innerHTML = '<p class="support-line">情感判读尚未接入</p>';
+      return;
+    }
+    var target = META.brand || "";
+    var items = brands.map(function (brand) {
+      var cell = byBrand[brand] || {};
+      var rateText = cell.pos_rate || "—";
+      var value = sentimentRateValue(rateText);
+      var width = value == null ? 0 : Math.max(2, Math.min(100, value));
+      return '<div class="sentiment-overview-bar' + (brand === target ? " is-target" : "") + '">' +
+        '<div class="bar-head"><span class="bar-brand">' + esc(brand) +
+        (brand === target ? " ★" : "") + "</span>" +
+        '<span class="bar-value">' + esc(rateText) + "</span></div>" +
+        '<div class="bar-track"><span class="bar-fill ' + sentimentRateClass(value) +
+        '" style="width:' + width + '%"></span></div>' +
+        "</div>";
+    }).join("");
+    el.innerHTML = '<div class="sentiment-overview-bars">' + items + "</div>";
   }
 
   function bucket(title, rateText, dir, items) {
     var chips = items.map(function (item, index) {
-      // 标签 + 出现次数：图例要能一眼看出哪个观点更普遍
       return '<button type="button" class="sentiment-chip ' + dir + (index === 0 ? " active" : "") +
-        '" data-claim="' + esc(dir + ":" + index) + '">' + esc(item.label || item.text) +
-        '<span class="sentiment-chip-count">× ' + esc(item.count || 0) + "</span></button>";
+        '" data-claim="' + esc(dir + ":" + index) + '">' + esc(item.label || item.text) + "</button>";
     }).join("") || '<span class="support-line">暂无判读结果</span>';
     return '<div class="sentiment-bucket">' +
       '<div class="sentiment-rate ' + dir + '">' + esc(rateText || "—") + " " + esc(title) + "</div>" +
@@ -317,11 +354,15 @@
     var ev = item.evidence;
     var platform = PLATFORM_LABEL_WITH_DIR[ev.platform] || ev.platform || "";
     var where = [ev.region, platform, ev.question_id].filter(Boolean).join(" · ");
+    // 句子里残留的 markdown 加粗先转义再转 <strong>，避免裸 ** 显示
+    var sentenceHtml = esc(ev.sentence || "")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     el.innerHTML =
       '<span class="sentiment-evidence-dir ' + esc(dir) + '">' + (dir === "pos" ? "正向" : "负向") + "</span>" +
       '<h4 class="sentiment-evidence-claim">' + esc(item.label || "") + "</h4>" +
       '<p class="sentiment-evidence-where">' + esc(where) + "</p>" +
-      '<blockquote class="sentiment-evidence-text">' + esc(ev.sentence || "") + "</blockquote>" +
+      '<blockquote class="sentiment-evidence-text">' + sentenceHtml + "</blockquote>" +
       '<button type="button" class="sentiment-evidence-toggle" data-open-answer="' +
       esc(ev.question_id || "") + '" data-open-region="' + esc(ev.region || "") +
       '" data-open-platform="' + esc(platform) + '">查看对应回答</button>';
@@ -331,24 +372,32 @@
 
   function renderSentimentMatrix() {
     var slice = currentSlice();
-    var matrix = (slice.sentiment || {}).matrix || {};
+    var themeMatrix = (slice.sentiment || {}).theme_matrix || null;
     var el = document.getElementById("sentimentMatrix");
     if (!el) return;
-    var columns = matrix.columns || [];
-    var rows = matrix.rows || [];
-    if (!columns.length || !rows.length) {
+    if (!themeMatrix || !themeMatrix.themes || !themeMatrix.brands) {
       el.innerHTML = '<tbody><tr><td class="support-line">情感判读尚未接入</td></tr></tbody>';
       return;
     }
-    var head = "<thead><tr><th>品牌</th>" +
-      columns.map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") + "</tr></thead>";
-    var body = "<tbody>" + rows.map(function (row) {
-      var cells = (row.values || []).map(function (value, index) {
-        var isEvidence = index === columns.length - 1;
-        return "<td" + (isEvidence ? ' style="text-align:left"' : "") + ">" + esc(value) + "</td>";
+    var themes = themeMatrix.themes;
+    var brands = themeMatrix.brands;
+    var matrix = themeMatrix.matrix || {};
+    var target = META.brand || "";
+    var head = "<thead><tr><th>Theme</th>" +
+      brands.map(function (b) {
+        return '<th class="' + (b === target ? "is-target" : "") + '">' + esc(b) +
+          (b === target ? " ★" : "") + "</th>";
+      }).join("") + "</tr></thead>";
+    var body = "<tbody>" + themes.map(function (theme) {
+      var row = matrix[theme] || {};
+      var cells = brands.map(function (brand) {
+        var cell = row[brand] || { pos: 0, neg: 0, rate: "—", top_claim: "", top_dir: "" };
+        var display = cell.top_claim || "—";
+        var dirClass = cell.top_dir === "pos" ? "dir-pos" : cell.top_dir === "neg" ? "dir-neg" : "dir-none";
+        var title = esc(brand + " · " + theme + " · 正 " + cell.pos + " / 负 " + cell.neg);
+        return '<td class="theme-cell ' + dirClass + '" title="' + title + '">' + esc(display) + "</td>";
       }).join("");
-      return "<tr" + (row.target ? ' class="is-target"' : "") + '><td class="brand-cell">' +
-        esc(row.brand) + (row.target ? " ★" : "") + "</td>" + cells + "</tr>";
+      return "<tr><th>" + esc(theme) + "</th>" + cells + "</tr>";
     }).join("") + "</tbody>";
     el.innerHTML = head + body;
   }
@@ -357,7 +406,18 @@
 
   function recordsForSlice() {
     var slice = currentSlice();
-    return slice.records || [];
+    var all = slice.records || [];
+    var query = (state.recordQuery || "").toLowerCase().trim();
+    var intent = state.recordIntent || "";
+    if (!query && !intent) return all;
+    return all.filter(function (r) {
+      if (intent && r.intent !== intent) return false;
+      if (query) {
+        var hay = [String(r.qid), r.en, r.zh].join(" ").toLowerCase();
+        if (!hay.includes(query)) return false;
+      }
+      return true;
+    });
   }
 
   var RECORD_HEAD = "<thead><tr>" +
@@ -392,12 +452,32 @@
     table.innerHTML = RECORD_HEAD + visible.map(function (topic) {
       var rows = groups[topic];
       var isOpen = state.expanded[topic] !== false;
+      // 按主题聚合：提及率/声量/引用份额取均值，排名只统计有提及的题（没提及的题 rank=末位，会拉高均值）
+      var withMention = rows.filter(function (r) { return r.mention_rate && r.mention_rate !== "—"; });
+      var avgMention = withMention.length ?
+        (withMention.reduce(function (a, r) { return a + parseFloat(r.mention_rate); }, 0) / withMention.length).toFixed(1) + "%" : "—";
+      var mentioned = rows.filter(function (r) { return r.mentioned; });
+      var avgRank = mentioned.length ?
+        (mentioned.reduce(function (a, r) { return a + parseFloat(r.rank); }, 0) / mentioned.length).toFixed(1) : "—";
+      var withShare = rows.filter(function (r) { return r.share && r.share !== "—"; });
+      var avgShare = withShare.length ?
+        (withShare.reduce(function (a, r) { return a + parseFloat(r.share); }, 0) / withShare.length).toFixed(1) + "%" : "—";
+      var withCite = rows.filter(function (r) { return r.citation_share && r.citation_share !== "—"; });
+      var avgCite = withCite.length ?
+        (withCite.reduce(function (a, r) { return a + parseFloat(r.citation_share); }, 0) / withCite.length).toFixed(1) + "%" : "—";
+      var withSent = rows.filter(function (r) { return r.sentiment && r.sentiment !== "—"; });
+      var avgSent = withSent.length ?
+        (withSent.reduce(function (a, r) { return a + parseFloat(r.sentiment); }, 0) / withSent.length).toFixed(1) + "%" : "—";
+
       var head = '<tr class="group-head" role="button" tabindex="0" aria-expanded="' + isOpen + '">' +
         '<td class="num group-toggle-cell"><span class="group-chevron">▸</span></td>' +
         "<td><strong>" + esc(topic) + '</strong><span class="group-count">' + rows.length + "</span></td>" +
-        '<td class="rank-num num">—</td><td class="rank-num num">—</td>' +
-        '<td class="rank-num num">—</td><td class="rank-num num">—</td>' +
-        '<td class="center">—</td><td class="center"></td></tr>';
+        '<td class="rank-num num"><strong>' + esc(avgMention) + '</strong></td>' +
+        '<td class="rank-num num"><strong>' + esc(avgRank) + '</strong></td>' +
+        '<td class="rank-num num"><strong>' + esc(avgShare) + '</strong></td>' +
+        '<td class="rank-num num"><strong>' + esc(avgCite) + '</strong></td>' +
+        '<td class="center"><strong>' + esc(avgSent) + '</strong></td>' +
+        '<td class="center"></td></tr>';
       var items = rows.map(function (record) {
         return '<tr class="q-row">' +
           '<td class="num">' + esc(record.qid) + "</td>" +
@@ -409,7 +489,7 @@
           '<td class="center">' + (record.sentiment ? esc(record.sentiment) : '<span aria-label="不适用">—</span>') + "</td>" +
           '<td class="center"><button class="detail-btn" type="button" data-detail="' + esc(record.qid) + '">查看</button></td></tr>';
       }).join("");
-      return '<tbody class="topic-group' + (isOpen ? " open" : "") + '" data-group-topic="' + esc(topic) + '">' + head + items + "</tbody>";
+      return '<tbody class="topic-group open" data-group-topic="' + esc(topic) + '">' + head + items + "</tbody>";
     }).join("");
     renderPagination(order.length, pages);
   }
@@ -428,7 +508,6 @@
     var details = DATA.details || {};
     var regions = state.region ? [state.region] : (META.regions || []);
     var platforms = state.platform ? [state.platform] : (META.platforms || []);
-    // details 的键用四位补零题号（0001），记录里的 qid 是数字，必须补零才能对上。
     var padded = String(qid).padStart(4, "0");
     for (var r = 0; r < regions.length; r += 1) {
       for (var p = 0; p < platforms.length; p += 1) {
@@ -437,6 +516,19 @@
       }
     }
     return null;
+  }
+
+  function allDetailsFor(qid) {
+    var details = DATA.details || {};
+    var padded = String(qid).padStart(4, "0");
+    var results = [];
+    (META.regions || []).forEach(function (r) {
+      (META.platforms || []).forEach(function (p) {
+        var entry = details[r + "|" + p + "|" + padded];
+        if (entry) results.push({ entry: entry, region: r, platform: p });
+      });
+    });
+    return results;
   }
 
 
@@ -458,11 +550,11 @@
   }
 
   function openDrawer(qid) {
-    // 题号在记录里是整数（20），在明细/证据里是补零字符串（"0020"），两边都要能对上
     var key = String(qid).padStart(4, "0");
     var record = recordsForSlice().filter(function (r) {
       return String(r.qid).padStart(4, "0") === key;
     })[0];
+    var variants = allDetailsFor(qid);
     var found = detailFor(qid);
     var body = document.getElementById("drawerBody");
     if (!body) return;
@@ -475,7 +567,27 @@
       document.body.style.overflow = "hidden";
       return;
     }
+    // 当前选中的变体（默认当前切片的）
+    state.drawerVariant = state.drawerVariant || {};
+    var selectedKey = found.region + "|" + found.platform;
+    if (state.drawerVariant[key] && variants.some(function (v) { return (v.region + "|" + v.platform) === state.drawerVariant[key]; })) {
+      selectedKey = state.drawerVariant[key];
+      found = variants.filter(function (v) { return (v.region + "|" + v.platform) === selectedKey; })[0];
+    }
     var entry = found.entry;
+
+    // 平台/国家切换 tab：只在有多个变体时显示
+    var variantTabs = "";
+    if (variants.length > 1) {
+      variantTabs = '<div class="variant-tabs" role="tablist" aria-label="切换平台与地区">' +
+        variants.map(function (v) {
+          var vKey = v.region + "|" + v.platform;
+          var active = vKey === selectedKey;
+          return '<button class="variant-tab' + (active ? " active" : "") + '" type="button" role="tab" aria-selected="' + active +
+            '" data-variant="' + esc(vKey) + '" data-variant-qid="' + esc(qid) + '">' +
+            esc(v.region) + " · " + esc(v.platform) + "</button>";
+        }).join("") + "</div>";
+    }
     var ranking = (entry.brands || []).map(function (row) {
       return '<div class="brand-rank-row' + (row.target ? " self-brand" : "") + '">' +
         '<span class="brand-name">' + logo(row.domain, 18) + esc(row.name) + "</span><strong>" +
@@ -493,17 +605,16 @@
 
     body.innerHTML =
       '<div class="detail-layout"><div class="detail-main">' +
+      variantTabs +
       '<p class="drawer-q">' + esc(record ? record.en : "") + "</p>" +
       '<p class="drawer-zh">' + esc(record ? record.zh : entry.question_zh) + "</p>" +
       '<div class="detail-meta-grid">' +
       '<div class="detail-meta-cell"><span>主题</span><strong>' + esc(record ? record.topic : "—") + "</strong></div>" +
       '<div class="detail-meta-cell"><span>诊断意图</span><strong>' + esc(record ? record.intent : "—") + "</strong></div>" +
       '<div class="detail-meta-cell"><span>标签</span><strong>' + esc(record ? record.tag : "—") + "</strong></div>" +
-      // 引用份额的计算层级：这里是「单个回答」；题级在明细表，切片级在 KPI，
-      // 平台级切平台 tab。同一指标四个层级都保留，不做合并。
       '<div class="detail-meta-cell"><span>本回答引用份额</span><strong>' +
       esc(entry.citation_share || "—") + "</strong></div>" +
-      '<div class="detail-meta-cell"><span>国家</span><strong>' + esc(found.region) + "</strong></div>" +
+      '<div class="detail-meta-cell"><span>地区</span><strong>' + esc(found.region) + "</strong></div>" +
       '<div class="detail-meta-cell"><span>平台</span><strong>' + esc(found.platform) + "</strong></div>" +
       "</div>" +
       // answer_html / answer_zh_html 在数据层由 markdown 转换并转义过，这里直接注入，不再二次 esc。
@@ -514,7 +625,7 @@
       (entry.brands || []).length + " 个结果</span></div>" +
       '<div class="brand-ranking">' + ranking + "</div></section>" +
       '<section class="detail-section"><div class="detail-section-head"><h4>引用来源</h4><span>正文引用 ' +
-      (entry.citation_occurrences || 0) + " 次 · 可解析 " + (entry.citations || []).length + " 条</span></div>" +
+      (entry.citation_occurrences || 0) + " 次</span></div>" +
       '<div class="citation-list">' + citations + "</div>" + toggle + "</section>" +
       "</aside></div>";
 
@@ -588,19 +699,43 @@
     var mention = (slice.competition || {}).mention || [];
     var target = mention.filter(function (r) { return (r[4] || "") === "gold"; })[0];
     var leader = mention[0];
-    var scope = (state.region || "全部国家") + (state.platform ? " · " + state.platform : "") +
+    var scope = (state.region || "全部地区") + (state.platform ? " · " + state.platform : "") +
       (state.topic ? " · " + state.topic : "");
 
     if (leader && target) {
       var gap = (parseFloat(leader[2]) - parseFloat(target[2])).toFixed(1);
-      setInsight("overviewInsight",
-        "在" + esc(scope) + "下，监测对象提及率 " + esc(k.mention_rate || "—") +
-        "，位列 " + esc(k.mention_rank || "—") + "。",
+      var mentionRate = parseFloat(k.mention_rate) || 0;
+      var mentionRank = parseInt(k.mention_rank) || 0;
+      var shareRate = parseFloat(k.share_of_voice) || 0;
+      var avgRank = parseFloat(k.average_rank) || 0;
+      var citeShare = parseFloat(k.official_share) || 0;
+
+      // 三层叙事：心智基本盘 → 断层 → 根因
+      var narrative = "";
+      if (mentionRate >= 60) {
+        narrative = "AI 对本品牌「知道且主动推荐」——心智基本盘稳固，";
+        if (mentionRank > 3) narrative += "但排名仍有提升空间，";
+        narrative += "需守住现有优势并向薄弱环节渗透。";
+      } else if (mentionRate >= 30) {
+        narrative = "AI 对本品牌「知道但不主动推荐」——心智基本盘存在，";
+        narrative += "但在发现型问题中大量未进入首选名单，存在明显的推荐断层。";
+      } else {
+        narrative = "AI 对本品牌「认知薄弱」——在发现型问题中极少被主动提及，";
+        narrative += "心智基本盘尚未建立，需要先解决「被知道」的问题。";
+      }
+
+      setInsight("overviewInsight", narrative,
         [
-          "<strong>差距：</strong>当前领先品牌为 " + esc(leader[0]) + "（" + esc(leader[2]) +
+          "<strong>心智现状：</strong>提及率 " + esc(k.mention_rate || "—") +
+            "（第 " + esc(k.mention_rank || "—") + " 位），声量份额 " + esc(k.share_of_voice || "—") +
+            "，平均提及位置 " + esc(k.average_rank || "—") + "。",
+          "<strong>与头部差距：</strong>当前领先品牌为 " + esc(leader[0]) + "（" + esc(leader[2]) +
             "），监测对象与其相差 " + gap + " 个百分点。",
-          "<strong>相对曝光：</strong>声量份额 " + esc(k.share_of_voice || "—") +
-            "，平均提及位置 " + esc(k.average_rank || "—") + "。"
+          citeShare < 5
+            ? "<strong>根因判断：</strong>官网引用份额仅 " + esc(k.official_share || "—") +
+              "，AI 可引用的官方事实源不足，第三方信源主导了叙事权。"
+            : "<strong>信源优势：</strong>官网引用份额 " + esc(k.official_share || "—") +
+              "，官方事实源已有基础，可继续扩大覆盖。"
         ]);
     } else {
       setInsight("overviewInsight", "当前切片下监测对象未出现在任何回答中。", []);
@@ -632,7 +767,7 @@
     var topDomain = (sources.domains || [])[0];
     var officialPages = (sources.official_pages || []).length;
     setInsight("sourcesInsight",
-      "官网引用份额 " + esc(sources.official_share || "—") + "，官网被引用页面 " + officialPages + " 个。",
+      "官网引用份额 " + esc(sources.official_share || "—") + "。",
       [
         topDomain ? "<strong>最大来源：</strong>" + esc(topDomain[0]) + "（" + esc(topDomain[2]) +
           "，计入 " + esc(topDomain[1]) + " 条）。" : "",
@@ -640,6 +775,17 @@
           ? "<strong>风险：</strong>官网可被引用的页面过少，事实定义权主要落在第三方。"
           : "<strong>现状：</strong>官网已有多个页面被引用，可继续按主题扩展。"
       ].filter(Boolean));
+
+    // 落地服务闭环：固定话术，不承诺时间
+    var oppEl = document.getElementById("opportunitiesInsight");
+    if (oppEl) {
+      oppEl.innerHTML = "<h4>以上内容资产按「诊断 → 生产 → 铺设 → 周期复测」四步推进</h4>" +
+        "<ul>" +
+        "<li><span class=\"point-copy\"><strong>官网事实底座：</strong>上线结构化事实指南，确保 AI 可引用到权威定义。</span></li>" +
+        "<li><span class=\"point-copy\"><strong>第三方信源：</strong>推进 Reddit、LinkedIn 等社区讨论沉淀，辅以媒体评测植入。</span></li>" +
+        "<li><span class=\"point-copy\"><strong>周期复测回流：</strong>持续监测并定期重跑全量评估，验证提及率与排名变化。</span></li>" +
+        "</ul>";
+    }
   }
 
   function emptyRow(text) {
@@ -657,6 +803,25 @@
     renderOpportunities();
     renderInsights();
     renderTabs();
+    renderIntentFilter();
+  }
+
+  /* ---------- 明细表意图筛选 ---------- */
+
+  function renderIntentFilter() {
+    var el = document.getElementById("recordIntentFilter");
+    if (!el) return;
+    var slice = currentSlice();
+    var intents = [];
+    (slice.records || []).forEach(function (r) {
+      var label = r.intent || "";
+      if (label && intents.indexOf(label) < 0) intents.push(label);
+    });
+    var html = '<option value="">全部意图</option>';
+    intents.forEach(function (label) {
+      html += '<option value="' + esc(label) + '"' + (state.recordIntent === label ? " selected" : "") + '>' + esc(label) + "</option>";
+    });
+    el.innerHTML = html;
   }
 
   /* ---------- 事件 ---------- */
@@ -748,7 +913,35 @@
       var detailBtn = event.target.closest("[data-detail]");
       if (detailBtn) { openDrawer(detailBtn.getAttribute("data-detail")); return; }
       if (event.target.closest("#drawerClose") || event.target.id === "drawerMask") { closeDrawer(); return; }
+      var variantTab = event.target.closest("[data-variant]");
+      if (variantTab) {
+        var vKey = variantTab.getAttribute("data-variant");
+        var vQid = variantTab.getAttribute("data-variant-qid");
+        state.drawerVariant = state.drawerVariant || {};
+        state.drawerVariant[String(vQid).padStart(4, "0")] = vKey;
+        openDrawer(vQid);
+        return;
+      }
+      var intentSelect = event.target.closest("#recordIntentFilter");
+      if (intentSelect) return; // select handled by change event below
     });
+
+    var searchEl = document.getElementById("recordSearch");
+    if (searchEl) {
+      searchEl.addEventListener("input", function () {
+        state.recordQuery = searchEl.value;
+        state.page = 1;
+        renderRecords();
+      });
+    }
+    var intentSelect = document.getElementById("recordIntentFilter");
+    if (intentSelect) {
+      intentSelect.addEventListener("change", function () {
+        state.recordIntent = intentSelect.value;
+        state.page = 1;
+        renderRecords();
+      });
+    }
 
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") closeDrawer();
