@@ -27,7 +27,7 @@
 | 步骤 | Skill | 干什么 |
 | --- | --- | --- |
 | 1 | `geo-presales-crawl-integrity` | 先确认这份采集能不能用：分不清「正文明说品牌」和「只是被检索到」，提及率就会失真 |
-| 2 | `geo-presales-report-builder` | 算可见度与引用类指标（复用 `geo_presales_core` 口径），产出 `report-data.json`；**不做情感判读**（判读归 sentiment-judge），只把判读结果按切片汇总进报告 |
+| 2 | `geo-presales-report-builder` | 算可见度与引用类指标（复用全库统一口径），产出报告数据文件；**不做情感判读**（判读归 sentiment-judge），只把判读结果按切片汇总进报告 |
 | 3 | `geo-presales-sentiment-judge` | 可选。做情感判读并算「正向情感占比」，产出句级正/负句明细；判读只有它做，报告里的数字由 builder 汇总 |
 
 ```bash
@@ -60,7 +60,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 先用 Report Audit 把底层结果改对，再用 Report Editor 改结论；两者处理同一份报告的不同层次，可连用。
 
-> 指标口径只有一个实现：`geo-presales-report-editor/scripts/geo_presales_core/`。Report Builder、Report Audit、Crawl Integrity 都引用它算数，自己不另写指标。
+> 指标口径全库只有一份实现：Report Builder、Report Audit、Crawl Integrity 都直接引用它算数，自己不另写。位置和改动方式见文末「开发与维护」。
 
 ## 完整清单（8 个 Skill）
 
@@ -75,28 +75,28 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 | `geo-presales-eval-case-builder` | 共用 | 有品牌资料，要构建监测输入或积累到飞书 Base | 规范化 Case、2 个监测主题、已核验竞品，写入飞书 Base | 不出题、不采集、不写报告 |
 | `geo-presales-prompt-builder` | 共用 | 已有 Case，要生成英文 AI 搜索监测题库 | `overseas-geo-question-bank/v8` 题库、属性规划、质量报告 | 不建主题、不选竞品、不算指标 |
 
-**Report Audit 跨两条链。** 它的报告 JSON 层服务于链 B 的修正流程；它的采集原始层脚本（`de_cite_crawl.py`、`verify_brand_extraction.py`）被链 A 的 Report Builder 直接引用——去引用正文是品牌识别的入口，两边必须用同一份实现。
+**Report Audit 跨两条链。** 它既服务于链 B 的修正流程，它的采集原始层脚本也被链 A 的 Report Builder 直接引用——去引用正文是品牌识别的入口，两边必须用同一份实现。
 
 ## 指标归属一览
 
 | 指标 | 谁算 | 口径实现 |
 | --- | --- | --- |
-| 提及率、提及率排名、声量份额、平均提及位置、可见度 | `geo-presales-report-builder` | `geo_presales_core`（`report-editor/scripts/` 下） |
+| 提及率、提及率排名、声量份额、平均提及位置、可见度 | `geo-presales-report-builder` | 全库统一实现（`geo_presales_core`） |
 | 引用次数 | `geo-presales-report-builder` | 只计正文里带编号的引用标记出现次数，不拿供应商给的来源清单凑数 |
 | 正向情感占比（判读） | `geo-presales-sentiment-judge` | 正向句 ÷（正向句 + 负向句），排除中性 |
 | 正向情感占比（按切片汇总进报告） | `geo-presales-report-builder` | 复用 sentiment-judge 的判读结果，按国家 / 平台 / 主题分别统计 |
 
-**改口径只改 `geo_presales_core` 这一处。** 其他 Skill 对它只读；改动前先跑 `python3 -m unittest discover -s skills/geo-presales-report-editor/scripts/tests`，并在说明里写明受影响的下游 Skill。
+**改口径只改统一实现这一处**，其他 Skill 对它只读。位置、改动前的验证命令和影响范围见文末「开发与维护」。
 
 ## 关键约束
 
 **Prompt Builder**
 
-- 每个 Topic 先做独立的 P1 / P2 / P3 属性规划，再出题。
-- 每个 Topic 固定 25 题，按适用竞品数 `n` 执行 `23-2n / n / 0 / 0 / 1+n / 1` 配额。
-- 每个 Topic 的 Discovery 必须覆盖全部 P1 属性；信息不足时报 Case 过薄，不凑题。
-- Discovery 与 Category Awareness 不出现具体品牌；每题用自由 `tags` 标记诊断意图、品牌范围和实际测试的属性。
-- 正式可见度的分子分母只统计 `Intent: Discovery` 题。
+- 每个 Topic 先排属性优先级（P1 核心 / P2 次要 / P3 补充），再出题。
+- 每个 Topic 固定 25 题：不点品牌的候选题 `23-2n` 条、每个适用竞品各 1 条竞品对比题、目标品牌与每个竞品各 1 条评价题（共 `1+n`）、品类认知 1 条；不出验证题与事实核验题（这两类留给售后）。（`n` = 该 Topic 的适用竞品数，1–3 个）
+- 每个 Topic 里不点品牌的候选题必须覆盖该 Topic 的全部核心属性（P1）；信息不足直接报 Case 过薄，不凑题。
+- 不点品牌的候选题与品类认知题不出现任何具体品牌；每题用 `tags` 标出它测什么、品牌范围如何（`tags` 只是标注，不参与指标口径）。
+- 正式可见度只统计 Discovery（不点品牌的候选题）这一类，品类认知等其他类型都不进分子分母。
 
 **Report Builder**
 
@@ -105,7 +105,21 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 - 声量份额、平均提及位置与提及率排名的分母 / 比较范围都是全部纳入品牌（目标 + 3 个配置竞品 + 开放词表命中），前端只展示 5 行是为了可读性。
 - 交付前必须做一次独立复算校验（`verify_report_data.py`）并全部通过，不通过不出报告。
 
-## 跨 Skill 路径
+## 开发与维护（同事可跳过）
+
+以下面向改脚本、跑测试的人。
+
+### 指标口径实现
+
+统一实现在 `skills/geo-presales-report-editor/scripts/geo_presales_core/`，其他 Skill 只读。改动前先跑：
+
+```bash
+python3 -m unittest discover -s skills/geo-presales-report-editor/scripts/tests
+```
+
+并在改动说明里写明受影响的下游 Skill。
+
+### 跨 Skill 路径
 
 脚本按自身位置定位兄弟 Skill：每个脚本都在 `<skills>/<skill>/scripts/` 下，用 `Path(__file__).resolve().parents[2]` 找到 skills 根目录。整套放在一起时，从任意工作目录调用都可以。
 
@@ -115,7 +129,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 export GEO_PRESALES_SKILLS_ROOT=/path/to/skills
 ```
 
-## 本地验证
+### 本地验证
 
 在仓库根目录运行：
 
@@ -130,6 +144,6 @@ python3 -m unittest discover -s skills/overseas-geo-competitor-research/scripts/
 
 测试不调用外部 AI 平台。
 
-## 不随仓库分发
+### 不随仓库分发
 
 各 Skill 的 `assets/` 下按客户生成的品牌词表与引用域名缓存、`build/` 运行产物都不入库，`.gitignore` 已排除。需要时按对应 `SKILL.md` 在自己的 `assets/` 下生成。
