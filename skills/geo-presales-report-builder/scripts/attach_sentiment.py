@@ -179,6 +179,60 @@ def top_claims(units: list[dict], merged: dict, brand: str, direction: str, pred
     return picked
 
 
+def load_claim_groups(claims_dir: Path, sentences_path: Path, brand: str) -> dict:
+    """读该品牌的「观点归纳」并挂回判读句子。
+
+    归纳文件给出 label / count / indices / evidence，indices 指向
+    judged-sentences.json 里该品牌同方向数组的下标。这里把它们展开成
+    「每组携带自己的成员句子」，便于按切片过滤。
+    """
+    claims_path = claims_dir / f"{brand}-claims.json"
+    if not claims_path.exists():
+        raise SystemExit(f"缺少观点归纳文件：{claims_path}")
+    groups = json.loads(claims_path.read_text(encoding="utf-8"))
+    sentences = json.loads(sentences_path.read_text(encoding="utf-8"))[brand]
+    out = {}
+    for direction, key in (("pos", "positive"), ("neg", "negative")):
+        members = sentences[key]
+        built = []
+        for group in groups.get(key) or []:
+            picked = [members[i] for i in group.get("indices") or [] if 0 <= i < len(members)]
+            built.append({
+                "label": group.get("label") or "",
+                "evidence": group.get("evidence") or (picked[0] if picked else {}),
+                "members": picked,
+            })
+        out[direction] = built
+    return out
+
+
+def sliced_claims(groups: list[dict], predicate) -> list[dict]:
+    """按当前切片过滤观点组，并用切片内的成员重算计数。
+
+    归纳是全局做的，某个切片里可能一条都不含某组；那种组直接不出现，
+    否则计数会把别国别平台的数据算进来。
+    """
+    out = []
+    for group in groups:
+        inside = [m for m in group["members"] if predicate(m)]
+        if not inside:
+            continue
+        evidence = group["evidence"] if predicate(group["evidence"]) else inside[0]
+        out.append({
+            "label": group["label"],
+            "count": len(inside),
+            "evidence": {
+                "sentence": evidence.get("sentence") or "",
+                "region": evidence.get("region"),
+                "platform": evidence.get("platform"),
+                "question_id": evidence.get("question_id"),
+            },
+        })
+    out.sort(key=lambda g: (-g["count"], g["label"]))
+    return out
+
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="把情感判读结果接入报告数据")
     parser.add_argument("--report", type=Path, required=True)
@@ -198,6 +252,12 @@ def main() -> int:
 
     # question_id → 主题；units 里的 question_id 是补零字符串，meta.questions 用整数
     topic_of = {f"{int(q['qid']):04d}": q.get("topic") for q in meta.get("questions", [])}
+
+    claims_dir = args.labels_dir.parent / "sentiment-claims"
+    sentences_path = claims_dir / "judged-sentences.json"
+    target_groups = None
+    if sentences_path.exists():
+        target_groups = load_claim_groups(claims_dir, sentences_path, args.target)
 
     pos_sets = {b: set() for b in brands}
     neg_sets = {b: set() for b in brands}
@@ -237,8 +297,10 @@ def main() -> int:
                 "neg_rate": rate(target_neg, target_pos),
             },
             "claims": {
-                "pos": top_claims(units, merged, args.target, "positive", predicate),
-                "neg": top_claims(units, merged, args.target, "negative", predicate),
+                "pos": sliced_claims(target_groups["pos"], predicate) if target_groups
+                      else top_claims(units, merged, args.target, "positive", predicate),
+                "neg": sliced_claims(target_groups["neg"], predicate) if target_groups
+                      else top_claims(units, merged, args.target, "negative", predicate),
             },
             "matrix": build_brand_table(units, merged, brands, counts, predicate),
             "by_brand": {
@@ -261,7 +323,8 @@ def main() -> int:
     meta["sentiment_brands"] = brands
     meta["sentiment_note"] = (
         "情感仅判读了报告中展示的 %d 个品牌；其余开放品牌未判读。"
-        "正向率 = 正向句 ÷（正向句 + 负向句），排除中性；代表证据句取自该品牌自己的判读句。" % len(brands)
+        "正向率 = 正向句 ÷（正向句 + 负向句），排除中性；"
+        "观点标签与计数来自句子级判读的归纳，计数为该切片内的出现次数。" % len(brands)
     )
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 

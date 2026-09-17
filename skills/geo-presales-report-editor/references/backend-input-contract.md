@@ -24,7 +24,7 @@
 | `brand_expression` | array/JSON string | 是 | Sentiment 回答中的目标品牌表达证据。 |
 | `category_actions` | object/JSON string | 是 | 后端已经分档的问题。 |
 | `question_details` | array/JSON string | 是 | 不含回答全文的问题明细。 |
-| `attribute_diagnostics` | array/JSON string | 是 | 基于 Validation 与配对 Discovery 得出的属性结果。 |
+| `attribute_diagnostics` | array/JSON string | 是 | 属性认知结果。售前题库不生成 Verification 题，样本只来自配对 Discovery 与 Evaluation；见 [Attribute 诊断](#attribute-诊断)。 |
 | `comparison_outcomes` | array/JSON string | 是 | Competitor 的逐题胜者、平局、强度与证据。 |
 | `competitor_comparison_summary` | object/JSON string | 推荐 | 按正式竞品汇总的决胜回答胜率、胜负/平局/无法判断计数及有正面对比证据的优劣势；缺失时 M02 不生成胜率和优劣势结论。 |
 | `market_perception` | array/JSON string | 是 | 各主题的选择标准与品类框架。 |
@@ -65,6 +65,12 @@
 ```
 
 `target_attributes` 不能直接转成结论。只有 `attribute_diagnostics` 能描述实际关联：知道且主动推荐为 Strength，知道但不主动推荐为 Opportunity，否定或错误关联为 Objection，证据不足为 Unknown。Attribute 通过主题或 Tag 承载；客户报告可按主题/Tag 组织，但不新增独立 Attribute 模块、上传字段或跨平台状态。
+
+**售前没有 Validation 样本，样本来自配对 Discovery 与 Evaluation。** 默认售前题库把 Verification 配额设为 0（Verification 是售后阶段的口径，属性级正确性核查并入 Accuracy 合同），所以：
+
+- `validation_question_ids` 允许为空；`evidence_refs` 只引 Discovery（判断「是否被主动推荐」）与 Evaluation（判断「是否知道」）的回答。上面的 JSON 只是字段形态，不代表售前一定有 Validation 样本。
+- 该字段是必填。后端确实无法派生属性认知时，必须提交该字段并把 `status` 全填 `unknown`，不得省略，也不得用 `target_attributes` 顶替——`target_attributes` 是采集前目标，把它写成已形成的认知属于「目标属性变成自证结论」。
+- 全 `unknown` 时 M04 不写属性级认知判断（Strength / Opportunity / Objection），但仍要按 Attribute 标注表达证据：品类认知与品牌表达的交叉判断锚在 `target_attributes` 上，与属性状态无关，不因属性诊断全 unknown 而跳过。
 
 `attribute_diagnostics` 与 `market_perception_diagnostics` 共用同一套 `target_attributes.attribute_id`，这是「市场看重什么」与「品牌被认可/质疑什么」能按属性交叉的前提。M04 的品牌表达证据用 `diagnostic:target_attributes:/索引` 注明所属 Attribute；该引用只用于内部核查，不进入上传 CSV 或客户文案。
 

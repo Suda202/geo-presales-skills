@@ -280,38 +280,53 @@
     var summary = sentiment.summary || {};
     var claims = sentiment.claims || { pos: [], neg: [] };
 
-    var rateEl = document.getElementById("sentimentRates");
-    if (rateEl) {
-      rateEl.innerHTML =
-        '<div class="sentiment-bucket" id="bucketPos"><div class="sentiment-rate pos">' +
-        esc(summary.pos_rate || "—") + " 正向</div><div class=\"sentiment-chip-list\" id=\"chipPos\"></div></div>" +
-        '<div class="sentiment-bucket" id="bucketNeg"><div class="sentiment-rate neg">' +
-        esc(summary.neg_rate || "—") + " 负向</div><div class=\"sentiment-chip-list\" id=\"chipNeg\"></div></div>";
-      fillChips("chipPos", claims.pos || [], "pos");
-      fillChips("chipNeg", claims.neg || [], "neg");
+    var el = document.getElementById("sentimentRates");
+    if (el) {
+      // #sentimentRates 本身就是 .sentiment-overview，h3/p 样式由原型提供
+      var intro = "<h3>" + esc((META.brand || "") + " 的正负向表达") + "</h3>" +
+        "<p>只提取明确的正负评价；纯事实、无明确倾向不产生信号。同一回答可同时包含正向和负向观点。</p>";
+      el.innerHTML = intro +
+        bucket("正向", summary.pos_rate, "pos", claims.pos || []) +
+        bucket("负向", summary.neg_rate, "neg", claims.neg || []);
+      var first = (claims.pos || [])[0] || (claims.neg || [])[0] || null;
+      showEvidence(first, first && (claims.pos || []).indexOf(first) >= 0 ? "pos" : "neg");
     }
-    showEvidence((claims.pos || [])[0] || (claims.neg || [])[0] || null);
     renderSentimentMatrix();
   }
 
-  function fillChips(containerId, items, dir) {
-    var el = document.getElementById(containerId);
-    if (!el) return;
-    if (!items.length) { el.innerHTML = '<span class="support-line">暂无判读结果</span>'; return; }
-    el.innerHTML = items.map(function (item, index) {
+  function bucket(title, rateText, dir, items) {
+    var chips = items.map(function (item, index) {
+      // 标签 + 出现次数：图例要能一眼看出哪个观点更普遍
       return '<button type="button" class="sentiment-chip ' + dir + (index === 0 ? " active" : "") +
-        '" data-claim-index="' + esc(dir + ":" + index) + '">' + esc(item.text) + "</button>";
-    }).join("");
+        '" data-claim="' + esc(dir + ":" + index) + '">' + esc(item.label || item.text) +
+        '<span class="sentiment-chip-count">× ' + esc(item.count || 0) + "</span></button>";
+    }).join("") || '<span class="support-line">暂无判读结果</span>';
+    return '<div class="sentiment-bucket">' +
+      '<div class="sentiment-rate ' + dir + '">' + esc(rateText || "—") + " " + esc(title) + "</div>" +
+      '<div class="sentiment-chip-list">' + chips + "</div></div>";
   }
 
-  function showEvidence(item) {
+  function showEvidence(item, dir) {
     var el = document.getElementById("sentimentEvidence");
     if (!el) return;
-    if (!item) { el.innerHTML = '<p class="support-line">暂无判读结果</p>'; return; }
-    el.innerHTML = '<div class="sentiment-evidence-block">' +
-      '<p class="sentiment-evidence-claim">' + esc(item.claim || item.text) + "</p>" +
-      '<p class="sentiment-evidence-text">' + esc(item.evidence || "") + "</p></div>";
+    if (!item || !item.evidence) {
+      el.innerHTML = '<p class="support-line">暂无判读结果</p>';
+      return;
+    }
+    var ev = item.evidence;
+    var platform = PLATFORM_LABEL_WITH_DIR[ev.platform] || ev.platform || "";
+    var where = [ev.region, platform, ev.question_id].filter(Boolean).join(" · ");
+    el.innerHTML =
+      '<span class="sentiment-evidence-dir ' + esc(dir) + '">' + (dir === "pos" ? "正向" : "负向") + "</span>" +
+      '<h4 class="sentiment-evidence-claim">' + esc(item.label || "") + "</h4>" +
+      '<p class="sentiment-evidence-where">' + esc(where) + "</p>" +
+      '<blockquote class="sentiment-evidence-text">' + esc(ev.sentence || "") + "</blockquote>" +
+      '<button type="button" class="sentiment-evidence-toggle" data-open-answer="' +
+      esc(ev.question_id || "") + '" data-open-region="' + esc(ev.region || "") +
+      '" data-open-platform="' + esc(platform) + '">查看对应回答</button>';
   }
+
+  var PLATFORM_LABEL_WITH_DIR = { overview: "AIO", gemini: "Gemini", chatgpt: "ChatGPT", perplexity: "Perplexity" };
 
   function renderSentimentMatrix() {
     var slice = currentSlice();
@@ -442,7 +457,11 @@
   }
 
   function openDrawer(qid) {
-    var record = recordsForSlice().filter(function (r) { return String(r.qid) === String(qid); })[0];
+    // 题号在记录里是整数（20），在明细/证据里是补零字符串（"0020"），两边都要能对上
+    var key = String(qid).padStart(4, "0");
+    var record = recordsForSlice().filter(function (r) {
+      return String(r.qid).padStart(4, "0") === key;
+    })[0];
     var found = detailFor(qid);
     var body = document.getElementById("drawerBody");
     if (!body) return;
@@ -664,16 +683,27 @@
         renderMatrix();
         return;
       }
-      var chip = event.target.closest("[data-claim-index]");
+      var chip = event.target.closest("[data-claim]");
       if (chip) {
-        var slice = currentSlice();
-        var key = chip.getAttribute("data-claim-index").split(":");
-        var item = ((slice.sentiment || {}).claims || {})[key[0]] || [];
+        var sliceNow = currentSlice();
+        var parts = chip.getAttribute("data-claim").split(":");
+        var group = ((sliceNow.sentiment || {}).claims || {})[parts[0]] || [];
         Array.prototype.forEach.call(document.querySelectorAll(".sentiment-chip"), function (btn) {
           btn.classList.remove("active");
         });
         chip.classList.add("active");
-        showEvidence(item[Number(key[1])]);
+        showEvidence(group[Number(parts[1])], parts[0]);
+        return;
+      }
+      var openAnswer = event.target.closest("[data-open-answer]");
+      if (openAnswer) {
+        var wantRegion = openAnswer.getAttribute("data-open-region");
+        var wantPlatform = openAnswer.getAttribute("data-open-platform");
+        if (wantRegion && META.regions.indexOf(wantRegion) >= 0) state.region = wantRegion;
+        if (wantPlatform && META.platforms.indexOf(wantPlatform) >= 0) state.platform = wantPlatform;
+        state.topic = "";
+        renderAll();
+        openDrawer(openAnswer.getAttribute("data-open-answer"));
         return;
       }
       var groupHead = event.target.closest(".group-head");

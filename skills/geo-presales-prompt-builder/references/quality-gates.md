@@ -22,7 +22,7 @@
 - Discovery 明确要求具体候选，不出现目标品牌或正式竞品，每题最多一个主要购买条件。
 - 非 `en` locale 的 Discovery 题面必须写出本地化 `category_label`（归一化后逐字包含）。本地化时删掉反复出现的品类限定词，会让监测问题落到别的品类上，判定失败；英文题库不受此检查，品类称呼变体由人工语义复核把关。
 - Competitor 题只比较目标品牌与当前 Topic 的一个适用竞品；每个适用竞品恰好一题。当前 Topic 有两题以上时，除竞品名称外英文题面完全相同。
-- Verification 配额为 0，默认题库不生成 Verification 题；P1 的属性级正确性核查并入 Accuracy 合同。
+- Verification 配额为 0，默认题库不生成 Verification 题；P1 的属性级正确性核查并入 Accuracy 合同。题库里出现 Verification 题即为失败——下游 `attribute_diagnostics` 只按配对 Discovery 与 Evaluation 派生，不依赖 Validation 样本。
 - 默认产物不生成 Accuracy 题；如用户明确要求，先使用另行确认的事实核验合同，不临时复用默认 Builder 合同。
 - Evaluation 每题只评价一个品牌；每个 Topic 分别对目标品牌和当前 Topic 的每个适用竞品各生成一题，不得混入其他品牌或不适用竞品。它只替换固定模板的品牌与 Topic 具体范围；英文 `user_question / monitoring_prompt / query` 不出现独立单词 `topic`，中文翻译和元数据不受此限制。Category Awareness 使用品类优先固定模板且不出现品牌。Evaluation 与 Category Awareness 在 `category_label` 与 Topic 归一后相同（忽略大小写、标点与复数）时，都使用省略范围从句的短式。
 - `analysis_type` 与 `formal_visibility_eligible` 精确匹配 v8 分流表：Discovery 为 `visibility,sentiment`/`true`，Competitor 与 Evaluation 为 `sentiment`/`false`，Verification 与 Accuracy 只在独立合同下使用（售前配额 0，不产生题），Category Awareness 无 `analysis_type` 且 `formal_visibility_eligible=true`。自由 Tags 不改变路由。

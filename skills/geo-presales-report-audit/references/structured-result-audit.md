@@ -92,8 +92,10 @@
 使用 `scripts/structured_result_audit.py prepare` 并显式传入 `--target-brand`，不要手写正则剥离 HTML，也不要从现有排名猜目标品牌。
 
 - 整体删除 `data-testid="webpage-citation-pill"` 容器。
-- 整体删除剩余 `<a>...</a>` 及其锚文本。
-- 删除引用来源名、favicon 文本和 `+1`。
+- 整体删除屏幕阅读器重复元数据块（锚文本含 `Opens in a new window`，或 class 含 `product-wrapper`）。
+- 商品卡容器内的锚点解包保留标题，不删除。
+- **内联内容锚点解包保留文字**：锚点位于 `<strong>`/`<b>` 内，或同一文本块内锚点之後仍有可见文字时，只去掉链接标记、保留锚文本。这类文字属于正文内容，删除会丢句子成分，甚至丢真实品牌提及。
+- 其余剩余 `<a>` 连锚文本一起删除（引用来源名、favicon 文本、`+1`、句末收尾链接标签）。
 - 保留引用外的正文和产品卡可见标题，包括当前 `shopping-product-metadata-*` 商品卡容器中的链接标题。
 - 同一名称只在链接中出现时不计；在非链接正文另有出现时按正文位置保留。
 - 清洗结果只进入审核包，不回写 `answer_text`。

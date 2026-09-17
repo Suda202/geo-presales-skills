@@ -850,6 +850,25 @@ class BackendReportTests(unittest.TestCase):
             MODULE.write_json(result_path, result_for(m04, attribute_join=True))
             MODULE.submit_result(run_root, m04["task_id"], result_path)
 
+    def test_joint_analysis_does_not_depend_on_attribute_diagnostics(self):
+        """售前题库不生成 Verification 题，attribute_diagnostics 因此常为全 unknown。
+        交叉判断锚在始终存在的 target_attributes 上，不得因属性状态缺失就不触发。"""
+        raw = market_perception_payload()
+        raw["attribute_diagnostics"] = [
+            {"attribute_id": "ATTR-001", "status": "unknown", "evidence_refs": []}
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_root, manifest = MODULE.prepare_run(
+                self.write_payload(root, raw), root / "run"
+            )
+            m04 = next(t for t in MODULE.ready_tasks(run_root, manifest)
+                       if t["module_id"] == "M04")
+            result_path = root / "M04-result.json"
+            MODULE.write_json(result_path, result_for(m04))
+            with self.assertRaisesRegex(MODULE.ContractError, "注明表达证据对应的 Attribute"):
+                MODULE.submit_result(run_root, m04["task_id"], result_path)
+
     def test_m01_must_join_same_attribute_across_m04_and_m08(self):
         """M01 只分别引用两侧不够，必须落在同一条结论里才算交叉判断。"""
         with tempfile.TemporaryDirectory() as temp:

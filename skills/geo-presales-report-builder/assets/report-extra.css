@@ -161,3 +161,28 @@
   padding: 5px 7px;
   overflow-wrap: anywhere;
 }
+
+/* 情感板块：观点标签带出现次数 */
+.sentiment-chip-count {
+  margin-left: 6px;
+  font: 700 10px/1 var(--mono);
+  color: var(--quiet);
+}
+.sentiment-chip.active .sentiment-chip-count {
+  color: var(--gold-deep);
+}
+
+/* 证据卡：平台 · 题号 */
+.sentiment-evidence-where {
+  margin: 6px 0 10px;
+  font: 10.5px/1.4 var(--mono);
+  color: var(--quiet);
+}
+.sentiment-evidence-card blockquote.sentiment-evidence-text {
+  margin: 0 0 14px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+}
+.sentiment-evidence-card .sentiment-evidence-dir + .sentiment-evidence-claim {
+  margin-top: 8px;
+}

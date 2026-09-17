@@ -166,6 +166,62 @@ class StructuredResultTests(unittest.TestCase):
         self.assertEqual(cleaned, "PETLIBRO appears before PETKIT in the answer body.")
         self.assertEqual(removed, ["PETKIT"])
 
+    def test_bolded_inline_entity_link_keeps_its_text(self) -> None:
+        """Task 246 #10119：句首品牌名位于 <strong> 内联链接中，删除锚文本会丢品牌提及。"""
+
+        cleaned, removed = STRUCTURED.remove_citations(
+            '<ul><li><p><strong><span class="contents">'
+            '<a class="decorated-link" href="https://www.personanutrition.com/">Persona Nutrition</a>'
+            "</span></strong> — certified nutritionists provide ongoing 1:1 consultations.</p></li>"
+            '<li><p><strong><a class="decorated-link" href="https://rootine.co/">Rootine</a></strong>'
+            " — emphasizes ongoing progress tracking.</p></li></ul>"
+        )
+        self.assertIn("Persona Nutrition — certified nutritionists", cleaned)
+        self.assertIn("Rootine — emphasizes ongoing", cleaned)
+        self.assertEqual(removed, [])
+
+    def test_trailing_source_label_link_is_deleted(self) -> None:
+        cleaned, removed = STRUCTURED.remove_citations(
+            "<p>If you're evaluating it as an investment, I can break down its valuation. "
+            '<a class="decorated-link" href="https://example.com/ir">Example investor relations</a></p>'
+            '<p><a class="decorated-link" href="https://example.com/sourcing">'
+            "Brand's ingredient sourcing disclosures</a></p>"
+        )
+        self.assertEqual(
+            cleaned,
+            "If you're evaluating it as an investment, I can break down its valuation.",
+        )
+        self.assertEqual(
+            removed,
+            ["Example investor relations", "Brand's ingredient sourcing disclosures"],
+        )
+
+    def test_gemini_product_link_mid_sentence_keeps_product_title(self) -> None:
+        """商品卡标题以 <product-link> 内联出现在句子里时，删锚文本会让句子丢主语。"""
+
+        cleaned, removed = STRUCTURED.remove_citations(
+            '<p data-path-to-node="3">The <response-element><product-link>'
+            '<a href="https://google.com/search?q=Brand+Product">Brand Product</a>'
+            "</product-link></response-element> offers raw whole food nutrition.</p>"
+        )
+        self.assertEqual(cleaned, "The Brand Product offers raw whole food nutrition.")
+        self.assertEqual(removed, [])
+
+    def test_product_wrapper_screen_reader_block_is_deleted(self) -> None:
+        cleaned, removed = STRUCTURED.remove_citations(
+            '<a class="product-wrapper" href="/p">Brand Kids Opens in a new window</a>'
+            '<a class="product-wrapper" href="/r">Shop &amp; more 4.3 (5k+) Opens in a new window</a>'
+            "<p>Real body sentence about Brand.</p>"
+        )
+        self.assertEqual(cleaned, "Real body sentence about Brand.")
+        self.assertEqual(
+            removed,
+            [
+                "Brand Kids Opens in a new window",
+                "Shop & more 4.3 (5k+) Opens in a new window",
+            ],
+        )
+
     def test_rank_uses_first_normalized_body_occurrence(self) -> None:
         catalog = [
             {

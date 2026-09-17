@@ -663,14 +663,6 @@ def has_material_page_opportunities(payload):
     )
 
 
-def has_material_attribute_diagnostics(payload):
-    """属性诊断里有非 unknown 的条目时，品牌表达证据才有可锚定的 Attribute。"""
-    return any(
-        item.get("status") != "unknown"
-        for item in payload.get("attribute_diagnostics", [])
-    )
-
-
 def material_market_attribute_ids(payload):
     """品类认知里非 insufficient 的 finding 所锚定的 Attribute。"""
     return {
@@ -1634,12 +1626,11 @@ def validate_evidence_refs(root, task, content, refs, payload):
                 prefix = f"fact:/findings/{index}/"
                 if not any(isinstance(ref, str) and ref.startswith(prefix) for ref in flattened_refs):
                     raise ContractError(f"M08 必须覆盖品类认知诊断 {item['finding_id']}")
-    if (task["module_id"] == "M04"
-            and has_material_attribute_diagnostics(payload)
-            and material_market_attribute_ids(payload)):
-        # 品类认知有正式状态、属性诊断也有实际结论时，才要求品牌表达证据注明
-        # Attribute——这正是 M01 能交叉判断的前提。此时不给锚点就无法核查交叉，
-        # 所以不能整体绕过；没有可交叉的品类认知时不强求，避免无谓约束。
+    if task["module_id"] == "M04" and material_market_attribute_ids(payload):
+        # 品类认知有正式状态时，要求品牌表达证据注明 Attribute——这正是 M01 能
+        # 交叉判断的前提，此时不给锚点就无法核查交叉，不能整体绕过。
+        # 不把 attribute_diagnostics 的可用性当条件：售前题库不生成 Verification 题，
+        # 属性诊断常为全 unknown，而锚点用的是始终存在的 target_attributes。
         anchored = set()
         for pointer in statement_pointers("M04", content):
             anchored |= anchored_attribute_ids(payload, refs, pointer)

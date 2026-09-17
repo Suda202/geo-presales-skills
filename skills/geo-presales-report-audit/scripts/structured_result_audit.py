@@ -51,6 +51,8 @@ PRODUCT_CARD_SELECTORS = (
     '[class*="product-card"]',
     '[class*="product_card"]',
 )
+BLOCK_LEVEL_TAGS = ("p", "li", "td", "th", "h1", "h2", "h3", "h4", "h5", "h6")
+UI_ARTIFACT_MARKER = "opens in a new window"
 
 
 class AuditValidationError(ValueError):
@@ -103,11 +105,43 @@ def parse_wordids(spec: str | None) -> set[int] | None:
     return result
 
 
+def _block_ancestor(node: Any) -> Any | None:
+    """锚点所在的文本块祖先，用于判断锚点是否处于句子中间。"""
+
+    for parent in node.parents:
+        name = getattr(parent, "name", None)
+        if name in BLOCK_LEVEL_TAGS:
+            return parent
+        if name == "body":
+            return None
+    return None
+
+
+def _text_after_within(node: Any, block: Any, soup: Any) -> str:
+    """同一文本块内、锚点之後仍有的可见文字；为空表示锚点是该块的收尾标签。"""
+
+    if block is None:
+        return ""
+    marker = soup.new_string("\x00")
+    node.insert_after(marker)
+    try:
+        full = block.get_text(" ", strip=True)
+    finally:
+        marker.extract()
+    if "\x00" not in full:
+        return ""
+    return full.split("\x00", 1)[1].strip()
+
+
 def remove_citations(answer_html: str) -> tuple[str, list[str]]:
     """Return body text after removing citation UI and citation anchors.
 
     Product-card anchors are unwrapped rather than deleted because their visible
-    title is answer content, not a citation source label.
+    title is answer content, not a citation source label. The same applies to
+    inline content links: when an anchor sits inside a running sentence (a bolded
+    entity mention, or a link with sentence text after it), deleting its text
+    removes body content and can drop a real brand mention. Only standalone
+    source labels — citations and trailing link labels — keep the delete behaviour.
     """
 
     soup = BeautifulSoup(answer_html or "", "html.parser")
@@ -142,6 +176,18 @@ def remove_citations(answer_html: str) -> tuple[str, list[str]]:
             anchor.unwrap()
             continue
         text = " ".join(anchor.get_text(" ", strip=True).split())
+        classes = " ".join(anchor.get("class") or []).casefold()
+        # 屏幕阅读器与商品卡的重复元数据块（含渠道名与 "Opens in a new window"）。
+        if UI_ARTIFACT_MARKER in text.casefold() or "product-wrapper" in classes:
+            if text:
+                removed.append(text)
+            anchor.decompose()
+            continue
+        if anchor.find_parent(["strong", "b"]) is not None or _text_after_within(
+            anchor, _block_ancestor(anchor), soup
+        ):
+            anchor.unwrap()
+            continue
         if text:
             removed.append(text)
         anchor.decompose()

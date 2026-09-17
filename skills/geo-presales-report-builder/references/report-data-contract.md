@@ -93,8 +93,9 @@
   "sentiment": {
     "summary": {"total":12,"pos":10,"neu":1,"neg":1,"pos_rate":"90.9%","neg_rate":"9.1%"},
     "claims": {
-      "pos": [{"text":"多场合适配","claim":"中文论断句","evidence":"英文原句"}],
-      "neg": [{"text":"留香与扩散争议","claim":"…","evidence":"…"}]
+      "pos": [{"label":"免安装零管线","count":37,
+               "evidence":{"sentence":"英文原句","region":"MY","platform":"aio","question_id":"0043"}}],
+      "neg": [{"label":"加水耗材负担","count":2,"evidence":{...}}]
     },
     "matrix": {
       "columns": ["正向率","正向句","负向句"],
@@ -142,7 +143,8 @@
 **sentiment**
 
 - `summary.pos_rate` 与 `neg_rate` 的分母是 `pos+neg`，**排除中性**，且两者相加为 100%。
-- `claims.pos` / `claims.neg` 各最多 3 条，来自目标品牌的句级情感判读。
+- `claims.pos` / `claims.neg` 是**归纳后的观点组**：`label` 为 4–8 字中文短语，`count` 是该观点在本切片内的出现次数，`evidence` 每组只给**一条**最有代表性的句子并附 `region`/`platform`/`question_id`（面板上的「查看对应回答」据此跳转）。
+- 归纳本身是全局做的；**每个切片按成员归属过滤后重算 `count` 并重选证据**，某切片里一条都不含的观点组不出现在该切片。
 - `matrix` 是**品牌情感对比表**，不是「属性 × 品牌」矩阵：判读按整句给方向、没有逐句属性标注，按关键词把长句切进属性格会同时错配品牌与方向，给客户看会误导。
 - `rows[].values` 与 `columns` 同序；`target` 为真的行是本品。末列「代表证据」要求句子明确点名该品牌且不含其他展示品牌，并优先取 60 字以上的完整句（标题式短句说明不了问题）。
 
