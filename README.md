@@ -27,7 +27,7 @@
 | 步骤 | Skill | 干什么 |
 | --- | --- | --- |
 | 1 | `geo-presales-crawl-integrity` | 先校验这份采集能不能当输入用，不把采集缺陷当成品牌表现 |
-| 2 | `geo-presales-report-builder` | 算可见度与引用类指标（复用 `geo_presales_core` 口径），产出 `report-data.json`；**不算情感指标** |
+| 2 | `geo-presales-report-builder` | 算可见度与引用类指标（复用 `geo_presales_core` 口径），产出 `report-data.json`；**不做情感判读**（判读归 sentiment-judge），只把判读结果按切片汇总进报告 |
 | 3 | `geo-presales-sentiment-judge` | 可选。算「正向情感占比」并产出句级正/负句明细，情感指标只有它算 |
 
 ```bash
@@ -66,7 +66,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 | Skill | 链条 | 什么时候用 | 产出 | 不做什么 |
 | --- | --- | --- | --- | --- |
 | `geo-presales-crawl-integrity` | A | 算任何指标之前，先确认采集能不能当输入用 | 缺陷清单 + 退出码（`0` 可用 / `1` 警告 / `2` 阻断） | 不算提及率、声量、排名、引用份额，不判情绪，不纠品牌 |
-| `geo-presales-report-builder` | A | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 可见度与引用类指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不算情感指标（归 sentiment-judge），不另写指标口径（复用 `geo_presales_core`），不出上传 CSV，不纠品牌识别，不做采集校验 |
+| `geo-presales-report-builder` | A | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 可见度与引用类指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不做情感判读（归 sentiment-judge，只汇总其结果），不另写指标口径（复用 `geo_presales_core`），不出上传 CSV，不纠品牌识别，不做采集校验 |
 | `geo-presales-sentiment-judge` | A | 需要句级正负句和正向情感占比 | 逐句 CSV + 正向情感占比，按品牌、意图、平台分层 | 只算「正向情感占比」一个指标；不回写后端 `sentiment` 字段，不判竞品胜负，不算可见度 |
 | `geo-presales-report-audit` | B（跨链） | 品牌提及识别或正文首现排序需要审核和修正 | 修正后的 `brand_rankings`、安全补丁、可复现的问题说明与 Bad Case 草稿 | 不改客户结论，不审情绪，不做竞品研究或出题 |
 | `geo-presales-report-editor` | B | 底层结果已确认，要改客户结论并出上传件 | 更新后的客户结论、可上传 CSV | 不重算底层，不渲染 HTML，不操作报告页面 |
@@ -82,7 +82,8 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 | --- | --- | --- |
 | 提及率、提及率排名、声量份额、平均提及位置、可见度 | `geo-presales-report-builder` | `geo_presales_core`（`report-editor/scripts/` 下） |
 | 引用次数 | `geo-presales-report-builder` | 只计正文 pill（`([来源名][N])`）出现次数 |
-| 正向情感占比 | `geo-presales-sentiment-judge` | 正向句 ÷（正向句 + 负向句），排除中性 |
+| 正向情感占比（判读） | `geo-presales-sentiment-judge` | 正向句 ÷（正向句 + 负向句），排除中性 |
+| 正向情感占比（按切片汇总进报告） | `geo-presales-report-builder` | 复用 sentiment-judge 的判读标签，按国家 / 平台 / 主题切片算 `pos_rate` |
 
 **改口径只改 `geo_presales_core` 这一处。** 其他 Skill 对它只读；改动前先跑 `python3 -m unittest discover -s skills/geo-presales-report-editor/scripts/tests`，并在说明里写明受影响的下游 Skill。
 
