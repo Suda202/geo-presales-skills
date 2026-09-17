@@ -28,7 +28,7 @@
 | --- | --- | --- |
 | 1 | `geo-presales-crawl-integrity` | 先校验这份采集能不能当输入用，不把采集缺陷当成品牌表现 |
 | 2 | `geo-presales-report-builder` | 算可见度与引用类指标（复用 `geo_presales_core` 口径），产出 `report-data.json`；**不做情感判读**（判读归 sentiment-judge），只把判读结果按切片汇总进报告 |
-| 3 | `geo-presales-sentiment-judge` | 可选。算「正向情感占比」并产出句级正/负句明细，情感指标只有它算 |
+| 3 | `geo-presales-sentiment-judge` | 可选。做情感判读并算「正向情感占比」，产出句级正/负句明细；判读只有它做，报告里的数字由 builder 汇总 |
 
 ```bash
 cd skills/geo-presales-report-builder
