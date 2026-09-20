@@ -4,7 +4,7 @@
 
 **与 Claim 层路径的关系**：
 
-- 若报告已升级到 Claim 层（`sentiment.metric_basis = "attribute_signals"`），判读产物的索引基座是 `claims.json` 的 `unit_index`。重抽 units 后旧 claims 会整体失效——**不能改索引硬套**，应重新走 Claim 抽取（`claims-assemble` 会校验索引越界与品牌不符），再按下方第 2 节的内容键规则做人工核对。
+- 若报告已升级到 Claim 层（`sentiment.metric_basis = "claim_signals"`），判读产物的索引基座是 `claims.json` 的 `unit_index`。重抽 units 后旧 claims 会整体失效——**不能改索引硬套**，应重新走 Claim 抽取（`claims-assemble` 会校验索引越界与品牌不符），再按下方第 2 节的内容键规则做人工核对。
 - 若仍在句级降级路径，按本文档第 2 节的 `(platform, region, question_id, brand, 规范化句子)` 内容键迁移 labels 与 `judged-sentences.json`。
 - 两条路径的共同底线：**确定性清洗不得改变任何人的语义判断**；清洗只应让同一判断落到相同的句子/观点上。
 

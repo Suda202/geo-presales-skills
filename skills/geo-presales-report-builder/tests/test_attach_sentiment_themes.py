@@ -84,25 +84,28 @@ if __name__ == "__main__":
 
 
 class ClaimLayerAggregationTests(unittest.TestCase):
-    """Claim 层接入：Attribute 信号口径、回答内去重、口径对账。"""
+    """Claim 层接入：Claim 信号口径、回答内按 semantic claim 去重、口径对账。"""
 
     def claims(self):
-        # 同回答同品牌同 attribute 同方向 2 条 → 只计 1 次；跨回答另计
+        # 同回答同品牌同 semantic claim（文本重复）→ 只计 1 次；
+        # 同回答同 attribute 下的不同 claim → 各计一次；跨回答另计
         base = {"region": "MY", "platform": "chatgpt", "idx": 1, "brand": "A",
                 "question_id": "0001", "intent": "Discovery"}
         return [
             dict(base, claim="免安装", attribute="安装便捷", theme="安装与部署", sentiment="positive"),
+            dict(base, claim="免安装 ", attribute="安装便捷", theme="安装与部署", sentiment="positive"),
             dict(base, claim="零管线", attribute="安装便捷", theme="安装与部署", sentiment="positive"),
             dict(base, claim="价格不透明", attribute="价格透明度低", theme="成本与价格", sentiment="negative"),
             dict(base, idx=2, claim="免安装", attribute="安装便捷", theme="安装与部署", sentiment="positive"),
         ]
 
-    def test_dedupe_and_attribute_basis(self):
+    def test_dedupe_and_claim_basis(self):
         block = MODULE.build_claims_sentiment(self.claims(), ["A"], lambda u: True, "A")
-        self.assertEqual("attribute_signals", block["metric_basis"])
-        # 3 个信号：安装便捷(正, 回答1) + 价格透明度低(负) + 安装便捷(正, 回答2)
-        self.assertEqual(3, block["summary"]["total"])
-        self.assertEqual(2, block["summary"]["pos"])
+        self.assertEqual("claim_signals", block["metric_basis"])
+        # 4 个信号：免安装(正, 回答1，文本重复只计 1) + 零管线(正, 回答1)
+        #          + 价格不透明(负) + 免安装(正, 回答2)
+        self.assertEqual(4, block["summary"]["total"])
+        self.assertEqual(3, block["summary"]["pos"])
         self.assertEqual(1, block["summary"]["neg"])
 
     def test_theme_matrix_cell_is_attribute_description(self):
@@ -117,5 +120,5 @@ class ClaimLayerAggregationTests(unittest.TestCase):
             MODULE._verify_claim_metrics(self.claims(), ["A"], "A", expected)
 
     def test_reconciliation_passes_on_matching_metrics(self):
-        expected = {"by_brand": {"A": {"positive_signals": 2, "negative_signals": 1}}}
+        expected = {"by_brand": {"A": {"positive_signals": 3, "negative_signals": 1}}}
         MODULE._verify_claim_metrics(self.claims(), ["A"], "A", expected)  # 不抛异常

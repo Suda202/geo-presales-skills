@@ -143,10 +143,10 @@
 
 **sentiment**
 
-> **两种口径并存,同一份报告只能用一种**:`metric_basis=attribute_signals` 表示走 Claim 层(Attribute 信号统计,推荐);无该字段表示句级降级路径(整句正负计数)。两者数字不可比。
+> **两种口径并存,同一份报告只能用一种**:`metric_basis=claim_signals` 表示走 Claim 层(Claim 信号统计,推荐);无该字段表示句级降级路径(整句正负计数)。两者数字不可比。
 
 - `summary.pos_rate` 与 `neg_rate` 的分母是 `pos+neg`，**排除中性**，且两者相加为 100%。
-- **Claim 层**(`--claims` 提供时):`summary.total` = 去重后的 Attribute 信号数(同回答同品牌同 Attribute 同方向只计 1 次);`pos_rate_cross_platform` 是各平台先算、再对**有信号的平台等权平均**的结果(无信号平台不补 0);`platforms_with_signal` 要一并展示,否则客户会以为等权值覆盖了全部平台。
+- **Claim 层**(`--claims` 提供时):`summary.total` = 去重后的 Claim 信号数(同回答同品牌同 semantic claim 只计 1 次,同 Attribute 下不同 Claim 各计一次);`pos_rate_cross_platform` 是各平台先算、再对**有信号的平台等权平均**的结果(无信号平台不补 0);`platforms_with_signal` 要一并展示,否则客户会以为等权值覆盖了全部平台。
 - `claims.pos` / `claims.neg` 是**归纳后的观点组**：`label` 为 4–8 字中文短语，`count` 是该观点在本切片内的出现次数，`evidence` 每组只给**一条**最有代表性的句子并附 `region`/`platform`/`question_id`（面板上的「查看对应回答」据此跳转）。
 - 归纳本身是全局做的；**每个切片按成员归属过滤后重算 `count` 并重选证据**，某切片里一条都不含的观点组不出现在该切片。
 - `matrix` 是**品牌情感占比表**，不是「属性 × 品牌」矩阵：判读按整句给方向、没有逐句属性标注，按关键词把长句切进属性格会同时错配品牌与方向，给客户看会误导。

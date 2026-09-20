@@ -3,7 +3,7 @@ name: geo-presales-sentiment-judge
 description: This skill should be used when computing brand sentiment from overseas GEO presales crawler answers — extracting atomic Claims with evidence, normalising them into Attribute dimensions and neutral Themes, and computing positive-share and cross-platform metrics for a target brand or a whole brand lexicon (target + configured/open competitors), against the v8 question bank sentiment sample scope. It does not modify backend JSON sentiment fields, judge competitor win rates, or compute visibility metrics.
 metadata:
   author: 海外 GEO 项目
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # GEO 售前品牌情感判读(Claim → Attribute → Theme)
@@ -68,23 +68,23 @@ metadata:
 
    校验会拦下:索引越界、品牌与单元不符、方向不是正/负、缺字段。**拿不准且会影响方向的判断列入清单交用户裁决**,不得各自猜测。单元很多时可分批读。
 
-4. **计算与交付**(口径:正向 Attribute 信号数 ÷ 正负向信号合计数;正式指标名为**正向情感占比**):
+4. **计算与交付**(口径:正向 Claim 信号数 ÷ 正负向信号合计数;正式指标名为**正向情感占比**):
 
    ```bash
    python3 scripts/sentiment_sentences.py claims-metrics \
      --claims claims.json --brands "目标,竞1,竞2,竞3,开放1" --out-metrics metrics.json
    ```
 
-   脚本按契约实现**回答内去重**(同回答同品牌同 Attribute 同方向只计 1 次,跨回答分别计数)与**跨平台等权**(有信号平台等权平均,无信号平台不补 0),输出按品牌、按平台、按 Attribute、按 Theme 四组统计。多品牌必须逐个品牌看结果,跨品牌的合计正向占比没有业务含义。
+   脚本按契约实现**回答内去重**(同回答同品牌同 semantic claim 只计 1 次,按 claim 文本兜底;同 Attribute 下不同 Claim 各计一次;跨回答分别计数)与**跨平台等权**(有信号平台等权平均,无信号平台不补 0),输出按品牌、按平台、按 Attribute、按 Theme 四组统计。多品牌必须逐个品牌看结果,跨品牌的合计正向占比没有业务含义。
 
    > 旧的 `compute` 子命令(整句判正/负 + `labels.json`)保留为**降级形态**,答不了「AI 在评价哪个方面」。新报告走上面的 Claim 链路;已交付报告不必回改,重跑时升级。同一份报告里汇总口径必须来自同一层,不要混用。
 
 ## 交付门槛
 
-- 必须报告完整漏斗：情绪样本回答数 → 提到品牌的回答数 → **含正负 Claim 的回答数 → Claim 数 → 去重后的 Attribute 信号数**（正/负拆开）。
+- 必须报告完整漏斗：情绪样本回答数 → 提到品牌的回答数 → **含正负 Claim 的回答数 → Claim 数 → 去重后的 Claim 信号数**（正/负拆开）。
 - **多品牌审计必须按品牌分层报告**：目标品牌 / 各配置竞品 / 开放品牌（聚合）各自的 Claim 数与信号数；配置竞品逐个列名，开放品牌可只汇总但需说明覆盖了几个品牌。
 - 必须交付逐 Claim 明细（platform、region、question_id、intent、brand、claim、attribute、theme、sentiment、evidence_text），让用户能筛出全部负向 Claim 抽查，也能按 region 切市场维度。
-- **正向占比要说明是哪个口径**:按 Attribute 信号数计,并给出跨平台等权值与「有信号平台数」;无信号平台不补 0 这件事要在交付里讲明。
+- **正向占比要说明是哪个口径**:按 Claim 信号数计,并给出跨平台等权值与「有信号平台数」;无信号平台不补 0 这件事要在交付里讲明。
 - 结论中必须写明"正向率说明被评价时的褒贬比,不代表全部回答的正面占比"。
 - 抽取中执行过的边界裁决(如某句按纯事实不生成 Claim)在交付时点名说明;用户改判后改 `claims-raw.json` 重跑 `claims-assemble` + `claims-metrics`,不动抽取。
 - **同一份报告的汇总口径必须来自同一层**:走了 Claim 层就不要混用句级 `compute` 的数字。

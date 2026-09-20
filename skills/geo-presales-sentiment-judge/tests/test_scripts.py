@@ -400,15 +400,18 @@ class ClaimLayerTests(unittest.TestCase):
     def test_metrics_dedupe_within_answer_keep_across_answers(self):
         raw = os.path.join(self.tmp, "raw.json")
         json.dump([
-            # 同回答同属性同方向 → 只计 1 次
+            # 同回答同 semantic claim（文本重复，仅空白/大小写差异）→ 只计 1 次
             {"unit_index": 0, "brand": "A", "claim": "免安装", "attribute": "安装便捷",
              "theme": "安装", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "免安装 ", "attribute": "安装便捷",
+             "theme": "安装", "sentiment": "positive"},
+            # 同回答同属性下的不同 claim → 各计一次
             {"unit_index": 0, "brand": "A", "claim": "零管线", "attribute": "安装便捷",
              "theme": "安装", "sentiment": "positive"},
-            # 跨回答同属性同方向 → 分别计数
+            # 跨回答同 claim → 分别计数
             {"unit_index": 1, "brand": "A", "claim": "免安装", "attribute": "安装便捷",
              "theme": "安装", "sentiment": "positive"},
-            # 同回答同属性但反向 → 各自计
+            # 同回答反向 claim → 各自计
             {"unit_index": 0, "brand": "A", "claim": "安装复杂", "attribute": "安装便捷",
              "theme": "安装", "sentiment": "negative"},
         ], open(raw, "w"), ensure_ascii=False)
@@ -419,9 +422,9 @@ class ClaimLayerTests(unittest.TestCase):
                             "--out-metrics", metrics_path)
         self.assertEqual(0, proc.returncode, proc.stderr)
         m = json.load(open(metrics_path))
-        self.assertEqual(4, m["claim_total"])
-        self.assertEqual(3, m["deduped_signal_total"])  # 4 条 claim → 3 个信号
-        self.assertEqual(2, m["by_brand"]["A"]["positive_signals"])
+        self.assertEqual(5, m["claim_total"])
+        self.assertEqual(4, m["deduped_signal_total"])  # 5 条 claim → 4 个信号
+        self.assertEqual(3, m["by_brand"]["A"]["positive_signals"])
         self.assertEqual(1, m["by_brand"]["A"]["negative_signals"])
 
     def test_cross_platform_equal_weight_ignores_platforms_without_signal(self):

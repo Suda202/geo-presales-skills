@@ -289,11 +289,16 @@ def load_claims_file(path) -> list[dict]:
     return claims
 
 
+def _norm_claim_text(text) -> str:
+    """去重用的 claim 文本归一：压空白 + casefold。语义级归一是抽取环节的职责。"""
+    return " ".join(str(text or "").split()).casefold()
+
+
 def _verify_claim_metrics(claims: list[dict], brands: list[str], target: str,
                           expected: dict) -> None:
     """把本 skill 的全局 Claim 统计与 sentiment-judge 的 claims-metrics 对账。
 
-    两处实现同一套口径（回答内去重、跨回答保留、跨平台等权不补 0），
+    两处实现同一套口径（回答内按 semantic claim 去重、跨回答保留、跨平台等权不补 0），
     不一致说明有一侧被改动过——直接报错，不让它静默进入报告。
     """
     seen: set[tuple] = set()
@@ -306,7 +311,7 @@ def _verify_claim_metrics(claims: list[dict], brands: list[str], target: str,
         if direction not in ("positive", "negative"):
             continue
         key = (brand, (c.get("region", ""), c.get("platform", ""), c.get("idx")),
-               c.get("attribute"), direction)
+               _norm_claim_text(c.get("claim")), direction)
         if key in seen:
             continue
         seen.add(key)
@@ -332,10 +337,12 @@ def _verify_claim_metrics(claims: list[dict], brands: list[str], target: str,
 
 def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
                            target: str) -> dict | None:
-    """按 Claim 层的 Attribute 信号口径聚合（2026-09-20 设计定稿）。
+    """按 Claim 层的 Claim 信号口径聚合（2026-09-20 设计定稿）。
 
-    与句级路径的区别：统计单位是 **Attribute 信号**而非句子数。
-      * 回答内去重：同品牌 × 同 Attribute × 同方向在一条回答里只计 1 次；
+    与句级路径的区别：统计单位是 **Claim 信号**而非句子数。
+      * 回答内去重：同品牌 × 同 semantic claim 在一条回答里只计 1 次
+        （语义归一由抽取环节完成，这里按 claim 文本兜底）；
+        同一 Attribute 下不同 Claim 各计一次；
       * 跨回答分别计数；
       * 正向占比 = 正向信号 ÷ 正负信号合计；
       * 跨平台等权、无信号平台不补 0。
@@ -355,7 +362,7 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
         brand = c.get("brand")
         if brand not in brands:
             continue
-        key = (brand, answer_key(c), c.get("attribute"), c.get("sentiment"))
+        key = (brand, answer_key(c), _norm_claim_text(c.get("claim")), c.get("sentiment"))
         if key in seen:
             continue
         seen.add(key)
@@ -441,7 +448,7 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
 
     target_stats = brand_stats.get(target, {})
     return {
-        "metric_basis": "attribute_signals",
+        "metric_basis": "claim_signals",
         "summary": {
             "total": target_stats.get("signal_total", 0),
             "pos": target_stats.get("positive_signals", 0),
@@ -571,7 +578,7 @@ def main() -> int:
                              "仅在走句级降级路径时使用——Claim 层自带 attribute/theme，不需要关键词表")
     parser.add_argument("--claims", type=Path, default=None,
                         help="Claim 层产物（sentiment-judge claims-assemble 输出）。"
-                             "提供时按 Attribute 信号口径聚合（推荐）；不提供则回落句级路径")
+                             "提供时按 Claim 信号口径聚合（推荐）；不提供则回落句级路径")
     parser.add_argument("--expected-metrics", type=Path, default=None,
                         help="sentiment-judge claims-metrics 的产出；提供时逐品牌对账统计口径，不一致即报错")
     parser.add_argument("--out", type=Path, required=True)
@@ -605,7 +612,7 @@ def main() -> int:
         all_claims = load_all_claim_groups(claims_dir, sentences_path, brands)
     theme_keywords = load_theme_keywords(args.theme_keywords)
     if claims:
-        print(f"Claim 层聚合：{len(claims)} 条 claim（Attribute 信号口径，回答内去重 + 跨平台等权）")
+        print(f"Claim 层聚合：{len(claims)} 条 claim（Claim 信号口径，回答内按 semantic claim 去重 + 跨平台等权）")
         # 口径对账：本 skill 出的是「每个切片」的统计，sentiment-judge 的
         # claims-metrics 出全局统计——两处实现同一套规则（回答内去重、跨回答保留、
         # 跨平台不补 0），必须一致。传了 --expected-metrics 时逐品牌核对，防止漂移。
@@ -685,7 +692,7 @@ def main() -> int:
     headline = report["slices"].get("||")
     if headline and not claims:
         # 句级路径才用 sentiment-judge 的 compute 对账头部聚合；
-        # Claim 层走 Attribute 信号口径，与 compute 的句数口径本就不同，不能对账。
+        # Claim 层走 Claim 信号口径，与 compute 的句数口径本就不同，不能对账。
         by_brand = headline["sentiment"]["by_brand"]
         verify_against_judge(
             args.units, args.labels_dir, args.target,
@@ -770,7 +777,7 @@ def main() -> int:
     head_sent = head["sentiment"]
     for brand in brands:
         row = head_sent["by_brand"][brand]
-        if head_sent.get("metric_basis") == "attribute_signals":
+        if head_sent.get("metric_basis") == "claim_signals":
             print(f"  {brand:12s} 正 {row['positive_signals']:>3}  负 {row['negative_signals']:>3}"
                   f"  正向率 {row['pos_rate']}（跨平台等权 {row['pos_rate_cross_platform']}，"
                   f"有信号平台 {row['platforms_with_signal']} 个）")

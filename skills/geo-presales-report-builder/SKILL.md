@@ -3,7 +3,7 @@ name: geo-presales-report-builder
 description: This skill should be used when generating a customer-facing overseas GEO presales diagnosis report (single-file HTML, V4.0 prototype styling) directly from Scrapeless crawler collection data plus a Case record, covering visibility, citations, sentiment, content planning and per-question detail with country / platform / topic filtering. Do not use it to compute the upload CSV (that is geo-presales-report-editor), to audit brand mention recognition, or to write report conclusions by hand.
 metadata:
   author: Overseas GEO Project
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # 海外 GEO 售前诊断报告生成
@@ -95,7 +95,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
      --claims <输出>/claims.json --brands "目标,配置1,配置2,配置3,开放1" --out-metrics <输出>/claims-metrics.json
    ```
 
-   接入（脚本按 Attribute 信号口径聚合，并与 `claims-metrics` 逐品牌对账，不一致直接报错）：
+   接入（脚本按 Claim 信号口径聚合，并与 `claims-metrics` 逐品牌对账，不一致直接报错）：
 
    ```bash
    python3 scripts/attach_sentiment.py --report <输出>/report-data.json \
@@ -105,7 +105,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
      --out <输出>/report-data.json
    ```
 
-   - **Claim 层是推荐路径**：统计单位是 Attribute 信号（同回答同品牌同 Attribute 同方向只计 1 次，跨回答分别计数），跨平台对有信号的平台等权平均。输出 `sentiment.metric_basis = "attribute_signals"`；前端读字段前先看它。
+   - **Claim 层是推荐路径**：统计单位是 Claim 信号（同回答同品牌同 semantic claim 只计 1 次，同 Attribute 下不同 Claim 各计一次，跨回答分别计数），跨平台对有信号的平台等权平均。输出 `sentiment.metric_basis = "claim_signals"`；前端读字段前先看它。
    - `--theme-keywords` 只在**不传 `--claims` 的句级降级路径**下才需要（它把自由标签归到主题）；Claim 层自带 `theme` 字段，不依赖关键词表。
    - **同一份报告只能用一种口径**：走了 Claim 层就不要混用句级 `compute` 的数字，两者不可比。
 

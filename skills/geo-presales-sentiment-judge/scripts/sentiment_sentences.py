@@ -513,14 +513,20 @@ def cmd_claims_assemble(args: argparse.Namespace) -> None:
     print(f"写入 {args.output}")
 
 
+def _norm_claim_text(text) -> str:
+    """去重用的 claim 文本归一：压空白 + casefold。语义级归一是抽取环节的职责。"""
+    return " ".join(str(text or "").split()).casefold()
+
+
 def cmd_claims_metrics(args: argparse.Namespace) -> None:
     """按设计的统计口径计算 Claim / Attribute / Theme 三层指标。
 
     口径（2026-09-20 设计定稿）：
       * 最小结构化单位 = Prompt × 平台 × 回答 × Brand × Claim；
-      * 同一回答内、同一品牌 × 同一 Attribute × 同一方向只计 1 次，
-        **跨回答分别计数**（先做回答内去重，再汇总）；
-      * 正向占比 = 正向 Attribute 信号数 ÷ 正负向 Attribute 信号数合计；
+      * 同一回答内、同一品牌 × 同一 semantic claim 只计 1 次
+        （语义归一由抽取环节完成，这里按 claim 文本兜底去重）；
+        同一 Attribute 下不同 Claim 各计一次；**跨回答分别计数**；
+      * 正向占比 = 正向 Claim 信号数 ÷ 正负向 Claim 信号数合计；
       * 跨平台先算各平台占比，再对**有有效信号的平台等权平均**，无信号平台不补 0。
     """
     claims = _load_claims(args.claims)
@@ -533,13 +539,13 @@ def cmd_claims_metrics(args: argparse.Namespace) -> None:
     def answer_key(c: dict) -> tuple:
         return (c.get("region", ""), c.get("platform", ""), c.get("idx"))
 
-    # 回答内去重：同品牌 × 同 Attribute × 同方向 在一条回答里只算一次
+    # 回答内去重：同品牌 × 同 semantic claim 在一条回答里只算一次（按 claim 文本兜底）
     signal_keys: set[tuple] = set()
     per_brand_attr: dict[tuple, dict] = {}
     per_theme: dict[tuple, dict] = {}
     per_platform: dict[tuple, dict] = {}
     for c in claims:
-        key = (c["brand"], answer_key(c), c["attribute"], c["sentiment"])
+        key = (c["brand"], answer_key(c), _norm_claim_text(c.get("claim")), c["sentiment"])
         if key in signal_keys:
             continue
         signal_keys.add(key)
@@ -634,7 +640,7 @@ def main() -> None:
                             help="语义环节产出的 claims-raw JSON（unit_index/brand/claim/attribute/theme/sentiment）")
     p_assemble.add_argument("--output", required=True)
 
-    p_cm = sub.add_parser("claims-metrics", help="按 Attribute 信号口径统计正负与跨平台等权占比")
+    p_cm = sub.add_parser("claims-metrics", help="按 Claim 信号口径统计正负与跨平台等权占比")
     p_cm.add_argument("--claims", required=True, help="claims-assemble 产出的 claims JSON")
     p_cm.add_argument("--brands", default=None, help="逗号分隔的品牌；缺省取 claim 里出现的全部品牌")
     p_cm.add_argument("--brand", default=None, help="只统计该品牌")
