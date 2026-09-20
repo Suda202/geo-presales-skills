@@ -20,9 +20,10 @@ metadata:
 
 1. [数据接口契约](references/report-data-contract.md)——数据层与渲染层之间唯一的接口，改动任何一侧前必须先读。
 2. [渲染规范](references/render-spec.md)——正文/pill/表格/商品卡的渲染规则、部署体积陷阱与验证方式,改 `report.js`、`report-extra.css` 或 markdown 转换前必读。
-3. [客户中途换竞品](references/competitor-swap.md)——换展示竞品时聚合板块与逐回答的两条规则,客户中途提出换品牌时先读。
-4. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)——诊断意图与客户标签的唯一权威词表。
-3. `geo-presales-crawl-integrity` 的校验产出（前置步骤，见执行流程第 0 步）。
+3. [重跑与产物卫生](references/rerun-and-artifact-hygiene.md)——修复抽取器/清洗器/渲染器或替换已交付报告时必读；规定隔离重跑、labels 安全迁移、残留扫描、旧新对账与快照验收。
+4. [客户中途换竞品](references/competitor-swap.md)——换展示竞品时聚合板块与逐回答的两条规则,客户中途提出换品牌时先读。
+5. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)——诊断意图与客户标签的唯一权威词表。
+6. `geo-presales-crawl-integrity` 的校验产出（前置步骤，见执行流程第 0 步）。
 
 ## 输入
 
@@ -178,7 +179,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 ## 交付门槛
 
-- **源码真相在本 skill,客户 HTML 只是产物**:任何修订都改 `scripts/` 与 `assets/` 后完整重跑数据层链路(build → attach_sentiment → attach_translations → verify → render),不得手改已渲染的单页 HTML——手改产物会在下次重渲染时被静默覆盖,且让产物与 `report-data.json` 脱钩。
+- **源码真相在本 skill,客户 HTML 只是产物**:任何修订都改 `scripts/` 与 `assets/` 后完整重跑数据层链路(build → attach_sentiment → attach_translations → verify → render),不得手改已渲染的单页 HTML——手改产物会在下次重渲染时被静默覆盖,且让产物与 `report-data.json` 脱钩。若修改了抽取器/清洗器或替换已交付报告,必须先在隔离输出目录重跑并按 [重跑与产物卫生](references/rerun-and-artifact-hygiene.md) 迁移 labels、对账旧新指标,通过后才替换正式文件。
 - `verify_report_data.py` 退出码为 0，且突变测试全部检出。
 - 在浏览器里逐层切过 tab，确认没有空白模块或错位。
 - **正文不得带平台残留文案**:逐条扫 `Go to product viewer dialog for this item.`(明细与情感证据两处都要,详见 [渲染规范](references/render-spec.md))。

@@ -69,3 +69,5 @@ AI 回答 → evidence_text → Claim → Attribute → Theme → 聚合统计
 ## 与旧句级形态的关系
 
 旧的 `<品牌>-labels.json`(整句正/负)与 `compute` 子命令仍然可用,是**降级形态**:它答不了「AI 在评价哪个方面」。新报告应走 Claim 层;已交付报告不必回改,重跑时再升级。两者不要混用——同一份报告里,汇总口径必须来自同一层。
+
+**重跑与迁移**:跑过之后需要修复抽取器或替换已交付报告时,按 `geo-presales-report-builder/references/rerun-and-artifact-hygiene.md` 执行——Claim 路径的索引基座是 `claims.json` 的 `unit_index`,重抽 units 后旧 claims 整体失效,**不能改索引硬套**;句级路径按该文档的内容键规则迁移 labels。共同底线是确定性清洗不得改变任何人的语义判断。
