@@ -171,13 +171,19 @@ ANSWER_FIELD = {
     "perplexity": "result_text",
 }
 
+# Scrapeless 锚点残留文案：它紧贴在商品名后（`AquaTru CarafeGo to product
+# viewer dialog for this item.`），会让证据句带着平台 UI 文案交付给客户。
+# 与 geo-presales-report-builder 的渲染清洗共用同一常量。
+PRODUCT_VIEWER_NOISE = "Go to product viewer dialog for this item."
+
 
 def answer_text(task: dict, platform: str) -> str:
     field = ANSWER_FIELD.get(platform, "result_text")
     text = task.get(field)
     if text is None and field != "result_text":
         text = task.get("result_text")
-    return str(text or "")
+    # 换成空格而非直接删：它粘在商品名后，删掉会把两个名字拼成一个词。
+    return str(text or "").replace(PRODUCT_VIEWER_NOISE, " ")
 
 
 def answer_prompt(task: dict) -> str:

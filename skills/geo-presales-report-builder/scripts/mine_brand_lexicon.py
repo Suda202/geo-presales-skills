@@ -75,7 +75,8 @@ TEXT_FIELD_DEFAULT = "result_text"
 # Cleaning
 # --------------------------------------------------------------------------
 
-PRODUCT_VIEWER_NOISE = "Go to product viewer dialog for this item."
+# 与渲染层共用同一定义，避免两处漂移（改一处即两边生效）。
+from build_report_data import PRODUCT_VIEWER_NOISE  # noqa: E402
 
 
 def clean_text(raw: str) -> str:

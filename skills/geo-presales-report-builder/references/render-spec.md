@@ -5,7 +5,6 @@
 **源码真相在本 skill**:任何视觉修订都改 `scripts/` 与 `assets/`,然后完整重跑数据链(build → attach_sentiment → attach_translations → verify → render)。手改已渲染的 HTML 会在下次重渲染时被静默覆盖,且让产物与 `report-data.json` 脱钩。
 
 ## 正文渲染(顺序敏感)
-
 Markdown 转换的处理顺序不能随意调换,引用 pill 必须在普通链接之前:
 
 1. 先收集脚注定义行 `[N]: url "标题"`,定义行本身从正文移除,但 URL 要留住供 pill 链接。
@@ -16,6 +15,7 @@ Markdown 转换的处理顺序不能随意调换,引用 pill 必须在普通链�
 
 硬约束:
 
+- **Scrapeless 锚点残留文案必须清掉**:采集文本里混着 `Go to product viewer dialog for this item.`,它**紧贴在商品名后**(`AquaTru CarafeGo to product viewer...`),不清会直接交付给客户(实测 329 处、60 条明细、13 个切片),还会在挖词表时造出 `CarafeGo` 这类垃圾 token。清洗时**替换成空格而非删除**,否则两个名字会被粘成一个词。常量 `PRODUCT_VIEWER_NOISE` 在两处定义:渲染层 `build_report_data.py`(用 `normalize_answer_html` 清洗)与判读层 `sentiment_sentences.py`(在 `answer_text` 清洗),两边必须一致——判读层不清的话,情感证据句仍会带着这串 UI 文案上屏。加同类清洗时同步扩这两处,并补 `tests/test_normalize_answer.py` 的回归用例。
 - 品牌高亮**不得覆盖 pill 自身的颜色**;高亮规则要在 pill 生成之后排除 pill 内部文本。
 - `answer_html` / `answer_zh_html` 已是转义好的成品,渲染层不要再二次转义。
 

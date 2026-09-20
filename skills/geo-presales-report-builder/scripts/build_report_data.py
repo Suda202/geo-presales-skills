@@ -1333,6 +1333,8 @@ def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
 
 # 回答正文里混着平台的原始 HTML。转义前必须按类型处理，否则会被当文本显示——
 # 实测 `<img src="data:image/jpeg;base64,...">` 一出现就是几百字，把表格单元撑爆。
+# Scrapeless 锚点残留文案（挖词表脚本用同一常量做清洗）
+PRODUCT_VIEWER_NOISE = "Go to product viewer dialog for this item."
 _HTML_IMG = re.compile(r"<img\b[^>]*>", re.I)
 _HTML_IMAGE_ALT = re.compile(r"<image\b[^>]*>", re.I)
 # 平台给的交互建议块（追问、相关推荐），不是回答内容，整块去掉
@@ -1401,6 +1403,10 @@ def normalize_answer_html(text: str) -> str:
     最后才展开布局标签——顺序反了会留下孤立属性。
     """
     value = str(text or "")
+    # Scrapeless 锚点残留文案：它紧贴在商品名后（`AquaTru CarafeGo to product
+    # viewer dialog for this item.`），必须换成空格而不是直接删，否则两个名字
+    # 会粘成一个词；同一常量在 mine_brand_lexicon.py 用于挖词表时的清洗。
+    value = value.replace(PRODUCT_VIEWER_NOISE, " ")
     # 先保护商品表中的图片，普通回答中的图片仍按原规则删除。
     value = _protect_product_table_images(value)
     value = _HTML_IMG.sub("", value)

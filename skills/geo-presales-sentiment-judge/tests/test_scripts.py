@@ -188,6 +188,30 @@ class MultiBrandExtractTests(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0)
 
 
+class PlatformNoiseTests(unittest.TestCase):
+    """Scrapeless 锚点残留文案必须在抽取时清掉，且不得把商品名粘成新词。"""
+
+    NOISE = "Go to product viewer dialog for this item."
+
+    def test_noise_is_stripped_and_names_stay_separated(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            bank, lexicon, crawl = make_lexicon_case(root)
+            path = os.path.join(crawl, "scraper.overview", "MY", "0001.json")
+            payload = json.load(open(path))
+            payload["task_result"]["content"] = (
+                f"**Bewinch** and Novita both work well here. AquaTru Carafe{self.NOISE} is cheaper.")
+            json.dump(payload, open(path, "w"))
+
+            out = os.path.join(root, "units.json")
+            proc = run("extract", "--bank", bank, "--crawl-dir", crawl,
+                       "--lexicon", lexicon, "--output", out)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            texts = " ".join(u["unit"] for u in json.load(open(out))["units"])
+            self.assertNotIn(self.NOISE, texts)
+            self.assertNotIn("Carafeis", texts)
+            self.assertIn("Carafe", texts)
+
+
 class ExtractTests(unittest.TestCase):
     def test_extract_scopes_decites_splits_and_filters(self) -> None:
         with tempfile.TemporaryDirectory() as root:
