@@ -336,3 +336,117 @@ class ComputeRegionKeyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClaimLayerTests(unittest.TestCase):
+    """Claim 层的四层结构与统计口径（2026-09-20 设计定稿）。"""
+
+    @staticmethod
+    def write_units(root, rows):
+        path = os.path.join(root, "units.json")
+        json.dump({"meta": {}, "units": rows}, open(path, "w"), ensure_ascii=False)
+        return path
+
+    @staticmethod
+    def claim(unit_index, brand, attribute, theme, sentiment, idx=1, platform="chatgpt",
+              region="MY"):
+        return {"unit_index": unit_index, "brand": brand, "claim": f"{attribute} 的原文观点",
+                "attribute": attribute, "theme": theme, "sentiment": sentiment,
+                "_idx": idx, "_platform": platform, "_region": region}
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.units = self.write_units(self.tmp, [
+            {"platform": "chatgpt", "region": "MY", "idx": 1, "question_id": "0001",
+             "intent": "Discovery", "brand": "A", "brand_type": "target", "unit": "A is cheap."},
+            {"platform": "chatgpt", "region": "MY", "idx": 2, "question_id": "0002",
+             "intent": "Evaluation", "brand": "A", "brand_type": "target", "unit": "A is slow."},
+        ])
+
+    def run_cmd(self, *argv):
+        return subprocess.run([sys.executable, SCRIPT, *map(str, argv)],
+                              capture_output=True, text=True)
+
+    def test_assemble_fills_evidence_and_context(self):
+        raw = os.path.join(self.tmp, "raw.json")
+        json.dump([{"unit_index": 0, "brand": "A", "claim": "价格便宜",
+                    "attribute": "价格有竞争力", "theme": "价格", "sentiment": "positive"}],
+                  open(raw, "w"), ensure_ascii=False)
+        out = os.path.join(self.tmp, "claims.json")
+        proc = self.run_cmd("claims-assemble", "--units", self.units, "--claims", raw,
+                            "--output", out)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        c = json.load(open(out))["claims"][0]
+        self.assertEqual("A is cheap.", c["evidence_text"])
+        self.assertEqual("0001", c["question_id"])
+        self.assertEqual("MY", c["region"])
+
+    def test_assemble_rejects_wrong_brand_and_bad_unit_index(self):
+        for bad, needle in (
+            ({"unit_index": 0, "brand": "B", "claim": "x", "attribute": "y",
+              "theme": "价格", "sentiment": "positive"}, "品牌不符"),
+            ({"unit_index": 99, "brand": "A", "claim": "x", "attribute": "y",
+              "theme": "价格", "sentiment": "positive"}, "越界"),
+            ({"unit_index": 0, "brand": "A", "claim": "x", "attribute": "y",
+              "theme": "价格", "sentiment": "neutral"}, "只允许"),
+        ):
+            raw = os.path.join(self.tmp, "bad.json")
+            json.dump([bad], open(raw, "w"), ensure_ascii=False)
+            proc = self.run_cmd("claims-assemble", "--units", self.units, "--claims", raw,
+                                "--output", os.path.join(self.tmp, "o.json"))
+            self.assertNotEqual(0, proc.returncode)
+            self.assertIn(needle, proc.stderr)
+
+    def test_metrics_dedupe_within_answer_keep_across_answers(self):
+        raw = os.path.join(self.tmp, "raw.json")
+        json.dump([
+            # 同回答同属性同方向 → 只计 1 次
+            {"unit_index": 0, "brand": "A", "claim": "免安装", "attribute": "安装便捷",
+             "theme": "安装", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "零管线", "attribute": "安装便捷",
+             "theme": "安装", "sentiment": "positive"},
+            # 跨回答同属性同方向 → 分别计数
+            {"unit_index": 1, "brand": "A", "claim": "免安装", "attribute": "安装便捷",
+             "theme": "安装", "sentiment": "positive"},
+            # 同回答同属性但反向 → 各自计
+            {"unit_index": 0, "brand": "A", "claim": "安装复杂", "attribute": "安装便捷",
+             "theme": "安装", "sentiment": "negative"},
+        ], open(raw, "w"), ensure_ascii=False)
+        claims = os.path.join(self.tmp, "claims.json")
+        self.run_cmd("claims-assemble", "--units", self.units, "--claims", raw, "--output", claims)
+        metrics_path = os.path.join(self.tmp, "m.json")
+        proc = self.run_cmd("claims-metrics", "--claims", claims, "--brands", "A",
+                            "--out-metrics", metrics_path)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        m = json.load(open(metrics_path))
+        self.assertEqual(4, m["claim_total"])
+        self.assertEqual(3, m["deduped_signal_total"])  # 4 条 claim → 3 个信号
+        self.assertEqual(2, m["by_brand"]["A"]["positive_signals"])
+        self.assertEqual(1, m["by_brand"]["A"]["negative_signals"])
+
+    def test_cross_platform_equal_weight_ignores_platforms_without_signal(self):
+        units = self.write_units(self.tmp, [
+            {"platform": "chatgpt", "region": "MY", "idx": 1, "question_id": "0001",
+             "intent": "Discovery", "brand": "A", "unit": "u1"},
+            {"platform": "gemini", "region": "MY", "idx": 2, "question_id": "0002",
+             "intent": "Discovery", "brand": "A", "unit": "u2"},
+            {"platform": "perplexity", "region": "MY", "idx": 3, "question_id": "0003",
+             "intent": "Discovery", "brand": "A", "unit": "u3"},
+        ])
+        raw = os.path.join(self.tmp, "raw.json")
+        json.dump([
+            # chatgpt: 2 正 / 1 负 = 66.7%
+            {"unit_index": 0, "brand": "A", "claim": "c1", "attribute": "a1", "theme": "t", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "c2", "attribute": "a2", "theme": "t", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "c3", "attribute": "a3", "theme": "t", "sentiment": "negative"},
+            # gemini: 1 负 = 0%
+            {"unit_index": 1, "brand": "A", "claim": "c4", "attribute": "a4", "theme": "t", "sentiment": "negative"},
+            # perplexity: 无信号，不补 0 → 等权分母只算 2 个平台 = 33.35%
+        ], open(raw, "w"), ensure_ascii=False)
+        claims = os.path.join(self.tmp, "claims.json")
+        self.run_cmd("claims-assemble", "--units", units, "--claims", raw, "--output", claims)
+        metrics_path = os.path.join(self.tmp, "m.json")
+        self.run_cmd("claims-metrics", "--claims", claims, "--brands", "A", "--out-metrics", metrics_path)
+        m = json.load(open(metrics_path))["by_brand"]["A"]
+        self.assertEqual(2, m["platforms_with_signal"])
+        self.assertEqual("33.3%", m["pos_rate_cross_platform"])  # (66.7+0)/2

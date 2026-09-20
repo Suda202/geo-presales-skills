@@ -143,7 +143,10 @@
 
 **sentiment**
 
+> **两种口径并存,同一份报告只能用一种**:`metric_basis=attribute_signals` 表示走 Claim 层(Attribute 信号统计,推荐);无该字段表示句级降级路径(整句正负计数)。两者数字不可比。
+
 - `summary.pos_rate` 与 `neg_rate` 的分母是 `pos+neg`，**排除中性**，且两者相加为 100%。
+- **Claim 层**(`--claims` 提供时):`summary.total` = 去重后的 Attribute 信号数(同回答同品牌同 Attribute 同方向只计 1 次);`pos_rate_cross_platform` 是各平台先算、再对**有信号的平台等权平均**的结果(无信号平台不补 0);`platforms_with_signal` 要一并展示,否则客户会以为等权值覆盖了全部平台。
 - `claims.pos` / `claims.neg` 是**归纳后的观点组**：`label` 为 4–8 字中文短语，`count` 是该观点在本切片内的出现次数，`evidence` 每组只给**一条**最有代表性的句子并附 `region`/`platform`/`question_id`（面板上的「查看对应回答」据此跳转）。
 - 归纳本身是全局做的；**每个切片按成员归属过滤后重算 `count` 并重选证据**，某切片里一条都不含的观点组不出现在该切片。
 - `matrix` 是**品牌情感占比表**，不是「属性 × 品牌」矩阵：判读按整句给方向、没有逐句属性标注，按关键词把长句切进属性格会同时错配品牌与方向，给客户看会误导。
@@ -152,6 +155,7 @@
   - 主题由 `--theme-keywords` 的词表把 claim 标签归一来定；未命中的归「其他」且不入矩阵。**换品类必须提供该品类的关键词表**，否则矩阵整块为空。
   - 展示颜色：正向绿、负向红、无数据 `—` 黑；主题列与非目标品牌表头黑，目标品牌高亮。
 - `rows[].values` 与 `columns` 同序；`target` 为真的行是本品。末列「代表证据」要求句子明确点名该品牌且不含其他展示品牌，并优先取 60 字以上的完整句（标题式短句说明不了问题）。
+- `by_brand` 在 Claim 层下按品牌给 `signal_total` / `positive_signals` / `negative_signals` / `pos_rate` / `pos_rate_cross_platform` / `platforms_with_signal` / `by_platform` / `by_attribute` / `by_theme`；句级路径下是 `positive`/`negative`/`pos_rate`。前端读字段前先看 `metric_basis`。
 
 **records**
 

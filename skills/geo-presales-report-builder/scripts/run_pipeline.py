@@ -97,10 +97,6 @@ def stage_sentiment(args, out: Path) -> None:
         print("○ [3 情感] 未提供 --brands/--target,跳过(报告情感板块为 pending)")
         return
     units = out / "sentiment-units.json"
-    batches = out / "sentiment-batches"
-    claims_dir = out / "sentiment-claims"
-    judged = claims_dir / "judged-sentences.json"
-    brand_list = [b.strip() for b in args.brands.split(",") if b.strip()]
 
     if not units.exists():
         run([sys.executable, JUDGE, "extract", "--bank", args.questions,
@@ -109,34 +105,31 @@ def stage_sentiment(args, out: Path) -> None:
     else:
         print(f"✓ [3a 情感抽取] {units}")
 
-    missing_labels = [b for b in brand_list if not (batches / f"{b}-labels.json").exists()]
-    if missing_labels:
-        run([sys.executable, HERE / "prep_sentiment_handoff.py", "split",
-             "--units", units, "--brands", args.brands, "--out-dir", batches],
-            args.dry_run, "3b 判读拆批")
+    # 3b/3c：抽 Claim 层（语义）+ 回装校验（确定性）
+    claims_raw = out / "claims-raw.json"
+    claims_file = out / "claims.json"
+    if not claims_raw.exists():
         raise Pause(
-            f"缺判读标签:{', '.join(missing_labels)}。批次视图已在 {batches}/<品牌>.json,"
-            f"请按 geo-presales-sentiment-judge 的判读规则逐句语义判读,"
-            f"写 {batches}/<品牌>-labels.json(全局 idx,格式 {{\"positive\":[...],\"negative\":[...]}}),"
-            f"拿不准的记入 {batches}/review-queue.md 交 Suda 裁决。禁止关键词自动打标。")
+            f"请抽 Claim 层:读 {units},按 references/claim-layer-contract.md 逐单元拆出**原子 Claim**,"
+            f"每条标注 attribute / theme / sentiment(一句话含多个观点就拆多条;"
+            f"品牌未提及或无明确倾向的不生成 Claim),写 {claims_raw}(数组,每条只给 "
+            f"unit_index/brand/claim/attribute/theme/sentiment)。"
+            f"拿不准的记入 {out}/review-queue.md 交 Suda 裁决,禁止关键词自动打标。")
+    else:
+        print(f"✓ [3b Claim 抽取] {claims_raw}")
 
-    run([sys.executable, HERE / "prep_sentiment_handoff.py", "assemble",
-         "--units", units, "--labels-dir", batches, "--brands", args.brands,
-         "--out", judged], args.dry_run, "3c 判读回装")
+    run([sys.executable, JUDGE, "claims-assemble", "--units", units,
+         "--claims", claims_raw, "--output", claims_file], args.dry_run, "3c Claim 回装")
 
-    missing_claims = [b for b in brand_list if not (claims_dir / f"{b}-claims.json").exists()]
-    if missing_claims:
-        raise Pause(
-            f"缺观点归纳:{', '.join(missing_claims)}。请读 {judged} 按品牌把判读句子"
-            f"归纳成 4–8 组,写 {claims_dir}/<品牌>-claims.json"
-            f"(格式见 references/sentiment-handoff-contract.md,indices 指向同方向数组下标,须互斥且穷尽)。")
-
-    run([sys.executable, HERE / "prep_sentiment_handoff.py", "check-claims",
-         "--judged", judged, "--claims-dir", claims_dir], args.dry_run, "3d 归纳校验")
+    metrics_file = out / "claims-metrics.json"
+    run([sys.executable, JUDGE, "claims-metrics", "--claims", claims_file,
+         "--brands", args.brands, "--out-metrics", metrics_file], args.dry_run, "3d Claim 统计")
 
     run([sys.executable, HERE / "attach_sentiment.py",
          "--report", out / "report-data.json", "--units", units,
-         "--labels-dir", batches, "--brands", args.brands, "--target", args.target,
+         "--labels-dir", out / "sentiment-batches", "--brands", args.brands,
+         "--target", args.target, "--claims", claims_file,
+         "--expected-metrics", metrics_file,
          *(["--theme-keywords", args.theme_keywords] if args.theme_keywords else []),
          "--out", out / "report-data.json"], args.dry_run, "3e 情感接入")
 

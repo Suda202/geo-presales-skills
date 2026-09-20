@@ -443,6 +443,164 @@ def cmd_compute(args: argparse.Namespace) -> None:
         print(f"写入 {args.out_metrics}")
 
 
+def _load_claims(path: str) -> list[dict]:
+    payload = json.load(open(path))
+    claims = payload.get("claims") if isinstance(payload, dict) else payload
+    if not isinstance(claims, list):
+        raise SystemExit(f"{path} 应为 claims 数组，或 {{\"claims\": [...]}}")
+    return claims
+
+
+def cmd_claims_assemble(args: argparse.Namespace) -> None:
+    """把模型抽出的 Claim 层回装成带完整上下文的记录。
+
+    输入：units.json（extract 产出，提供 evidence_text 与平台/地区/题号/意图上下文）
+        + claims-raw.json（语义环节产出，每条只需给出 unit_index / brand / claim /
+          attribute / theme / sentiment）。
+    输出：claims.json —— 每条补齐 evidence_text 与上下文，供统计与明细展示使用。
+    """
+    units = json.load(open(args.units))["units"]
+    raw = _load_claims(args.claims)
+    out = []
+    problems = []
+    for i, item in enumerate(raw):
+        # 注意：unit_index 可以是 0，不能用 `or ""` 判空（会把 0 当缺失）。
+        missing = [f for f in ("brand", "claim", "attribute", "theme", "sentiment")
+                   if not str(item.get(f) or "").strip()]
+        if item.get("unit_index") is None:
+            missing.insert(0, "unit_index")
+        if missing:
+            problems.append(f"第 {i} 条缺字段:{'、'.join(missing)}")
+            continue
+        unit_index = item["unit_index"]
+        if not isinstance(unit_index, int) or not 0 <= unit_index < len(units):
+            problems.append(f"第 {i} 条 unit_index 越界:{unit_index}")
+            continue
+        unit = units[unit_index]
+        if item["brand"] != unit.get("brand"):
+            problems.append(
+                f"第 {i} 条品牌不符:claim 写 {item['brand']!r}，unit {unit_index} 属于 {unit.get('brand')!r}")
+            continue
+        direction = str(item["sentiment"]).strip()
+        if direction not in ("positive", "negative", "正向", "负向"):
+            problems.append(f"第 {i} 条 sentiment 只允许 positive/negative:{direction!r}")
+            continue
+        out.append({
+            "unit_index": unit_index,
+            "idx": unit.get("idx"),
+            "region": unit.get("region"),
+            "platform": unit.get("platform"),
+            "question_id": unit.get("question_id"),
+            "intent": unit.get("intent"),
+            "brand": item["brand"],
+            "brand_type": unit.get("brand_type"),
+            "claim": str(item["claim"]).strip(),
+            "attribute": str(item["attribute"]).strip(),
+            "theme": str(item["theme"]).strip(),
+            "sentiment": "positive" if direction in ("positive", "正向") else "negative",
+            "evidence_text": unit.get("unit", ""),
+        })
+    if problems:
+        for p in problems[:20]:
+            print("校验失败:", p, file=sys.stderr)
+        if len(problems) > 20:
+            print(f"... 另有 {len(problems) - 20} 条", file=sys.stderr)
+        raise SystemExit(f"claims 校验未通过（{len(problems)} 条问题）")
+    json.dump({"meta": {"unit_source": args.units, "claim_count": len(out)},
+               "claims": out}, open(args.output, "w"), ensure_ascii=False, indent=1)
+    by_dir = collections.Counter(c["sentiment"] for c in out)
+    print(f"回装 {len(out)} 条 claim（正向 {by_dir.get('positive', 0)} / 负向 {by_dir.get('negative', 0)}）")
+    print(f"写入 {args.output}")
+
+
+def cmd_claims_metrics(args: argparse.Namespace) -> None:
+    """按设计的统计口径计算 Claim / Attribute / Theme 三层指标。
+
+    口径（2026-09-20 设计定稿）：
+      * 最小结构化单位 = Prompt × 平台 × 回答 × Brand × Claim；
+      * 同一回答内、同一品牌 × 同一 Attribute × 同一方向只计 1 次，
+        **跨回答分别计数**（先做回答内去重，再汇总）；
+      * 正向占比 = 正向 Attribute 信号数 ÷ 正负向 Attribute 信号数合计；
+      * 跨平台先算各平台占比，再对**有有效信号的平台等权平均**，无信号平台不补 0。
+    """
+    claims = _load_claims(args.claims)
+    brands = [b.strip() for b in args.brands.split(",") if b.strip()] if args.brands else \
+        sorted({c["brand"] for c in claims})
+    if args.brand:
+        claims = [c for c in claims if c["brand"] == args.brand]
+        brands = [args.brand]
+
+    def answer_key(c: dict) -> tuple:
+        return (c.get("region", ""), c.get("platform", ""), c.get("idx"))
+
+    # 回答内去重：同品牌 × 同 Attribute × 同方向 在一条回答里只算一次
+    signal_keys: set[tuple] = set()
+    per_brand_attr: dict[tuple, dict] = {}
+    per_theme: dict[tuple, dict] = {}
+    per_platform: dict[tuple, dict] = {}
+    for c in claims:
+        key = (c["brand"], answer_key(c), c["attribute"], c["sentiment"])
+        if key in signal_keys:
+            continue
+        signal_keys.add(key)
+        pk = (c["brand"], c.get("platform", ""))
+        bucket = per_platform.setdefault(pk, {"pos": 0, "neg": 0})
+        bucket["pos" if c["sentiment"] == "positive" else "neg"] += 1
+        attr_key = (c["brand"], c["attribute"], c["sentiment"])
+        per_brand_attr[attr_key] = per_brand_attr.get(attr_key, 0) + 1
+        theme_key = (c["brand"], c["theme"], c["sentiment"])
+        per_theme[theme_key] = per_theme.get(theme_key, 0) + 1
+
+    def rate(pos: int, neg: int) -> str:
+        total = pos + neg
+        return f"{pos / total * 100:.1f}%" if total else "—"
+
+    by_brand = {}
+    for brand in brands:
+        pos = sum(v for (b, _t, s), v in per_theme.items() if b == brand and s == "positive")
+        neg = sum(v for (b, _t, s), v in per_theme.items() if b == brand and s == "negative")
+        platform_rates = []
+        for (b, plat), bucket in sorted(per_platform.items()):
+            if b != brand or bucket["pos"] + bucket["neg"] == 0:
+                continue
+            platform_rates.append(bucket["pos"] / (bucket["pos"] + bucket["neg"]))
+        by_brand[brand] = {
+            "signal_total": pos + neg,
+            "positive_signals": pos,
+            "negative_signals": neg,
+            "pos_rate": rate(pos, neg),
+            "platforms_with_signal": len(platform_rates),
+            "pos_rate_cross_platform": (
+                f"{sum(platform_rates) / len(platform_rates) * 100:.1f}%" if platform_rates else "—"),
+            "by_platform": {
+                plat: {"positive": b["pos"], "negative": b["neg"], "pos_rate": rate(b["pos"], b["neg"])}
+                for (brand_name, plat), b in sorted(per_platform.items()) if brand_name == brand
+            },
+            "by_attribute": sorted(
+                ({"attribute": a, "sentiment": s, "occurrence": v}
+                 for (b, a, s), v in per_brand_attr.items() if b == brand),
+                key=lambda x: (-x["occurrence"], x["attribute"])),
+            "by_theme": sorted(
+                ({"theme": t, "sentiment": s, "occurrence": v}
+                 for (b, t, s), v in per_theme.items() if b == brand),
+                key=lambda x: x["theme"]),
+        }
+
+    metrics = {
+        "brands": brands,
+        "claim_total": len(claims),
+        "deduped_signal_total": len(signal_keys),
+        "by_brand": by_brand,
+    }
+    json.dump(metrics, open(args.out_metrics, "w"), ensure_ascii=False, indent=1)
+    for brand in brands:
+        s = by_brand[brand]
+        print(f"{brand}: 信号 {s['signal_total']}（正 {s['positive_signals']} / 负 {s['negative_signals']}）"
+              f" 正向占比 {s['pos_rate']}，跨平台等权 {s['pos_rate_cross_platform']}"
+              f"（有信号平台 {s['platforms_with_signal']} 个）")
+    print(f"写入 {args.out_metrics}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -468,11 +626,29 @@ def main() -> None:
     p_compute.add_argument("--out-csv", required=True)
     p_compute.add_argument("--out-metrics", default=None)
 
+    # Claim 层（四层结构：evidence_text → Claim → Attribute → Theme）
+    p_assemble = sub.add_parser("claims-assemble",
+                                help="把模型抽出的 Claim 回装成带证据与上下文的记录")
+    p_assemble.add_argument("--units", required=True, help="extract 产出的单元 JSON")
+    p_assemble.add_argument("--claims", required=True,
+                            help="语义环节产出的 claims-raw JSON（unit_index/brand/claim/attribute/theme/sentiment）")
+    p_assemble.add_argument("--output", required=True)
+
+    p_cm = sub.add_parser("claims-metrics", help="按 Attribute 信号口径统计正负与跨平台等权占比")
+    p_cm.add_argument("--claims", required=True, help="claims-assemble 产出的 claims JSON")
+    p_cm.add_argument("--brands", default=None, help="逗号分隔的品牌；缺省取 claim 里出现的全部品牌")
+    p_cm.add_argument("--brand", default=None, help="只统计该品牌")
+    p_cm.add_argument("--out-metrics", required=True)
+
     args = parser.parse_args()
     if args.command == "extract":
         cmd_extract(args)
-    else:
+    elif args.command == "compute":
         cmd_compute(args)
+    elif args.command == "claims-assemble":
+        cmd_claims_assemble(args)
+    else:
+        cmd_claims_metrics(args)
 
 
 if __name__ == "__main__":

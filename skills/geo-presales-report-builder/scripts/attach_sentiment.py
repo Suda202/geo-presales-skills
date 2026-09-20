@@ -278,6 +278,196 @@ def load_all_claim_groups(claims_dir: Path, sentences_path: Path, brands: list[s
     return out
 
 
+def load_claims_file(path) -> list[dict]:
+    """读 Claim 层产物（sentiment-judge 的 claims-assemble 输出）。"""
+    if path is None:
+        return []
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    claims = payload.get("claims") if isinstance(payload, dict) else payload
+    if not isinstance(claims, list):
+        raise SystemExit(f"{path} 应为 claims 数组，或 {{\"claims\": [...]}}")
+    return claims
+
+
+def _verify_claim_metrics(claims: list[dict], brands: list[str], target: str,
+                          expected: dict) -> None:
+    """把本 skill 的全局 Claim 统计与 sentiment-judge 的 claims-metrics 对账。
+
+    两处实现同一套口径（回答内去重、跨回答保留、跨平台等权不补 0），
+    不一致说明有一侧被改动过——直接报错，不让它静默进入报告。
+    """
+    seen: set[tuple] = set()
+    per_brand: dict[str, dict] = {}
+    for c in claims:
+        brand = c.get("brand")
+        if brand not in brands:
+            continue
+        direction = c.get("sentiment") or ""
+        if direction not in ("positive", "negative"):
+            continue
+        key = (brand, (c.get("region", ""), c.get("platform", ""), c.get("idx")),
+               c.get("attribute"), direction)
+        if key in seen:
+            continue
+        seen.add(key)
+        slot = "pos" if direction == "positive" else "neg"
+        per_brand.setdefault(brand, {"pos": 0, "neg": 0})[slot] += 1
+
+    mismatches = []
+    for brand, exp in (expected.get("by_brand") or {}).items():
+        got = per_brand.get(brand)
+        if got is None:
+            mismatches.append(f"{brand}: 本地没有该品牌的 claim")
+            continue
+        if got["pos"] != exp.get("positive_signals") or got["neg"] != exp.get("negative_signals"):
+            mismatches.append(
+                f"{brand}: 本地 正{got['pos']}/负{got['neg']} vs claims-metrics "
+                f"正{exp.get('positive_signals')}/负{exp.get('negative_signals')}")
+    if mismatches:
+        for m in mismatches[:10]:
+            print("口径对账不一致:", m, file=sys.stderr)
+        raise SystemExit("Claim 统计口径与 sentiment-judge claims-metrics 不一致，请先对齐口径")
+    print(f"口径对账通过：{len(expected.get('by_brand') or {})} 个品牌与 claims-metrics 一致")
+
+
+def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
+                           target: str) -> dict | None:
+    """按 Claim 层的 Attribute 信号口径聚合（2026-09-20 设计定稿）。
+
+    与句级路径的区别：统计单位是 **Attribute 信号**而非句子数。
+      * 回答内去重：同品牌 × 同 Attribute × 同方向在一条回答里只计 1 次；
+      * 跨回答分别计数；
+      * 正向占比 = 正向信号 ÷ 正负信号合计；
+      * 跨平台等权、无信号平台不补 0。
+    """
+    if not claims:
+        return None
+
+    def answer_key(c: dict) -> tuple:
+        return (c.get("region", ""), c.get("platform", ""), c.get("idx"))
+
+    seen: set[tuple] = set()
+    per_brand_attr: dict[tuple, int] = {}
+    per_brand_theme: dict[tuple, int] = {}
+    per_platform: dict[tuple, dict] = {}
+    per_answer: dict[tuple, list] = {}
+    for c in claims:
+        brand = c.get("brand")
+        if brand not in brands:
+            continue
+        key = (brand, answer_key(c), c.get("attribute"), c.get("sentiment"))
+        if key in seen:
+            continue
+        seen.add(key)
+        direction = c.get("sentiment") or ""
+        if direction not in ("positive", "negative"):
+            continue
+        slot = "pos" if direction == "positive" else "neg"
+        bucket = per_platform.setdefault((brand, c.get("platform", "")), {"pos": 0, "neg": 0})
+        bucket[slot] += 1
+        per_brand_attr[(brand, c.get("attribute") or "", direction)] = \
+            per_brand_attr.get((brand, c.get("attribute") or "", direction), 0) + 1
+        per_brand_theme[(brand, c.get("theme") or "", direction)] = \
+            per_brand_theme.get((brand, c.get("theme") or "", direction), 0) + 1
+        per_answer.setdefault(f"{c.get('region','')}|{c.get('platform','')}|{c.get('idx')}", []).append({
+            "brand": c.get("brand"),
+            "claim": c.get("claim"),
+            "attribute": c.get("attribute"),
+            "theme": c.get("theme"),
+            "sentiment": c.get("sentiment"),
+            "evidence_text": c.get("evidence_text"),
+            "question_id": c.get("question_id"),
+        })
+
+    def rate(pos: int, neg: int) -> str:
+        total = pos + neg
+        return f"{pos / total * 100:.1f}%" if total else "—"
+
+    brand_stats = {}
+    for brand in brands:
+        pos = sum(v for (b, _a, s), v in per_brand_attr.items() if b == brand and s == "positive")
+        neg = sum(v for (b, _a, s), v in per_brand_attr.items() if b == brand and s == "negative")
+        platform_rates = [b["pos"] / (b["pos"] + b["neg"])
+                          for (bn, _p), b in per_platform.items()
+                          if bn == brand and b["pos"] + b["neg"] > 0]
+        brand_stats[brand] = {
+            "signal_total": pos + neg,
+            "positive_signals": pos,
+            "negative_signals": neg,
+            "pos_rate": rate(pos, neg),
+            "platforms_with_signal": len(platform_rates),
+            "pos_rate_cross_platform": (f"{sum(platform_rates) / len(platform_rates) * 100:.1f}%"
+                                        if platform_rates else "—"),
+            "by_platform": {
+                plat: {"positive": b["pos"], "negative": b["neg"], "pos_rate": rate(b["pos"], b["neg"])}
+                for (bn, plat), b in sorted(per_platform.items()) if bn == brand
+            },
+            "by_attribute": sorted(
+                ({"attribute": a, "sentiment": s, "occurrence": v}
+                 for (b, a, s), v in per_brand_attr.items() if b == brand),
+                key=lambda x: (-x["occurrence"], x["attribute"])),
+            "by_theme": sorted(
+                ({"theme": t, "sentiment": s, "occurrence": v}
+                 for (b, t, s), v in per_brand_theme.items() if b == brand),
+                key=lambda x: (x["theme"], x["sentiment"])),
+        }
+
+    # Theme × 品牌 矩阵：单元格取该主题下计数最高的 Attribute 作代表描述（不是数字）
+    themes: list[str] = []
+    attr_theme: dict[tuple, str] = {}
+    for c in claims:
+        t = c.get("theme")
+        if t and t not in themes:
+            themes.append(t)
+        attr_theme[(c.get("brand"), c.get("attribute"))] = t
+    matrix = {t: {} for t in themes}
+    for theme in themes:
+        for brand in brands:
+            rows = [(a, s, v) for (b, a, s), v in per_brand_attr.items()
+                    if b == brand and attr_theme.get((b, a)) == theme]
+            if not rows:
+                matrix[theme][brand] = {"pos": 0, "neg": 0, "top_attribute": "",
+                                        "top_count": 0, "top_dir": "", "rate": "—"}
+                continue
+            top = max(rows, key=lambda r: (r[2], r[0]))
+            pos = sum(v for _a, s, v in rows if s == "positive")
+            neg = sum(v for _a, s, v in rows if s == "negative")
+            matrix[theme][brand] = {
+                "pos": pos, "neg": neg,
+                "top_attribute": top[0], "top_count": top[2],
+                "top_dir": "pos" if top[1] == "positive" else "neg",
+                "rate": rate(pos, neg),
+            }
+
+    target_stats = brand_stats.get(target, {})
+    return {
+        "metric_basis": "attribute_signals",
+        "summary": {
+            "total": target_stats.get("signal_total", 0),
+            "pos": target_stats.get("positive_signals", 0),
+            "neu": 0,
+            "neg": target_stats.get("negative_signals", 0),
+            "pos_rate": target_stats.get("pos_rate", "—"),
+            "neg_rate": "—" if target_stats.get("pos_rate") in (None, "—")
+                        else rate(target_stats.get("negative_signals", 0),
+                                  target_stats.get("positive_signals", 0)),
+            "pos_rate_cross_platform": target_stats.get("pos_rate_cross_platform", "—"),
+            "platforms_with_signal": target_stats.get("platforms_with_signal", 0),
+        },
+        "claims": {
+            "pos": [{"label": a["attribute"], "count": a["occurrence"],
+                     "evidence": {}} for a in target_stats.get("by_attribute", [])
+                    if a["sentiment"] == "positive"],
+            "neg": [{"label": a["attribute"], "count": a["occurrence"],
+                     "evidence": {}} for a in target_stats.get("by_attribute", [])
+                    if a["sentiment"] == "negative"],
+        },
+        "by_brand": brand_stats,
+        "theme_matrix": {"themes": themes, "brands": list(brands), "matrix": matrix},
+        "answer_sentiment": per_answer,
+    }
+
+
 def sliced_claims(groups: list[dict], predicate) -> list[dict]:
     """按当前切片过滤观点组，并用切片内的成员重算计数。
 
@@ -370,18 +560,27 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="把情感判读结果接入报告数据")
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--units", type=Path, required=True)
-    parser.add_argument("--labels-dir", type=Path, required=True)
+    parser.add_argument("--labels-dir", type=Path, required=True,
+                        help="句级标签目录（含 <品牌>-labels.json）。走 Claim 层时该目录只需用于定位 "
+                             "sentiment-claims/ 兄弟目录，句级标签不读")
     parser.add_argument("--brands", required=True, help="逗号分隔的展示品牌")
     parser.add_argument("--target", required=True)
     parser.add_argument("--theme-keywords", type=Path,
                         help="主题关键词表 JSON（{\"<Theme>\": [关键词...]}）；换品类必须提供，"
-                             "缺省用内置的净水器品类词表，其他品类会整块落入「其他」不入矩阵")
+                             "缺省用内置的净水器品类词表，其他品类会整块落入「其他」不入矩阵。"
+                             "仅在走句级降级路径时使用——Claim 层自带 attribute/theme，不需要关键词表")
+    parser.add_argument("--claims", type=Path, default=None,
+                        help="Claim 层产物（sentiment-judge claims-assemble 输出）。"
+                             "提供时按 Attribute 信号口径聚合（推荐）；不提供则回落句级路径")
+    parser.add_argument("--expected-metrics", type=Path, default=None,
+                        help="sentiment-judge claims-metrics 的产出；提供时逐品牌对账统计口径，不一致即报错")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
     brands = [b.strip() for b in args.brands.split(",") if b.strip()]
     units = json.loads(args.units.read_text(encoding="utf-8"))["units"]
-    merged = merge_labels(args.labels_dir, brands)
+    # Claim 层路径不需要句级标签；只有句级路径才合并 labels。
+    merged = {"positive": [], "negative": []} if args.claims else merge_labels(args.labels_dir, brands)
 
     report = json.loads(args.report.read_text(encoding="utf-8"))
     meta = report.get("meta", {})
@@ -397,14 +596,24 @@ def main() -> int:
 
     claims_dir = args.labels_dir.parent / "sentiment-claims"
     sentences_path = claims_dir / "judged-sentences.json"
+    claims = load_claims_file(args.claims)
+    # Claim 层路径不需要句级 labels / judged-sentences；句级路径才加载它们。
     target_groups = None
     all_claims: dict = {}
-    if sentences_path.exists():
+    if not claims and sentences_path.exists():
         target_groups = load_claim_groups(claims_dir, sentences_path, args.target)
         all_claims = load_all_claim_groups(claims_dir, sentences_path, brands)
     theme_keywords = load_theme_keywords(args.theme_keywords)
-    if args.theme_keywords is None:
-        print("提示: 未提供 --theme-keywords,主题矩阵使用内置净水器品类词表;"
+    if claims:
+        print(f"Claim 层聚合：{len(claims)} 条 claim（Attribute 信号口径，回答内去重 + 跨平台等权）")
+        # 口径对账：本 skill 出的是「每个切片」的统计，sentiment-judge 的
+        # claims-metrics 出全局统计——两处实现同一套规则（回答内去重、跨回答保留、
+        # 跨平台不补 0），必须一致。传了 --expected-metrics 时逐品牌核对，防止漂移。
+        if args.expected_metrics:
+            expected = json.loads(Path(args.expected_metrics).read_text(encoding="utf-8"))
+            _verify_claim_metrics(claims, brands, args.target, expected)
+    elif args.theme_keywords is None:
+        print("提示: 未走 Claim 层且未提供 --theme-keywords,主题矩阵使用内置净水器品类词表;"
               "换品类时未命中关键词的观点会整块落入「其他」而不进矩阵。")
     pos_sets = {b: set() for b in brands}
     neg_sets = {b: set() for b in brands}
@@ -436,7 +645,10 @@ def main() -> int:
             for b in brands
         }
         target_pos, target_neg = counts[args.target]
-        slice_value["sentiment"] = {
+        claims_block = build_claims_sentiment(
+            [c for c in claims if predicate(c)], brands, lambda _c: True, args.target) \
+            if claims else None
+        slice_value["sentiment"] = claims_block or {
             "summary": {
                 "total": target_pos + target_neg,
                 "pos": target_pos, "neu": 0, "neg": target_neg,
@@ -471,13 +683,18 @@ def main() -> int:
         }
 
     headline = report["slices"].get("||")
-    if headline:
+    if headline and not claims:
+        # 句级路径才用 sentiment-judge 的 compute 对账头部聚合；
+        # Claim 层走 Attribute 信号口径，与 compute 的句数口径本就不同，不能对账。
         by_brand = headline["sentiment"]["by_brand"]
         verify_against_judge(
             args.units, args.labels_dir, args.target,
             {"positive": by_brand[args.target]["positive"],
              "negative": by_brand[args.target]["negative"]},
         )
+    elif headline:
+        basis = headline["sentiment"].get("metric_basis")
+        print(f"头部聚合口径：{basis}（Claim 层，不与句级 compute 对账）")
 
     # 明细表「正向情感占比」列：按切片口径聚目标品牌在该题下的正负句。
     # 单 region+单平台切片 → 只算该 (region, platform, qid)；
@@ -549,10 +766,16 @@ def main() -> int:
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     head = report["slices"].get("||", report["slices"][next(iter(report["slices"]))])
-    print("情感已接入 45 个切片；头部切片（全部国家/全部平台/全部主题）：")
+    print(f"情感已接入 {len(report['slices'])} 个切片；头部切片（全部地区/全部平台/全部主题）：")
+    head_sent = head["sentiment"]
     for brand in brands:
-        row = head["sentiment"]["by_brand"][brand]
-        print(f"  {brand:12s} 正 {row['positive']:>3}  负 {row['negative']:>3}  正向率 {row['pos_rate']}")
+        row = head_sent["by_brand"][brand]
+        if head_sent.get("metric_basis") == "attribute_signals":
+            print(f"  {brand:12s} 正 {row['positive_signals']:>3}  负 {row['negative_signals']:>3}"
+                  f"  正向率 {row['pos_rate']}（跨平台等权 {row['pos_rate_cross_platform']}，"
+                  f"有信号平台 {row['platforms_with_signal']} 个）")
+        else:
+            print(f"  {brand:12s} 正 {row['positive']:>3}  负 {row['negative']:>3}  正向率 {row['pos_rate']}")
     print(f"写出 {args.out}")
     return 0
 

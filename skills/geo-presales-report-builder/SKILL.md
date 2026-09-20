@@ -3,7 +3,7 @@ name: geo-presales-report-builder
 description: This skill should be used when generating a customer-facing overseas GEO presales diagnosis report (single-file HTML, V4.0 prototype styling) directly from Scrapeless crawler collection data plus a Case record, covering visibility, citations, sentiment, content planning and per-question detail with country / platform / topic filtering. Do not use it to compute the upload CSV (that is geo-presales-report-editor), to audit brand mention recognition, or to write report conclusions by hand.
 metadata:
   author: Overseas GEO Project
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # 海外 GEO 售前诊断报告生成
@@ -77,32 +77,36 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
      --domain-cache assets/domain-categories.json --out <输出>/report-data.json
    ```
 
-5. **句级情感判读**（可选，缺省时情感板块显示「待接入」）：
+5. **情感判读（Claim 层，可选；缺省时情感板块显示「待接入」）**：
 
-   抽取单元走 `geo-presales-sentiment-judge`：
+   走 `geo-presales-sentiment-judge` 的四层结构 `answer → evidence_text → Claim → Attribute → Theme`（契约见该 skill 的 [Claim 层契约](../geo-presales-sentiment-judge/references/claim-layer-contract.md)，**不必再读本 skill 的句级交接契约**）。
 
    ```bash
+   # 1) 抽取单元（evidence_text 候选）
    python3 ../geo-presales-sentiment-judge/scripts/sentiment_sentences.py extract \
      --bank <题库.csv> --crawl-dir <采集目录> \
      --lexicon assets/brand_lexicon.<品类>.json --output <输出>/sentiment-units.json
+   # 2) 语义环节暂停：抽 Claim 层 → claims-raw.json（一条回答拆多个原子 Claim）
+   # 3) 回装校验 + 统计（确定性）
+   python3 ../geo-presales-sentiment-judge/scripts/sentiment_sentences.py claims-assemble \
+     --units <输出>/sentiment-units.json --claims <输出>/claims-raw.json --output <输出>/claims.json
+   python3 ../geo-presales-sentiment-judge/scripts/sentiment_sentences.py claims-metrics \
+     --claims <输出>/claims.json --brands "目标,配置1,配置2,配置3,开放1" --out-metrics <输出>/claims-metrics.json
    ```
 
-   按展示品牌分批判读（**只判展示的 5 个**，判全部开放品牌成本是前者的 2 倍以上且不进报告）。判读交接的四个中间产物（拆批视图、labels、judged-sentences、claims）的格式与门禁见 [情感判读交接契约](references/sentiment-handoff-contract.md)；其中确定性环节用 `scripts/prep_sentiment_handoff.py` 的 `split / assemble / check-claims` 子命令生成与校验，**不要人肉整理**。判读代理遇到拿不准的句子不得自行拍板，记入 `sentiment-batches/review-queue.md` 交用户裁。
-
-   接入：
+   接入（脚本按 Attribute 信号口径聚合，并与 `claims-metrics` 逐品牌对账，不一致直接报错）：
 
    ```bash
    python3 scripts/attach_sentiment.py --report <输出>/report-data.json \
      --units <输出>/sentiment-units.json --labels-dir <输出>/sentiment-batches \
      --brands "目标,配置1,配置2,配置3,开放1" --target <目标品牌> \
-     --theme-keywords assets/theme-keywords.<品类>.json --out <输出>/report-data.json
+     --claims <输出>/claims.json --expected-metrics <输出>/claims-metrics.json \
+     --out <输出>/report-data.json
    ```
 
-   **主题矩阵换品类必须传 `--theme-keywords`**:它把 claim 标签归一到「安装与部署 / 体积与空间 / 过滤与水质 / 温控与出水 / 成本与价格 / 服务与售后」这类主题,未命中的归「其他」且不入矩阵;不传时用内置的净水器品类词表,其他品类矩阵会整块为空。
-
-   脚本会用 `sentiment-judge` 的 `compute` 对账头部聚合，两处算不一致会直接报错。
-
-   **观点归纳**（情感板块要展示「标签 + 次数」，不是句子截断）：把判读句子按品牌各自归纳成 4–8 组，写出 `sentiment-claims/<品牌>-claims.json`，`indices` 指向 `judged-sentences.json` 里该品牌同方向数组的下标，**必须互斥且穷尽**；写完必须跑 `prep_sentiment_handoff.py check-claims` 门禁，退出码非 0 不得接入（Bewinch 案例中 Coway 曾把全局 idx 写进 indices，观点组在切片时被静默丢弃）。缺 claims 文件时 `attach_sentiment.py` 回落到「句子前 24 字当标签」的旧行为。
+   - **Claim 层是推荐路径**：统计单位是 Attribute 信号（同回答同品牌同 Attribute 同方向只计 1 次，跨回答分别计数），跨平台对有信号的平台等权平均。输出 `sentiment.metric_basis = "attribute_signals"`；前端读字段前先看它。
+   - `--theme-keywords` 只在**不传 `--claims` 的句级降级路径**下才需要（它把自由标签归到主题）；Claim 层自带 `theme` 字段，不依赖关键词表。
+   - **同一份报告只能用一种口径**：走了 Claim 层就不要混用句级 `compute` 的数字，两者不可比。
 
 6. **中文译文**（可选；不跑则抽屉只显示原文）：
 

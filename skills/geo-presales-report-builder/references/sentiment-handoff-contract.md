@@ -1,4 +1,6 @@
-# 情感判读交接契约(extract → 判读 → 归纳 → attach)
+# 情感判读交接契约(句级降级路径)
+
+> **这是降级路径**,只答「句子是正是负」。新报告走 Claim 层(见 `geo-presales-sentiment-judge/references/claim-layer-contract.md`):它能答「AI 在评价哪个方面」,且自带 theme 不依赖关键词表。已交付报告不必回改。
 
 `sentiment-units.json`(judge extract 产出)与 `attach_sentiment.py`(builder 接入)之间有四个中间产物。此前只有口头惯例,2026-09-17 起以本文件为准;`scripts/prep_sentiment_handoff.py` 提供其中确定性环节的生成与校验,`scripts/run_pipeline.py` 会按序驱动。语义判读与观点归纳本身是语义工作,不得脚本化(禁止关键词自动打标)。
 
