@@ -19,8 +19,9 @@ metadata:
 ## 开始前读取
 
 1. [数据接口契约](references/report-data-contract.md)——数据层与渲染层之间唯一的接口，改动任何一侧前必须先读。
-2. [渲染规范](references/render-spec.md)——正文/pill/表格/商品卡的渲染规则与验证方式,改 `report.js`、`report-extra.css` 或 markdown 转换前必读。
-3. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)——诊断意图与客户标签的唯一权威词表。
+2. [渲染规范](references/render-spec.md)——正文/pill/表格/商品卡的渲染规则、部署体积陷阱与验证方式,改 `report.js`、`report-extra.css` 或 markdown 转换前必读。
+3. [客户中途换竞品](references/competitor-swap.md)——换展示竞品时聚合板块与逐回答的两条规则,客户中途提出换品牌时先读。
+4. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)——诊断意图与客户标签的唯一权威词表。
 3. `geo-presales-crawl-integrity` 的校验产出（前置步骤，见执行流程第 0 步）。
 
 ## 输入
