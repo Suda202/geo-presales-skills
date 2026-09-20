@@ -38,6 +38,7 @@
 |---|---|---|
 | `brand` | string | 目标品牌名，如 `Bewinch` |
 | `brand_display` | string | 展示名，含 `★`，如 `Bewinch ★` |
+| `brand_suffixes` | string[] | 展示时从品牌名剥掉的品类/产品线后缀（`--brand-suffixes` 注入）；空数组时渲染层用内置净水器词表兜底 |
 | `official_domain` | string | 官网域名，如 `bewinch.com` |
 | `category` | string | 品类中文名，如 `台式净饮机` |
 | `generated_at` | string | ISO 时间戳 |

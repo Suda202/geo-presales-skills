@@ -87,6 +87,8 @@ def stage_build(args, out: Path) -> None:
            "--out", report]
     if args.regions:
         cmd += ["--regions", args.regions]
+    if args.brand_suffixes:
+        cmd += ["--brand-suffixes", args.brand_suffixes]
     run(cmd, args.dry_run, "2 数据生成")
 
 
@@ -177,6 +179,9 @@ def main() -> int:
     parser.add_argument("--target", help="目标品牌标准名")
     parser.add_argument("--theme-keywords", type=Path,
                         help="主题关键词表 JSON;换品类必传,否则主题矩阵落空")
+    parser.add_argument("--brand-suffixes",
+                        help="逗号分隔的品类/产品线后缀,展示时从品牌名剥掉(如 LED,Display);"
+                             "留空用内置净水器词表兜底")
     parser.add_argument("--regions", help="逗号分隔区域,透传给 build_report_data")
     parser.add_argument("--brand-name", help="输出 HTML 文件名用的品牌名,缺省 report")
     parser.add_argument("--dry-run", action="store_true", help="只打印步骤计划,不执行")

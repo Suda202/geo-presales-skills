@@ -1245,11 +1245,15 @@ def parse_args(argv=None):
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--regions", default="",
                         help="逗号分隔的市场代码；留空则从采集目录发现（推荐）")
+    parser.add_argument("--brand-suffixes", default="",
+                        help="逗号分隔的品类/产品线后缀，渲染时从品牌展示名剥掉（如 LED,Display）；"
+                             "留空则渲染层用内置净水器词表兜底")
     return parser.parse_args(argv)
 
 
 def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
-               sample_issues, order_issues, lexicon_brands, lexicon_uncertain) -> dict:
+               sample_issues, order_issues, lexicon_brands, lexicon_uncertain,
+               brand_suffixes=None) -> dict:
     intents, seen = [], set()
     for row in rows:
         backend = CSV_INTENT_MAP.get(str(row.get("diagnosis_intent") or "").strip())
@@ -1282,6 +1286,9 @@ def build_meta(case, rows, config, topics, regions, lexicon_status, collect_dir,
     return {
         "brand": case["brand"],
         "brand_display": f"{case['brand']} ★",
+        # 展示名要剥掉的品类/产品线后缀词表（渲染层 displayBrand 用）。
+        # 缺省为空则渲染层用内置净水器词表兜底；换品类时由 --brand-suffixes 提供。
+        "brand_suffixes": brand_suffixes,
         "official_domain": normalize_host(case["official_domain"]),
         "category": case["category"],
         "generated_at": now_iso(),
@@ -1903,7 +1910,9 @@ def main(argv=None) -> int:
 
         meta = build_meta(case, rows, config, topics, regions, lexicon_status,
                           args.collect, sample_issues, order_issues,
-                          len(lexicon_entries), len(lexicon_uncertain))
+                          len(lexicon_entries), len(lexicon_uncertain),
+                          brand_suffixes=[s.strip() for s in args.brand_suffixes.split(",")
+                                          if s.strip()])
         # 抽屉「品牌提及」识别词表全集：目标品牌 + 配置竞品 + 所有开放品牌，
         # 任何可识别品牌在正文出现都计入（Suda 2026-09-18：回答详情品牌提及识别全量）。
         # 可见度板块的 5 品牌展示口径不变，那是切片层逻辑，不经过这里。

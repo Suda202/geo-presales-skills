@@ -25,7 +25,17 @@
   }
   // 品牌显示名：剥掉数据层 key 里的品类/产品线后缀，让榜单读品牌本身。
   // 识别别名仍用全称匹配（数据层 key 不变），仅展示层精简。
-  var BRAND_SUFFIX = /\s+(Water|Water\s*Purifier|Purification|Aqua|Filters?)$/i;
+  // 后缀词表由数据层按品类注入（meta.brand_suffixes）；缺省用净水器词表兜底，
+  // 换品类时应提供该品类的后缀（如显示屏品类要剥 "Display"/"LED"）。
+  var BRAND_SUFFIX = (function () {
+    var custom = (DATA.meta || {}).brand_suffixes;
+    if (custom && custom.length) {
+      return new RegExp("\\s+(" + custom.map(function (w) {
+        return String(w).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s*");
+      }).join("|") + ")$", "i");
+    }
+    return /\s+(Water|Water\s*Purifier|Purification|Aqua|Filters?)$/i;
+  })();
   function displayBrand(name) {
     var n = String(name || "").replace(/\s*★\s*$/, "");
     return n.replace(BRAND_SUFFIX, "").trim() || n;
