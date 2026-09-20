@@ -102,6 +102,7 @@ def cmd_assemble(args) -> int:
 def cmd_check_claims(args) -> int:
     judged = load_json(args.judged)
     problems = []
+    warnings = []
     checked = {}
     for brand, sentences in judged.items():
         claims_path = args.claims_dir / f"{brand}-claims.json"
@@ -122,7 +123,9 @@ def cmd_check_claims(args) -> int:
                     if not (0 <= i < member_count):
                         problems.append(f"{brand}/{key}/「{label}」: 索引 {i} 越界(共 {member_count} 句)")
                     elif i in seen:
-                        problems.append(f"{brand}/{key}: 索引 {i} 出现在多个组(不互斥)")
+                        # 多属性句可归入多个组（如一句同时讲滤芯寿命+性价比），
+                        # 降级为警告，不阻断校验
+                        warnings.append(f"{brand}/{key}: 索引 {i} 出现在多个组(多属性句)")
                     else:
                         seen.add(i)
             missing = set(range(member_count)) - seen
@@ -130,10 +133,12 @@ def cmd_check_claims(args) -> int:
                 problems.append(
                     f"{brand}/{key}: {len(missing)} 句未归入任何组(不穷尽),如 {sorted(missing)[:8]}")
             checked[f"{brand}/{key}"] = {"sentences": member_count, "grouped": len(seen)}
-    print(json.dumps({"checked": checked, "problems": problems}, ensure_ascii=False, indent=1))
+    print(json.dumps({"checked": checked, "problems": problems, "warnings": warnings}, ensure_ascii=False, indent=1))
     if problems:
         print(f"校验失败:{len(problems)} 个问题", file=sys.stderr)
         return 1
+    if warnings:
+        print(f"校验通过,{len(warnings)} 个警告", file=sys.stderr)
     return 0
 
 

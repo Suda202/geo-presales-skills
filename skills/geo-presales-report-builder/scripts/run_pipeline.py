@@ -135,6 +135,7 @@ def stage_sentiment(args, out: Path) -> None:
     run([sys.executable, HERE / "attach_sentiment.py",
          "--report", out / "report-data.json", "--units", units,
          "--labels-dir", batches, "--brands", args.brands, "--target", args.target,
+         *(["--theme-keywords", args.theme_keywords] if args.theme_keywords else []),
          "--out", out / "report-data.json"], args.dry_run, "3e 情感接入")
 
 
@@ -174,6 +175,8 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--brands", help="展示品牌(含目标),与词表标准名一致;缺省跳过情感环节")
     parser.add_argument("--target", help="目标品牌标准名")
+    parser.add_argument("--theme-keywords", type=Path,
+                        help="主题关键词表 JSON;换品类必传,否则主题矩阵落空")
     parser.add_argument("--regions", help="逗号分隔区域,透传给 build_report_data")
     parser.add_argument("--brand-name", help="输出 HTML 文件名用的品牌名,缺省 report")
     parser.add_argument("--dry-run", action="store_true", help="只打印步骤计划,不执行")

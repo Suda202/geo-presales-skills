@@ -19,7 +19,8 @@ metadata:
 ## 开始前读取
 
 1. [数据接口契约](references/report-data-contract.md)——数据层与渲染层之间唯一的接口，改动任何一侧前必须先读。
-2. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)——诊断意图与客户标签的唯一权威词表。
+2. [渲染规范](references/render-spec.md)——正文/pill/表格/商品卡的渲染规则与验证方式,改 `report.js`、`report-extra.css` 或 markdown 转换前必读。
+3. [跨 skill 规范映射](../shared/canonical-intent-mapping.md)——诊断意图与客户标签的唯一权威词表。
 3. `geo-presales-crawl-integrity` 的校验产出（前置步骤，见执行流程第 0 步）。
 
 ## 输入
@@ -92,8 +93,11 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
    ```bash
    python3 scripts/attach_sentiment.py --report <输出>/report-data.json \
      --units <输出>/sentiment-units.json --labels-dir <输出>/sentiment-batches \
-     --brands "目标,配置1,配置2,配置3,开放1" --target <目标品牌> --out <输出>/report-data.json
+     --brands "目标,配置1,配置2,配置3,开放1" --target <目标品牌> \
+     --theme-keywords assets/theme-keywords.<品类>.json --out <输出>/report-data.json
    ```
+
+   **主题矩阵换品类必须传 `--theme-keywords`**:它把 claim 标签归一到「安装与部署 / 体积与空间 / 过滤与水质 / 温控与出水 / 成本与价格 / 服务与售后」这类主题,未命中的归「其他」且不入矩阵;不传时用内置的净水器品类词表,其他品类矩阵会整块为空。
 
    脚本会用 `sentiment-judge` 的 `compute` 对账头部聚合，两处算不一致会直接报错。
 

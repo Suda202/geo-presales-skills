@@ -22,6 +22,14 @@ from .util import ContractError, extract_urls, normalize_text, sha256_obj
 # 词法 + 长度分不开；Suda 2026-09-16 裁定不做长度约束，只补签名。
 # 实测暴露面：三个数据集 240 条回答里只有 1 条含签名词且判定正确——属机制隐患，非现行错误。
 # 后续若发现某批数据有效回答数偏低，先查这里。
+#
+# 2026-09-18 补：签名改为**只在剔除引用定义行后**匹配。
+# 实测 Trip.Biz 港新数据集 scraper.chatgpt/SG/0025.json、0026.json 两条正常回答
+# （3406 / 4030 字符）被判成 LOGIN_REQUIRED：命中的是尾部引用定义行
+# `[1]: https://www.fcmtravel.com/en-sg/one-login-technology/Singapore?utm_source=chatgpt.com
+#  "FCM Travel - One Login - Singapore…"`——URL 路径里的 `one-login` 与查询串里的
+# `chatgpt`（utm_source）、以及标题里的「One Login」拼出了跨词匹配。
+# 引用定义行是采集交付的引用数据，不是助手正文，本不应参与失败页判定。
 INVALID_SIGNATURES = [
     ("LOGIN_REQUIRED", re.compile(r"\b(log in|login|sign in|sign up)\b.{0,80}\b(chatgpt|account|continue)\b", re.I | re.S)),
     ("ERROR_PAGE", re.compile(
@@ -37,13 +45,17 @@ INVALID_SIGNATURES = [
     ("PLACEHOLDER", re.compile(r"^(n/?a|no answer|placeholder|loading\.{0,3})$", re.I)),
 ]
 
+# 引用定义行：`[编号]: url "标题"`（chatgpt / gemini 交付格式）。
+REFERENCE_LINE = re.compile(r"^[ \t]*\[\d+\][ \t]*:.*$", re.M)
+
 
 def answer_validity(text: str) -> tuple[bool, str | None]:
     value = str(text or "").strip()
     if not value:
         return False, "EMPTY_ANSWER"
+    body = REFERENCE_LINE.sub("", value).strip()
     for code, pattern in INVALID_SIGNATURES:
-        if pattern.search(value):
+        if pattern.search(body):
             return False, code
     return True, None
 

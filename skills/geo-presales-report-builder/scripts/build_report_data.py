@@ -1352,6 +1352,47 @@ _HTML_LEFT = re.compile(r"<\s*/?\s*[a-zA-Z][a-zA-Z0-9]*\b[^>]*>")
 _CHATGPT_PRODUCT_TOKEN = re.compile(
     r"\b(?:product|entity)\[\"turn\d+\w*\",\"([^\"]*)\"(?:,\{[^}]*\})?\]")
 
+_PRODUCT_TABLE_HEADER = re.compile(
+    r"^\|\s*id\s*\|.*\b(?:goods|商品)\b.*\b(?:price|价格)\b.*\b(?:rating|评分)\b.*\|\s*$",
+    re.I,
+)
+_PRODUCT_TABLE_IMG = re.compile(
+    r"<img\b[^>]*\bsrc=[\"']([^\"']+)[\"'][^>]*>", re.I,
+)
+_PRODUCT_IMAGE_TOKEN = re.compile(r"^__GEO_PRODUCT_IMAGE_([A-Za-z0-9%._~-]+)__$")
+
+
+def _protect_product_table_images(value: str) -> str:
+    """保护商品表 picture 列的远程图片，普通回答图片仍由清洗器移除。"""
+    from urllib.parse import quote
+
+    lines = value.split("\n")
+    in_product_table = False
+    for index, line in enumerate(lines):
+        if _PRODUCT_TABLE_HEADER.match(line.strip()):
+            in_product_table = True
+            continue
+        if not in_product_table:
+            continue
+        if not line.strip().startswith("|"):
+            in_product_table = False
+            continue
+        lines[index] = _PRODUCT_TABLE_IMG.sub(
+            lambda match: f"__GEO_PRODUCT_IMAGE_{quote(match.group(1), safe='')}__",
+            line,
+        )
+    return "\n".join(lines)
+
+
+def _align_product_row(row: list[str]) -> list[str]:
+    """恢复商品名里含裸 `|` 的商品表行，避免后续字段整体错位。"""
+    if len(row) < 6:
+        return row + [""] * (6 - len(row))
+    if len(row) == 6:
+        return row
+    # 商品表最后四列稳定为 price / rating / merchants / picture。
+    return [row[0], " | ".join(row[1:-4]), *row[-4:]]
+
 
 def normalize_answer_html(text: str) -> str:
     """把回答里的原始 HTML 归一成 markdown 能处理的纯文本。
@@ -1360,6 +1401,8 @@ def normalize_answer_html(text: str) -> str:
     最后才展开布局标签——顺序反了会留下孤立属性。
     """
     value = str(text or "")
+    # 先保护商品表中的图片，普通回答中的图片仍按原规则删除。
+    value = _protect_product_table_images(value)
     value = _HTML_IMG.sub("", value)
     value = _HTML_IMAGE_ALT.sub("", value)
     value = _HTML_PLATFORM_BLOCK.sub("", value)
@@ -1428,8 +1471,8 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
         while list_stack:
             out.append(f"</{list_stack.pop()}>")
 
-    def _pill(match: "_re.Match[str]") -> str:
-        name, num = match.group(1).strip(), match.group(2)
+    def _pill_html(name: str, num: str) -> str:
+        name = name.strip()
         url = footnotes.get(num, "")
         label = f'<span class="cite-pill-num">{num}</span>'
         if url:
@@ -1437,11 +1480,14 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
                     f'rel="noopener noreferrer" title="{name}">{name}{label}</a>')
         return f'<span class="cite-pill" title="{name}">{name}{label}</span>'
 
+    def _pill(match: "_re.Match[str]") -> str:
+        return _pill_html(match.group(1), match.group(2))
+
     def inline(chunk: str) -> str:
         chunk = _re.sub(r"`([^`]+)`", r"<code>\1</code>", chunk)
         chunk = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", chunk)
         chunk = _re.sub(r"(?<![\*\w])\*([^*\n]+)\*(?![\*\w])", r"<em>\1</em>", chunk)
-        # 引用 pill：([来源名][N]) 或 [来源名][N]，链接到脚注 URL。要在普通链接之前处理。
+        # 引用 pill：每个 ([名][N]) 标记各渲染一个 pill，不去重不折叠，便于核对引用次数。
         chunk = _re.sub(r"\(\[([^\]\[]+)\]\[(\d+)\]\)", _pill, chunk)
         chunk = _re.sub(r"\[([^\]\[]+)\]\[(\d+)\]", _pill, chunk)
         # URL 里允许一层括号（如 .../product(tk-cs200-hma)?utm=...），否则链接在首个 ) 提前闭合，
@@ -1466,24 +1512,41 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
                 rows.append([cell.strip() for cell in lines[i].strip().strip("|").split("|")])
                 i += 1
 
-            # ChatGPT 商品卡表格（header 含 id/goods/price/rating）不走表格渲染，
-            # 转成卡片组件——图片 + 名称 + 价格 + 评分，跟原平台视觉一致。
+            # ChatGPT 商品卡表格（header 含 id/goods/price/rating，或其中文表头）不走表格渲染，
+            # 转成卡片组件，图片 + 名称 + 价格 + 评分，跟原平台视觉一致。
             header_lower = [h.lower() for h in header]
-            is_product_card_table = (
-                "goods" in header_lower and "price" in header_lower and "rating" in header_lower
+            product_column_aliases = {
+                "goods": {"goods", "商品", "商品名称", "名称"},
+                "price": {"price", "价格"},
+                "rating": {"rating", "评分"},
+            }
+            is_product_card_table = all(
+                any(alias in header_lower for alias in aliases)
+                for aliases in product_column_aliases.values()
             )
             if is_product_card_table:
                 cards = []
-                for row in rows:
-                    if len(row) < 5:
+                for raw_row in rows:
+                    row = _align_product_row(raw_row)
+                    if len(row) < 6:
                         continue
-                    # 列映射：id | goods | price | rating | merchants | picture
-                    col = {h.lower(): (row[idx] if idx < len(row) else "") for idx, h in enumerate(header)}
-                    goods = col.get("goods", "").strip()
-                    price = col.get("price", "").strip()
-                    rating = col.get("rating", "").strip()
-                    merchants = col.get("merchants", "").strip()
-                    picture = col.get("picture", "").strip()
+                    # 列映射：id | goods/商品 | price/价格 | rating/评分 |
+                    # merchants/商家 | picture/图片。
+                    col = {h.lower(): (row[idx] if idx < len(row) else "")
+                           for idx, h in enumerate(header)}
+
+                    def product_value(*names: str) -> str:
+                        for name in names:
+                            value = col.get(name, "")
+                            if value:
+                                return value
+                        return ""
+
+                    goods = product_value("goods", "商品", "商品名称", "名称").strip()
+                    price = product_value("price", "价格").strip()
+                    rating = product_value("rating", "评分").strip()
+                    merchants = product_value("merchants", "merchant", "商家").strip()
+                    picture = product_value("picture", "图片").strip()
                     # 跳过占位行
                     if not goods or goods in ("****", ""):
                         continue
@@ -1491,11 +1554,16 @@ def markdown_to_html(text: str, highlight: list[str] | None = None) -> str:
                     goods_text = _re.sub(r"\*\*(.+?)\*\*", r"\1", goods)
                     # merchants 里的链接剥掉标签只留文本
                     merchants_text = _re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", merchants)
-                    # picture 里提取 img src
+                    # picture 列已在 normalize_answer_html 中保护为 token，恢复为商品卡缩略图。
                     img_src = ""
-                    img_match = _re.search(r'src="([^"]+)"', picture)
-                    if img_match:
-                        img_src = img_match.group(1)
+                    image_token = _PRODUCT_IMAGE_TOKEN.fullmatch(picture)
+                    if image_token:
+                        from urllib.parse import unquote
+                        img_src = unquote(image_token.group(1))
+                    else:
+                        img_match = _re.search(r'src="([^"]+)"', picture)
+                        if img_match:
+                            img_src = img_match.group(1)
                     # 商品卡 HTML
                     card = ['<div class="product-card">']
                     if img_src:
@@ -1618,8 +1686,24 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
 
     放在顶层而不是切片里：同一题的答案会在多个切片出现，放进切片会让文件成倍膨胀。
     抽屉按当前国家与平台查找；「全部国家」时取该平台第一个可用市场。
+
+    display_objects 传入词表全集（all_objects），品牌提及识别所有可识别的竞品 +
+    目标品牌；排序按「目标品牌优先，其余按正文首次出现位置」。
     """
     from geo_presales_core.util import domain_matches, find_alias_spans, normalize_url
+
+    # 正文品牌高亮只标 5 个核心品牌（目标 + 3 配置竞品 + 提及率最高开放品牌），
+    # 与可见度主榜口径一致；词表全量仅用于「品牌提及」识别，不用于高亮。
+    highlight_names = [
+        obj["canonical_name"]
+        for obj in display_objects
+        if obj.get("role") in ("target", "competitor") or obj["object_id"] == "target"
+    ]
+    # 提及率最高的开放品牌（排第一的开放竞品）也加入高亮
+    open_objs = [o for o in display_objects if o.get("role") not in ("target", "competitor")
+                 and o["object_id"] != "target"]
+    if open_objs:
+        highlight_names.append(open_objs[0]["canonical_name"])
 
     text_field = {"overview": "content"}
     citation_field = {
@@ -1651,7 +1735,8 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                     spans = find_alias_spans(answer, obj["aliases"])
                     if spans:
                         ranked.append((spans[0]["start"], obj))
-                ranked.sort(key=lambda item: item[0])
+                # 目标品牌置顶，其余按正文首次出现位置排序
+                ranked.sort(key=lambda item: (item[1]["object_id"] != "target", item[0]))
                 brands = [
                     {
                         "name": obj["canonical_name"] + (" ★" if obj["object_id"] == "target" else ""),
@@ -1686,12 +1771,54 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                             "host": normalized["host"],
                             "source_name": source_name,
                         })
+                # 平台原始引用字段：直接从 task_result 提取，去重后的 URL 列表
+                # AIO=source, Gemini=citations, ChatGPT=content_references, Perplexity=web_results
+                platform_citations = []
+                citation_field = CITATION_FIELD.get(platform_dir)
+                if citation_field:
+                    raw_items = result.get(citation_field) or []
+                    if isinstance(raw_items, list):
+                        seen_urls = set()
+                        for item in raw_items:
+                            if isinstance(item, dict):
+                                url = str(item.get("url") or item.get("link") or item.get("href") or "").strip()
+                            elif isinstance(item, str):
+                                url = item.strip()
+                            else:
+                                continue
+                            if not url:
+                                continue
+                            normalized = normalize_url(url)
+                            if not normalized:
+                                continue
+                            canonical = normalized["canonical_url"]
+                            if canonical in seen_urls:
+                                continue
+                            seen_urls.add(canonical)
+                            platform_citations.append({
+                                "url": canonical,
+                                "host": normalized["host"],
+                            })
+
+                # ChatGPT 的 search_result 是搜索引擎返回的来源列表，与正文引用不同源
+                search_results = []
+                if platform_dir == "chatgpt":
+                    for item in (result.get("search_result") or []):
+                        url = str(item.get("url") or "").strip()
+                        if url:
+                            search_results.append({"url": url})
+
                 details[f"{market}|{label}|{qid}"] = {
                     "question_zh": question_zh.get(qid, ""),
+                    # 品牌高亮只覆盖目标 + 配置竞品 + 提及率最高开放品牌这 5 个核心品牌；
+                    # 品牌识别（上方 brands）用全集，但正文高亮全量会让泛词（Sans/PUR/Vort）
+                    # 误伤成斑点，干扰阅读。
                     "answer_html": markdown_to_html(
-                        answer[:6000], [obj["canonical_name"] for obj in display_objects]),
+                        answer[:6000], highlight_names),
                     "brands": brands,
                     "citations": citations,
+                    "platform_citations": platform_citations,
+                    "search_results": search_results,
                     "citation_occurrences": len(occurrences),
                     "citation_share": (f"{own_occurrences * 100 / len(occurrences):.1f}%"
                                        if occurrences else "—"),
@@ -1771,16 +1898,11 @@ def main(argv=None) -> int:
         meta = build_meta(case, rows, config, topics, regions, lexicon_status,
                           args.collect, sample_issues, order_issues,
                           len(lexicon_entries), len(lexicon_uncertain))
-        # 抽屉里展示与主榜一致的 5 个品牌：目标 + 3 配置竞品 + 提及率最高的开放品牌
-        headline = slices.get("||") or next(iter(slices.values()))
-        shown = [row[0].replace(" ★", "") for row in headline["competition"]["mention"]]
-        configured_names = {config["objects"][0]["canonical_name"],
-                            *[o["canonical_name"] for o in config["objects"] if o["role"] == "competitor"]}
-        wanted = configured_names | {name for name in shown if name not in configured_names}
-        display_objects = [obj for obj in all_objects(config) if obj["canonical_name"] in wanted]
-        display_objects.sort(key=lambda o: (o["object_id"] != "target", o["display_order"]))
+        # 抽屉「品牌提及」识别词表全集：目标品牌 + 配置竞品 + 所有开放品牌，
+        # 任何可识别品牌在正文出现都计入（Suda 2026-09-18：回答详情品牌提及识别全量）。
+        # 可见度板块的 5 品牌展示口径不变，那是切片层逻辑，不经过这里。
         meta["scope_notes"] = build_scope_notes(slices, list(PLATFORM_LABELS))
-        details = build_details(args.collect, config, regions, bank, display_objects)
+        details = build_details(args.collect, config, regions, bank, all_objects(config))
         write_json(args.out, {"schema": SCHEMA, "meta": meta, "slices": slices,
                               "details": details})
     finally:

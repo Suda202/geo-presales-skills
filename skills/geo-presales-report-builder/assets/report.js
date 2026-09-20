@@ -23,9 +23,24 @@
     var d = String(domainOrUrl || "").replace(/^https?:\/\//, "").split("/")[0];
     return "https://favicone.com/" + encodeURIComponent(d) + "?s=64";
   }
-  function logo(domain, size) {
-    if (!domain) return "";
-    return '<img class="entity-logo" src="' + favicon(domain) + '" width="' + (size || 16) + '" height="' + (size || 16) + '" alt="" loading="lazy" onerror="this.remove()">';
+  // 品牌显示名：剥掉数据层 key 里的品类/产品线后缀，让榜单读品牌本身。
+  // 识别别名仍用全称匹配（数据层 key 不变），仅展示层精简。
+  var BRAND_SUFFIX = /\s+(Water|Water\s*Purifier|Purification|Aqua|Filters?)$/i;
+  function displayBrand(name) {
+    var n = String(name || "").replace(/\s*★\s*$/, "");
+    return n.replace(BRAND_SUFFIX, "").trim() || n;
+  }
+  function logo(domain, size, brandName) {
+    var s = size || 16;
+    var initial = displayBrand(brandName || domain || "?").trim().charAt(0).toUpperCase();
+    // icon 加载失败时回退为首字母占位块，保持行对齐（原来 this.remove() 会留空白）
+    // 注意：onerror 属性值用双引号包裹，内部所有双引号必须用 &quot; 转义
+    var fallbackSpan = '<span class="entity-logo entity-logo-fallback" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * 0.62) + 'px">' + initial + '</span>';
+    if (!domain) {
+      return fallbackSpan;
+    }
+    var escapedFallback = fallbackSpan.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return '<img class="entity-logo" src="' + favicon(domain) + '" width="' + s + '" height="' + s + '" alt="" loading="lazy" onerror="this.outerHTML=\'' + escapedFallback + '\'">';
   }
   function sliceKey(region, platform, topic) {
     return [region, platform, topic].join("|");
@@ -129,7 +144,7 @@
         var isTarget = color === "gold";
         return '<div class="bar-row' + (isTarget ? " is-target" : "") + '">' +
           '<span class="bar-rank">' + esc(row[5]) + "</span>" +
-          '<span class="bar-label">' + logo(row[1]) + esc(row[0]) + "</span>" +
+          '<span class="bar-label">' + logo(row[1], 16, row[0]) + esc(displayBrand(row[0])) + "</span>" +
           '<div class="track"><div class="fill ' + esc(color) + '" style="width:' + pctWidth(row[3]) + '"></div></div>' +
           '<b class="bar-val">' + esc(row[2]) + "</b></div>";
       }).join("") || emptyRow("暂无数据");
@@ -140,7 +155,7 @@
       rankEl.innerHTML = rank.map(function (row) {
         var isTarget = row[3] === "target";
         return '<div class="rankdot-row' + (isTarget ? " is-target" : "") + '">' +
-          '<span class="rankdot-name">' + logo(row[1], 18) + esc(row[0]) + "</span>" +
+          '<span class="rankdot-name">' + logo(row[1], 18, row[0]) + esc(displayBrand(row[0])) + "</span>" +
           '<span class="rankdot-track"><i class="' + (isTarget ? "gold" : "") + '" style="left:' + rankDotLeft(row[2]) + '"></i></span>' +
           '<span class="rankdot-val">' + esc(row[2]) + "</span></div>";
       }).join("") || emptyRow("暂无数据");
@@ -181,10 +196,10 @@
       donutEl.innerHTML =
         '<div class="donut-wrap"><div class="donut" style="background:conic-gradient(' + stops.join(",") + ')"></div>' +
         '<div class="donut-center"><b>' + esc(targetRow ? targetRow.value.toFixed(1) + "%" : "—") + "</b><small>" +
-        esc((targetRow ? targetRow.name : "").replace(" ★", "")) + "</small></div></div>" +
+        esc((targetRow ? displayBrand(targetRow.name) : "")) + "</small></div></div>" +
         '<div class="donut-legend">' + segments.map(function (row) {
           return "<div" + (row.target ? ' class="is-target"' : "") + '><i style="background:' + row.color + '"></i><span>' +
-            esc(row.name) + "</span><b>" + row.value.toFixed(1) + "%</b></div>";
+            esc(displayBrand(row.name)) + "</span><b>" + row.value.toFixed(1) + "%</b></div>";
         }).join("") + "</div>";
     }
 
@@ -208,7 +223,7 @@
         if (metric === "rank") return "<td>" + Number(value).toFixed(1) + "</td>";
         return "<td>" + Number(value).toFixed(1) + "%</td>";
       }).join("");
-      return "<tr" + (row.target ? ' class="is-target"' : "") + '><td class="brand-cell">' + esc(row.name) + "</td>" + cells + "</tr>";
+      return "<tr" + (row.target ? ' class="is-target"' : "") + '><td class="brand-cell">' + esc(displayBrand(row.name)) + "</td>" + cells + "</tr>";
     }).join("") + "</tbody>";
     el.innerHTML = head + body;
   }
@@ -253,8 +268,9 @@
       var pageHead = '<div class="page-head"><span>页面</span><span>类别</span><span>页面中提及</span><span>引用份额</span></div>';
       pagesEl.innerHTML = pageHead + (pages.map(function (row) {
         var miss = row[2] === "未提及";
-        return '<div class="page-item">' +
-          '<div class="page-title-with-logo">' + logo(row[0], 18) + '<small title="' + esc(row[0]) + '">' + esc(row[0]) + "</small></div>" +
+        return '<div class="page-item" data-tip="' + esc(row[0]) + '">' +
+          '<div class="page-title-with-logo">' + logo(row[0], 18) +
+            '<small class="page-url">' + esc(row[0]) + "</small></div>" +
           catTag(row[1]) +
           '<span class="page-mention' + (miss ? " miss" : "") + '">' + esc(row[2]) + "</span>" +
           '<span class="count">' + esc(row[3]) + "</span></div>";
@@ -266,8 +282,9 @@
       var official = sources.official_pages || [];
       var officialHead = '<div class="page-head"><span>页面</span><span>引用份额</span></div>';
       officialEl.innerHTML = officialHead + (official.map(function (row) {
-        return '<div class="page-item"><div class="page-title-with-logo">' +
-          logo(META.official_domain, 18) + '<small title="' + esc(row[0]) + '">' + esc(row[0]) + "</small></div>" +
+        return '<div class="page-item" data-tip="' + esc(row[0]) + '"><div class="page-title-with-logo">' +
+          logo(META.official_domain, 18) +
+          '<small class="page-url">' + esc(row[0]) + "</small></div>" +
           '<span class="count">' + esc(row[1]) + "</span></div>";
       }).join("") || emptyRow("官网尚未被引用"));
     }
@@ -324,7 +341,7 @@
       var value = sentimentRateValue(rateText);
       var width = value == null ? 0 : Math.max(2, Math.min(100, value));
       return '<div class="sentiment-overview-bar' + (brand === target ? " is-target" : "") + '">' +
-        '<div class="bar-head"><span class="bar-brand">' + esc(brand) +
+        '<div class="bar-head"><span class="bar-brand">' + esc(displayBrand(brand)) +
         (brand === target ? " ★" : "") + "</span>" +
         '<span class="bar-value">' + esc(rateText) + "</span></div>" +
         '<div class="bar-track"><span class="bar-fill ' + sentimentRateClass(value) +
@@ -385,7 +402,7 @@
     var target = META.brand || "";
     var head = "<thead><tr><th>Theme</th>" +
       brands.map(function (b) {
-        return '<th class="' + (b === target ? "is-target" : "") + '">' + esc(b) +
+        return '<th class="' + (b === target ? "is-target" : "") + '">' + esc(displayBrand(b)) +
           (b === target ? " ★" : "") + "</th>";
       }).join("") + "</tr></thead>";
     var body = "<tbody>" + themes.map(function (theme) {
@@ -590,18 +607,79 @@
     }
     var ranking = (entry.brands || []).map(function (row) {
       return '<div class="brand-rank-row' + (row.target ? " self-brand" : "") + '">' +
-        '<span class="brand-name">' + logo(row.domain, 18) + esc(row.name) + "</span><strong>" +
+        '<span class="brand-name">' + logo(row.domain, 18, row.name) + esc(displayBrand(row.name)) + (row.target ? ' <span class="drawer-sentiment-star">★</span>' : '') + "</span><strong>" +
         esc(row.rank) + "</strong></div>";
     }).join("") || '<p class="support-line">该回答未提及已配置品牌</p>';
 
-    var citations = (entry.citations || []).map(function (row, index) {
-      return '<article class="citation-item"' + (index >= 5 ? " hidden" : "") + ">" +
-        '<div class="citation-title">' + logo(row.host, 18) + "<span>" + esc(row.title) + "</span></div>" +
-        '<a href="' + esc(row.url) + '" target="_blank" rel="noopener noreferrer">' + esc(row.url) + "</a></article>";
-    }).join("") || '<p class="support-line">该回答没有可解析的引用记录</p>';
-    var toggle = (entry.citations || []).length > 5
+    // 引用列表：icon + URL 同一行，URL 单行截断，hover 显示完整
+    function citationRow(row, hidden) {
+      return '<article class="citation-item"' + (hidden ? " hidden" : "") + ">" +
+        logo(row.host, 18) +
+        '<a class="citation-url" href="' + esc(row.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(row.url) + '">' + esc(row.url) + "</a></article>";
+    }
+    // 引用：平台原始字段（去重后的 URL）
+    var platformCitations = (entry.platform_citations || []).map(function (row, index) {
+      return citationRow(row, index >= 5);
+    }).join("");
+    if (!platformCitations) platformCitations = '<p class="support-line">该回答没有可解析的引用记录</p>';
+    var citationToggle = (entry.platform_citations || []).length > 5
       ? '<button class="source-toggle" type="button" data-source-toggle aria-expanded="false">查看全部来源</button>'
       : "";
+
+    // 搜索来源：仅 ChatGPT 的 search_result
+    var searchResults = (entry.search_results || []).map(function (row, index) {
+      var host = row.url.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+      return citationRow({ host: host, url: row.url }, index >= 5);
+    }).join("");
+    var searchSection = "";
+    if (searchResults) {
+      searchSection = '<section class="detail-section"><div class="detail-section-head"><h4>搜索来源</h4><span>' +
+        (entry.search_results || []).length + ' 个结果</span></div>' +
+        '<div class="citation-list">' + searchResults + "</div>" +
+        ((entry.search_results || []).length > 5
+          ? '<button class="source-toggle" type="button" data-source-toggle aria-expanded="false">查看全部来源</button>'
+          : "") + "</section>";
+    }
+
+    // 品牌情感：展示该回答中识别到品牌的正/负向 claim 标签
+    var sentimentBrands = ((entry.sentiment || {}).brands) || [];
+    var sentimentSection = "";
+    if (sentimentBrands.length) {
+      var targetName = META.brand || "";
+      var sorted = sentimentBrands.slice().sort(function (a, b) {
+        if (a.brand === targetName) return -1;
+        if (b.brand === targetName) return 1;
+        return 0;
+      });
+      var blocks = sorted.map(function (sb) {
+        var isTarget = sb.brand === targetName;
+        // 按 label 去重，同一 label 只显示一次
+        var seen = {};
+        var claims = [];
+        (sb.pos_claims || []).forEach(function (c) {
+          var label = c.label || "";
+          if (seen["pos|" + label]) return;
+          seen["pos|" + label] = true;
+          claims.push('<div class="drawer-claim"><span class="drawer-claim-dir pos">正向</span>' +
+            '<span class="drawer-claim-label">' + esc(label) + '</span></div>');
+        });
+        (sb.neg_claims || []).forEach(function (c) {
+          var label = c.label || "";
+          if (seen["neg|" + label]) return;
+          seen["neg|" + label] = true;
+          claims.push('<div class="drawer-claim"><span class="drawer-claim-dir neg">负向</span>' +
+            '<span class="drawer-claim-label">' + esc(label) + '</span></div>');
+        });
+        if (!claims.length) return "";
+        return '<div class="drawer-sentiment-brand' + (isTarget ? " is-target" : "") + '">' +
+          '<div class="drawer-sentiment-name">' + esc(displayBrand(sb.brand)) + (isTarget ? ' <span class="drawer-sentiment-star">★</span>' : '') + '</div>' +
+          claims.join("") + '</div>';
+      }).filter(Boolean).join("");
+      if (blocks) {
+        sentimentSection = '<section class="detail-section"><div class="detail-section-head"><h4>品牌情感</h4></div>' +
+          '<div class="drawer-sentiment">' + blocks + '</div></section>';
+      }
+    }
 
     body.innerHTML =
       '<div class="detail-layout"><div class="detail-main">' +
@@ -612,10 +690,8 @@
       '<div class="detail-meta-cell"><span>主题</span><strong>' + esc(record ? record.topic : "—") + "</strong></div>" +
       '<div class="detail-meta-cell"><span>诊断意图</span><strong>' + esc(record ? record.intent : "—") + "</strong></div>" +
       '<div class="detail-meta-cell"><span>标签</span><strong>' + esc(record ? record.tag : "—") + "</strong></div>" +
-      '<div class="detail-meta-cell"><span>本回答引用份额</span><strong>' +
+      '<div class="detail-meta-cell"><span>引用份额</span><strong>' +
       esc(entry.citation_share || "—") + "</strong></div>" +
-      '<div class="detail-meta-cell"><span>地区</span><strong>' + esc(found.region) + "</strong></div>" +
-      '<div class="detail-meta-cell"><span>平台</span><strong>' + esc(found.platform) + "</strong></div>" +
       "</div>" +
       // answer_html / answer_zh_html 在数据层由 markdown 转换并转义过，这里直接注入，不再二次 esc。
       answerSwitch(entry) +
@@ -624,9 +700,11 @@
       '<section class="detail-section"><div class="detail-section-head"><h4>品牌提及</h4><span>' +
       (entry.brands || []).length + " 个结果</span></div>" +
       '<div class="brand-ranking">' + ranking + "</div></section>" +
-      '<section class="detail-section"><div class="detail-section-head"><h4>引用来源</h4><span>正文引用 ' +
-      (entry.citation_occurrences || 0) + " 次</span></div>" +
-      '<div class="citation-list">' + citations + "</div>" + toggle + "</section>" +
+      sentimentSection +
+      '<section class="detail-section"><div class="detail-section-head"><h4>引用</h4><span>' +
+      (entry.platform_citations || []).length + " 个来源</span></div>" +
+      '<div class="citation-list">' + platformCitations + "</div>" + citationToggle + "</section>" +
+      searchSection +
       "</aside></div>";
 
     document.getElementById("drawerMask").classList.add("open");
@@ -660,19 +738,20 @@
           esc(record.zh || record.en) + '</strong><span class="plan-tag gold">补内容</span></div>' +
           '<p class="plan-card-body"><strong>解决问题：</strong>该问题下监测对象尚未进入回答，需建立可被引用的官方事实页。</p></div>';
       }).join("");
-      officialEl.innerHTML = (cards || '<p class="support-line">当前切片下没有缺失问题</p>') +
-        '<p class="plan-note">官网当前被引用的页面共 ' + official.length + " 个。</p>";
+      officialEl.innerHTML = cards || '<p class="support-line">当前切片下没有缺失问题</p>';
     }
 
     var thirdEl = document.getElementById("thirdPartyPlan");
     if (thirdEl) {
-      var targets = pages.slice(0, 3).map(function (row, index) {
-        return '<div class="plan-card"><div class="plan-card-head"><strong>' + (index + 1) + ". " +
-          esc(row[0]) + '</strong><span class="plan-tag blue">' + esc(row[1] || "第三方") + "</span></div>" +
-          '<p class="plan-card-body"><strong>介入方式：</strong>该页面在 ' + esc(row[3]) +
-          " 的引用中承担主要来源，页面中" + esc(row[2]) + "监测对象。</p></div>";
-      }).join("");
-      thirdEl.innerHTML = targets || '<p class="support-line">暂无引用页面数据</p>';
+      // 只挑「页面存在但 AI 没在里面提到我们」的——已提及的页面不需要再介入。
+      var targets = pages.filter(function (row) { return row[2] === "未提及"; })
+        .slice(0, 3).map(function (row, index) {
+          return '<div class="plan-card"><div class="plan-card-head"><strong>' + (index + 1) + ". " +
+            esc(row[0]) + '</strong><span class="plan-tag blue">' + esc(row[1] || "第三方") + "</span></div>" +
+            '<p class="plan-card-body"><strong>介入方式：</strong>该页面在 ' + esc(row[3]) +
+            " 的引用中承担主要来源，页面中" + esc(row[2]) + "监测对象。</p></div>";
+        }).join("");
+      thirdEl.innerHTML = targets || '<p class="support-line">当前切片下没有未提及的第三方页面</p>';
     }
 
   }
@@ -745,22 +824,38 @@
     var sentTarget = targetRow(matrix.mention || []);
     var platforms = matrix.platforms || [];
     if (sentTarget && platforms.length) {
-      var best = null;
-      var worst = null;
-      (sentTarget.vals || []).forEach(function (value, index) {
-        if (value === null || value === undefined) return;
-        if (!best || value > best.value) best = { name: platforms[index], value: value };
-        if (!worst || value < worst.value) worst = { name: platforms[index], value: value };
-      });
-      setInsight("competitionInsight",
-        best && best.value > 0
-          ? "平台差异显著：" + esc(best.name) + " 提及率最高（" + best.value.toFixed(1) + "%）。"
-          : "监测对象在可见度题下未进入回答。",
-        [
-          best ? "<strong>最强平台：</strong>" + esc(best.name) + " " + best.value.toFixed(1) + "%。" : "",
-          worst ? "<strong>最弱平台：</strong>" + esc(worst.name) + " " + worst.value.toFixed(1) + "%。" : "",
-          "<strong>建议：</strong>优先补齐最弱平台可引用的官方事实源。"
-        ].filter(Boolean));
+      // 跨平台横切看共识：所有平台两两差距都 ≤10pt 才叫有共识；否则就是无共识，
+      // 直接点名提及率最高的平台，并把单一平台高低和"优化目标"解耦。
+      var vals = (sentTarget.vals || []).map(function (v, i) {
+        return v === null || v === undefined ? null : { name: platforms[i], value: v };
+      }).filter(Boolean);
+      var headline = "";
+      var points = [];
+      if (!vals.length) {
+        headline = "当前切片下监测对象未进入任何平台回答。";
+      } else {
+        var sorted = vals.slice().sort(function (a, b) { return b.value - a.value; });
+        var top = sorted[0];
+        var bottom = sorted[sorted.length - 1];
+        var spread = top.value - bottom.value;
+        if (spread <= 10 && sorted.length >= 2) {
+          var avg = sorted.reduce(function (a, c) { return a + c.value; }, 0) / sorted.length;
+          headline = "跨平台存在共识：各平台提及率接近（均值约 " + avg.toFixed(1) + "%）。";
+          points.push("<strong>各平台：</strong>" + sorted.map(function (c) {
+            return c.name + " " + c.value.toFixed(1) + "%";
+          }).join("、") + "。");
+        } else {
+          headline = "跨平台差距较大（最高与最低相差 " + spread.toFixed(1) + " 个百分点），未形成共识。";
+          points.push("<strong>提及率最高：</strong>" + top.name + " " + top.value.toFixed(1) + "%。");
+          if (sorted.length > 1) {
+            points.push("<strong>其他平台：</strong>" + sorted.slice(1).map(function (c) {
+              return c.name + " " + c.value.toFixed(1) + "%";
+            }).join("、") + "。");
+          }
+        }
+        points.push("<strong>怎么看：</strong>不同平台的信源偏好不同（如 Google 系更常引用 YouTube），同一品牌在各平台表现有差异是普遍现象。多平台一致偏低才代表真实的认知缺口；单一平台的高低波动，会随后续内容分发自然收敛。");
+      }
+      setInsight("competitionInsight", headline, points);
     }
 
     var sources = slice.sources || {};
@@ -779,11 +874,11 @@
     // 落地服务闭环：固定话术，不承诺时间
     var oppEl = document.getElementById("opportunitiesInsight");
     if (oppEl) {
-      oppEl.innerHTML = "<h4>以上内容资产按「诊断 → 生产 → 铺设 → 周期复测」四步推进</h4>" +
+      oppEl.innerHTML = "<h4>以上内容资产按「诊断 → 生产 → 信源分发 → 周期复测」四步推进</h4>" +
         "<ul>" +
         "<li><span class=\"point-copy\"><strong>官网事实底座：</strong>上线结构化事实指南，确保 AI 可引用到权威定义。</span></li>" +
         "<li><span class=\"point-copy\"><strong>第三方信源：</strong>推进 Reddit、LinkedIn 等社区讨论沉淀，辅以媒体评测植入。</span></li>" +
-        "<li><span class=\"point-copy\"><strong>周期复测回流：</strong>持续监测并定期重跑全量评估，验证提及率与排名变化。</span></li>" +
+        "<li><span class=\"point-copy\"><strong>周期复测回流：</strong>持续监测并定期重跑全量评估，对比各项指标变化。</span></li>" +
         "</ul>";
     }
   }

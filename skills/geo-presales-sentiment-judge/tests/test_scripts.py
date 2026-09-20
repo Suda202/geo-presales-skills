@@ -271,5 +271,44 @@ class ComputeTests(unittest.TestCase):
             self.assertIn("无样本", proc.stderr)
 
 
+class ComputeRegionKeyTests(unittest.TestCase):
+    """同一平台、同一 idx 出现在两个区域时，含正负句的回答须按区域分别计数。
+
+    采集按 scraper.<platform>/<REGION>/NNNN.json 分层，idx 是区域内编号，
+    港/新同题回答 idx 相同。只以 (platform, idx) 去重会合并两地、低报回答数
+    ——实测 Trip.Biz 港新报 38 条、实为 52 条。
+    """
+
+    def test_answers_with_pg_separates_regions(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            bank = os.path.join(root, "bank.json")
+            json.dump({"questions": [
+                {"question_id": "q-001", "analysis_type": "sentiment",
+                 "tags": ["Intent: Discovery"], "user_question": "which is best"},
+            ]}, open(bank, "w"))
+            crawl = os.path.join(root, "crawl")
+            for region in ("HK", "SG"):
+                outdir = os.path.join(crawl, "scraper.gemini", region)
+                os.makedirs(outdir)
+                json.dump({"status": "success", "task_result": {
+                    "prompt": "which is best",
+                    "result_text": f"YOUKU is the best pick in {region}."}},
+                    open(os.path.join(outdir, "0001.json"), "w"))
+
+            units = os.path.join(root, "units.json")
+            run("extract", "--bank", bank, "--crawl-dir", crawl,
+                "--aliases", "YOUKU", "--output", units)
+
+            labels = os.path.join(root, "labels.json")
+            json.dump({"positive": [0, 1], "negative": []}, open(labels, "w"))
+            metrics = os.path.join(root, "m.json")
+            proc = run("compute", "--units", units, "--labels", labels,
+                       "--out-csv", os.path.join(root, "s.csv"), "--out-metrics", metrics)
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(json.load(open(metrics))["funnel"]["answers_with_pg"], 2)
+            self.assertIn("含正负句的回答 2 条", proc.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

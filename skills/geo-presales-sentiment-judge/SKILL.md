@@ -3,7 +3,7 @@ name: geo-presales-sentiment-judge
 description: This skill should be used when computing sentence-level brand sentiment (positive/negative sentence extraction and positive rate) for a target brand or for a whole brand lexicon (target + configured/open competitors) from overseas GEO presales crawler answers, judged against the v8 question bank sentiment sample scope. It does not modify backend JSON sentiment fields, judge competitor win rates, or compute visibility metrics.
 metadata:
   author: 海外 GEO 项目
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # GEO 售前句子级情绪判读

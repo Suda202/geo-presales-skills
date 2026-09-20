@@ -70,6 +70,24 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(answer_validity("Something went wrong. Try again later."), (False, "ERROR_PAGE"))
         self.assertEqual(answer_validity("Acme is a valid option."), (True, None))
 
+    def test_answer_validity_ignores_reference_definition_lines(self):
+        # 引用定义行是采集交付的引用数据，不是助手正文。其实测中 URL 路径（one-login）、
+        # 查询串（utm_source=chatgpt）与标题（"One Login"）会拼出跨词匹配，
+        # 把正常回答判成 LOGIN_REQUIRED（trip-biz scraper.chatgpt/SG/0025.json、0026.json）。
+        body = (
+            "FCM covers the region well.\n\n"
+            "[1]: https://www.fcmtravel.com/en-sg/one-login-technology/Singapore?utm_source=chatgpt.com "
+            "\"FCM Travel - One Login - Singapore, Hong Kong, Malaysia | FCM Travel\""
+        )
+        self.assertEqual(answer_validity(body), (True, None))
+        # 剔除引用行后，真正的失败页仍要被识别
+        self.assertEqual(
+            answer_validity("I encountered an error doing what you asked. Could you try again?\n"
+                            "[1]: https://example.com \"Example\""),
+            (False, "ERROR_PAGE"))
+        self.assertEqual(answer_validity("Please log in to your ChatGPT account to continue."),
+                         (False, "LOGIN_REQUIRED"))
+
     def test_task190_metric_scopes_are_independent(self):
         non_discovery_visibility = {
             "diagnostic_intents": ["competitor"],

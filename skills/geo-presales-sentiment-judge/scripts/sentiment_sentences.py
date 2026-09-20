@@ -382,7 +382,11 @@ def cmd_compute(args: argparse.Namespace) -> None:
     if denom == 0:
         raise SystemExit("没有任何正负句；无法计算正向率（0/0 属于无样本，须如实报告）")
 
-    docs_with_pg = {(u["platform"], u["idx"]) for u in extracted}
+    # 键必须含 region：采集按 scraper.<platform>/<REGION>/NNNN.json 分层，
+    # idx 是区域内编号，同一平台的港/新同题回答 idx 相同，
+    # 只用 (platform, idx) 会把两地回答合并、低报含正负句的回答数
+    # （实测 Trip.Biz 港新报 38、实为 52）。region 缺失时回落空串，不改变旧数据行为。
+    docs_with_pg = {(u.get("region", ""), u["platform"], u["idx"]) for u in extracted}
     print(f"情绪样本回答 {meta.get('scope_answers', '?')} 条")
     print(f"  提到品牌的回答 {meta.get('mentioned_answers', '?')} 条")
     print(f"  含正负句的回答 {len(docs_with_pg)} 条")

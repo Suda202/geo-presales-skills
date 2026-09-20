@@ -56,11 +56,27 @@ THEME_KEYWORDS = {
 THEMES = list(THEME_KEYWORDS.keys())
 
 
-def theme_of(label: str) -> str:
+def load_theme_keywords(path) -> dict:
+    """从 JSON 覆盖 Theme 关键词表（换品类必做）。
+
+    格式：{"<Theme 名>": ["关键词", ...], ...}。未提供时用内置的净水器品类词表。
+    """
+    if path is None:
+        return dict(THEME_KEYWORDS)
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not payload:
+        raise SystemExit(f"主题词表 {path} 应为非空 JSON 对象：{{\"<Theme>\": [关键词...]}}")
+    for theme, keywords in payload.items():
+        if not isinstance(keywords, list) or not keywords:
+            raise SystemExit(f"主题词表 {path} 的「{theme}」缺少关键词数组")
+    return {theme: [str(k) for k in keywords] for theme, keywords in payload.items()}
+
+
+def theme_of(label: str, keywords: dict) -> str:
     """按关键词把 claims 的 label 归一到 Theme；匹配不到归入「其他」（不入矩阵）。"""
     lowered = (label or "").casefold()
-    for theme in THEMES:
-        for keyword in THEME_KEYWORDS[theme]:
+    for theme, words in keywords.items():
+        for keyword in words:
             if keyword.casefold() in lowered:
                 return theme
     return "其他"
@@ -153,7 +169,7 @@ def excerpt(sentence: str, keywords: list[str], width: int = 46) -> str:
 
 
 def build_brand_table(units: list[dict], merged: dict, brands: list[str], counts: dict,
-                      predicate) -> dict:
+                      predicate, target: str) -> dict:
     """顶部「竞品情感占比」数据：每个品牌在给定切片下的正向情感占比。
 
     判读是按整句给方向的，没有逐句的属性标注；这里只按品牌汇总，
@@ -164,7 +180,7 @@ def build_brand_table(units: list[dict], merged: dict, brands: list[str], counts
         "rows": [
             {
                 "brand": brand,
-                "target": brand == "Bewinch",
+                "target": brand == target,
                 "values": [rate(counts[brand][0], counts[brand][1])],
             }
             for brand in brands
@@ -172,21 +188,22 @@ def build_brand_table(units: list[dict], merged: dict, brands: list[str], counts
     }
 
 
-def build_theme_matrix(all_claims: dict, brands: list[str], predicate) -> dict:
+def build_theme_matrix(all_claims: dict, brands: list[str], predicate, theme_keywords: dict) -> dict:
     """竞品情感矩阵（Theme × 品牌）。
 
     对每个品牌，把它的 claims 按 Theme 归一；用 sliced_claims 的过滤逻辑
     统计当前切片内每个 Theme × 品牌的正负句数。「其他」不入矩阵。
     每个单元格取该 Theme 下计数最高的 claim 标签作为代表描述，并记录其方向。
     """
-    matrix: dict[str, dict[str, dict]] = {theme: {} for theme in THEMES}
+    themes = list(theme_keywords.keys())
+    matrix: dict[str, dict[str, dict]] = {theme: {} for theme in themes}
     for brand in brands:
         groups = all_claims.get(brand) or {"pos": [], "neg": []}
         for direction, key in (("pos", "pos"), ("neg", "neg")):
             sliced = sliced_claims(groups[key], predicate)
             for group in sliced:
-                theme = theme_of(group["label"])
-                if theme not in THEMES:
+                theme = theme_of(group["label"], theme_keywords)
+                if theme not in themes:
                     continue
                 cell = matrix[theme].setdefault(brand, {
                     "pos": 0, "neg": 0, "top_claim": "", "top_count": 0, "top_dir": "",
@@ -197,13 +214,13 @@ def build_theme_matrix(all_claims: dict, brands: list[str], predicate) -> dict:
                     cell["top_claim"] = group["label"]
                     cell["top_count"] = group["count"]
                     cell["top_dir"] = direction
-    for theme in THEMES:
+    for theme in themes:
         for brand in brands:
             cell = matrix[theme].setdefault(brand, {
                 "pos": 0, "neg": 0, "top_claim": "", "top_count": 0, "top_dir": "",
             })
             cell["rate"] = rate(cell["pos"], cell["neg"])
-    return {"themes": list(THEMES), "brands": list(brands), "matrix": matrix}
+    return {"themes": themes, "brands": list(brands), "matrix": matrix}
 
 
 def top_claims(units: list[dict], merged: dict, brand: str, direction: str, predicate, limit=3) -> list[dict]:
@@ -241,6 +258,7 @@ def load_claim_groups(claims_dir: Path, sentences_path: Path, brand: str) -> dic
             picked = [members[i] for i in group.get("indices") or [] if 0 <= i < len(members)]
             built.append({
                 "label": group.get("label") or "",
+                "indices": group.get("indices") or [],
                 "evidence": group.get("evidence") or (picked[0] if picked else {}),
                 "members": picked,
             })
@@ -355,6 +373,9 @@ def main() -> int:
     parser.add_argument("--labels-dir", type=Path, required=True)
     parser.add_argument("--brands", required=True, help="逗号分隔的展示品牌")
     parser.add_argument("--target", required=True)
+    parser.add_argument("--theme-keywords", type=Path,
+                        help="主题关键词表 JSON（{\"<Theme>\": [关键词...]}）；换品类必须提供，"
+                             "缺省用内置的净水器品类词表，其他品类会整块落入「其他」不入矩阵")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
@@ -381,7 +402,10 @@ def main() -> int:
     if sentences_path.exists():
         target_groups = load_claim_groups(claims_dir, sentences_path, args.target)
         all_claims = load_all_claim_groups(claims_dir, sentences_path, brands)
-
+    theme_keywords = load_theme_keywords(args.theme_keywords)
+    if args.theme_keywords is None:
+        print("提示: 未提供 --theme-keywords,主题矩阵使用内置净水器品类词表;"
+              "换品类时未命中关键词的观点会整块落入「其他」而不进矩阵。")
     pos_sets = {b: set() for b in brands}
     neg_sets = {b: set() for b in brands}
     for index in merged["positive"]:
@@ -425,11 +449,23 @@ def main() -> int:
                 "neg": sliced_claims(target_groups["neg"], predicate) if target_groups
                       else top_claims(units, merged, args.target, "negative", predicate),
             },
-            "matrix": build_brand_table(units, merged, brands, counts, predicate),
-            "theme_matrix": build_theme_matrix(all_claims, brands, predicate) if all_claims else None,
+            "matrix": build_brand_table(units, merged, brands, counts, predicate, args.target),
+            "theme_matrix": build_theme_matrix(all_claims, brands, predicate, theme_keywords)
+                            if all_claims else None,
             "by_brand": {
-                b: {"positive": counts[b][0], "negative": counts[b][1],
-                    "pos_rate": rate(counts[b][0], counts[b][1])}
+                b: {
+                    "positive": counts[b][0], "negative": counts[b][1],
+                    "pos_rate": rate(counts[b][0], counts[b][1]),
+                    # 观点数口径：去重后的 claim 组数，同一观点多句只算一次
+                    **({
+                        "pos_claims": len(sliced_claims(all_claims[b]["pos"], predicate)),
+                        "neg_claims": len(sliced_claims(all_claims[b]["neg"], predicate)),
+                        "claim_pos_rate": rate(
+                            len(sliced_claims(all_claims[b]["pos"], predicate)),
+                            len(sliced_claims(all_claims[b]["neg"], predicate)),
+                        ),
+                    } if all_claims.get(b) else {}),
+                }
                 for b in brands
             },
         }
@@ -506,6 +542,8 @@ def main() -> int:
     meta["sentiment_note"] = (
         "情感仅判读了报告中展示的 %d 个品牌；其余开放品牌未判读。"
         "正向率 = 正向句 ÷（正向句 + 负向句），排除中性；"
+        "观点数口径 = 去重后的正向观点组数 ÷（正向+负向观点组数），"
+        "同一观点多句只算一次；"
         "观点标签与计数来自句子级判读的归纳，计数为该切片内的出现次数。" % len(brands)
     )
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
