@@ -178,6 +178,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 - `verify_report_data.py` 退出码为 0，且突变测试全部检出。
 - 在浏览器里逐层切过 tab，确认没有空白模块或错位。
 - **正文不得带平台残留文案**:逐条扫 `Go to product viewer dialog for this item.`(明细与情感证据两处都要,详见 [渲染规范](references/render-spec.md))。
+- **商品卡逐条核查**:客户会直接问「所有涉及商品卡的回答详情渲染都正常了吗」,交付前把含商品表的回答全部过一遍(中英文两版),不只抽查一条。
 - 报告里出现的每个数字都能在 `report-data.json` 里定位到，不得有前端临时计算的指标。
 - `meta.questions` 每题必须带 `intent`(从题库 `diagnostic_intent` 映射的中文标签):明细表的情感列、切片过滤都靠它,缺失时明细正向情感列会整列显示「—」(Bewinch 实例)。
 - 情感板块若尚无判读数据，必须在 `meta.sentiment_claims_status` 标 `pending`，不允许用占位数字冒充。
