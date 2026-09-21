@@ -129,6 +129,26 @@
 
 ---
 
+## D8 · 引用列表伪重复（警告，仅旧格式批次）
+
+**现象**：供应商引用字段把**同一个来源**列成多条，引用计数与来源数被系统性抬高。三种形态：
+
+| 形态 | 平台 | 实测规模（旧批次） |
+|---|---|---|
+| 同 URL 不同 `#:~:text=` 片段拆成多条 | Gemini | bewinch 59/74 条回答受影响 |
+| **完全相同 URL**（同一片段）重复 | Gemini | trip-biz 31/78 条回答、52 处 |
+| 「裸桩 + 完整」成对：同 URL 列两遍，一条只有站点名（`title`/`snippet` 空），一条带完整标题摘要 | AIO、AI Mode | AIO bewinch 71/78 条、201 对（100% 此模式）；AI Mode botslab 33/37 条 |
+
+**裸桩识别**（AIO 旧数据，已验证）：裸桩 `title` 空且 `favicon` 有；完整条目 `title` 有且 `favicon` 无。成因是响应里「正文引用 chip + 来源列表条目」被拍进同一个 `source` 字段。
+
+**新格式批次已修复**：2026-09-18 起的 AI Mode / AIO 新格式（见 [数据分层契约](layer-contract.md#字段代数新旧格式批次)）来源列表已去重、伪重复为 0。**审计前先判断批次代数**；Gemini / ChatGPT / Perplexity 截至 2026-09-21 仍是旧格式（Gemini 未去重，已提供应商）。
+
+**检测**：暂无自动检测码（`audit_crawl_integrity.py` 未实现），人工核查——对每条回答的引用字段按完整 URL 分组,组内条数 >1 即命中;AIO/AI Mode 再看是否为「`title` 空 + `favicon` 有」的裸桩形态。
+
+**下游处理**（不改采集文件）：旧格式数据统计引用时按 `geo-presales-report-builder` 的 `_citation_keep_mask` 规则折叠伪拆分——只对 gemini/overview，每个 canonical 保留出现次数最多的编号，**同编号真重复保留**，不得一刀切按 URL 去重。
+
+---
+
 ## 判读边界
 
 - 检测只报事实与受影响记录，不修改采集文件。

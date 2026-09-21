@@ -3,7 +3,7 @@ name: geo-presales-crawl-integrity
 description: This skill should be used before computing any overseas GEO presales metric, to verify that a raw crawler collection directory (Scrapeless scraper.<platform>/<REGION>/<NNNN>.json) is trustworthy input — detecting field-layer mixing, lost reference definitions, empty citation fields and failed answers, and naming the exact platform + file for each. Do not use it to compute visibility or citation metrics, to correct brand rankings, or to judge sentiment.
 metadata:
   author: 海外 GEO 项目
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # 采集数据可信性前置校验
@@ -20,7 +20,7 @@ metadata:
 ## 开始前读取
 
 1. [数据分层契约](references/layer-contract.md)——四层数据定义、每平台字段映射、两个计数单位、缺失状态约定。判读任何一条前先读这个。
-2. [已知缺陷目录](references/defect-catalog.md)——D1–D7 的现象、一手证据、检测方法与影响范围。
+2. [已知缺陷目录](references/defect-catalog.md)——D1–D8 的现象、一手证据、检测方法与影响范围，含旧格式批次的引用列表伪重复（D8）。
 3. [平台字段契约](references/platform-contract.json)——**平台会持续扩展**：新增平台在这里加一条即可，不必改脚本；有平台没登记时脚本报 `UNKNOWN_PLATFORM_CONTRACT` 阻断，不静默跳过。
 
 ## 为什么必须先跑这一步
