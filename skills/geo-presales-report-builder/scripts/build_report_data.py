@@ -1828,42 +1828,33 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                     }
                     for index, (_, obj) in enumerate(ranked, 1)
                 ]
-                # 单条回答的引用份额：该回答正文 pill 出现次数中，指向本品官网的比例。
-                # 这是「单个回答」层的口径；切片级（多回答/多平台）与平台级由
-                # build_slice 分别给出，三层都保留，不做合并。Gemini / AIO 的伪拆分按
-                # _citation_keep_mask 折叠（保留同编号真重复），与数据层、verify 同口径。
-                definitions, occurrences = _body_citation_occurrences(answer)
-                resolved = []
-                for source_name, number, _position in occurrences:
-                    definition = definitions.get(number) or {}
-                    raw_url = definition.get("url") or ""
-                    normalized = normalize_url(raw_url) if raw_url else None
-                    canonical = normalized["canonical_url"] if normalized else None
-                    resolved.append((source_name, number, definition, normalized, canonical))
-                keep = _citation_keep_mask(
-                    [(number, canonical) for _s, number, _d, _n, canonical in resolved],
-                    platform_dir in CITATION_URL_COLLAPSE_PLATFORMS)
-                own_occurrences = 0
-                effective = 0  # 折叠后的有效引用次数（ChatGPT/Perplexity == len(occurrences)）
+                # 单条回答的引用份额：与明细表 records[].citation_share、sources、KPI 完全同源。
+                # 必须复用 _citation_entries（正文 pill + 缺定义行按位置回退平台字段 + 平台内链
+                # 过滤 + Gemini/AIO 伪拆分折叠），不要在这里另起一套只认定义行、不做回退的解析——
+                # 那会让 AIO（大量 pill 靠位置回退取 URL）抽屉与明细表对不上（2026-09-21 修）。
+                cite_entries = _citation_entries(platform_dir, result, answer)
+                effective = len(cite_entries)
+                own_occurrences = sum(
+                    1 for c in cite_entries
+                    if c.get("domain_hint")
+                    and any(domain_matches(c["domain_hint"], domain) for domain in target_domains))
                 citations = []
-                seen_urls = set()  # 同一 URL 只显示一次（Gemini/AIO 会把同一页面拆成多条）
-                for (source_name, number, definition, normalized, canonical), keep_it in zip(resolved, keep):
-                    if not keep_it:
+                seen_urls = set()  # 展示层同一 URL 只列一次（Gemini/AIO 把同一页面拆成多条）
+                for c in cite_entries:
+                    raw_url = c.get("raw_url")
+                    normalized = normalize_url(raw_url) if raw_url else None
+                    if not normalized:
                         continue
-                    host = normalized["host"] if normalized else ""
-                    effective += 1
-                    if host and any(domain_matches(host, domain) for domain in target_domains):
-                        own_occurrences += 1
-                    if normalized:
-                        if canonical in seen_urls:
-                            continue
-                        seen_urls.add(canonical)
-                        citations.append({
-                            "title": str(definition.get("title") or "").strip() or normalized["host"],
-                            "url": canonical,
-                            "host": normalized["host"],
-                            "source_name": source_name,
-                        })
+                    canonical = normalized["canonical_url"]
+                    if canonical in seen_urls:
+                        continue
+                    seen_urls.add(canonical)
+                    citations.append({
+                        "title": str(c.get("title") or "").strip() or normalized["host"],
+                        "url": canonical,
+                        "host": normalized["host"],
+                        "source_name": c.get("source_name"),
+                    })
                 # 平台原始引用字段：直接从 task_result 提取，去重后的 URL 列表
                 # AIO=source, Gemini=citations, ChatGPT=content_references, Perplexity=web_results
                 platform_citations = []
