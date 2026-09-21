@@ -352,14 +352,22 @@ class Recomputer:
 
         total_mentions = sum(mention_counts.values())
         target_mentions = mention_counts.get("target", 0)
-        order = sorted(self.objects,
-                       key=lambda o: (-mention_counts.get(o["object_id"], 0), o["name"]))
-        rank_lookup, last_value, last_rank = {}, None, 0
-        for index, obj in enumerate(order, 1):
-            value = mention_counts.get(obj["object_id"], 0)
-            if value != last_value:
-                last_rank, last_value = index, value
-            rank_lookup[obj["object_id"]] = last_rank
+        # 空切片（该切片没有任何有效 Discovery 回答）没有可比较的名次：与
+        # build_report_data.rank_lookup_of 一致返回 `—`，而不是按排序位置给出
+        # 「并列第一」。旧版这里返回 1、builder 写 0，两边对同一条空切片各说各话
+        # （2026-09-21 对齐）。回答存在但无人被提及时 mention_rate 是 0 而非 None，
+        # 不属于空切片，名次照常计算。
+        if discovery_answers == 0:
+            rank_lookup = {o["object_id"]: "—" for o in self.objects}
+        else:
+            order = sorted(self.objects,
+                           key=lambda o: (-mention_counts.get(o["object_id"], 0), o["name"]))
+            rank_lookup, last_value, last_rank = {}, None, 0
+            for index, obj in enumerate(order, 1):
+                value = mention_counts.get(obj["object_id"], 0)
+                if value != last_value:
+                    last_rank, last_value = index, value
+                rank_lookup[obj["object_id"]] = last_rank
 
         # 每个对象的独立口径，供逐行对账 competition.mention / matrix
         object_stats = {}
@@ -666,9 +674,12 @@ def _check_slice(key, slc, recomputer, region, platform, topic, meta) -> list[st
         if counts != sources.get("total_citations"):
             out.append(f"{key}: sources.types 计数和 {counts} != total_citations "
                        f"{sources.get('total_citations')}")
-        pct_sum = sum(_num(r[1]) or 0 for r in types)
-        if abs(pct_sum - 100) > 0.5:
-            out.append(f"{key}: sources.types 百分比合计 {pct_sum:.1f} != 100")
+        # 无引用切片（total_citations=0）没有可分配的份额，各类型都是「—」，
+        # 百分比合计不适用；只在有引用时才要求合计为 100。
+        if sources.get("total_citations"):
+            pct_sum = sum(_num(r[1]) or 0 for r in types)
+            if abs(pct_sum - 100) > 0.5:
+                out.append(f"{key}: sources.types 百分比合计 {pct_sum:.1f} != 100")
 
     # 引用两种计法：次数按标记出现、来源清单去重。两者必须同时给出且各自可复算。
     units = sources.get("citation_units") or {}

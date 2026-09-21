@@ -1010,7 +1010,10 @@ def build_slice(region: str, platform: str, topic: str, config: dict, bank: dict
             bar_width(row["mention_rate"], max_rate), fill,
             rank_lookup.get(row["object_id"]),
         ])
-        share_values.append(round((row["share_of_voice"] or 0) * 100, 1))
+        # 声量份额无分母时为「—」而不是 0：空切片没有可分配的份额，
+        # 写 0 会被读成「有 0% 份额」，与 verify 复算的「—」冲突。
+        share_values.append(None if row["share_of_voice"] is None
+                            else round(row["share_of_voice"] * 100, 1))
 
     rank_rows = []
     for row in sorted(display, key=lambda r: (r["average_rank"] if r["average_rank"] is not None else 999)):
@@ -1065,7 +1068,14 @@ def build_slice(region: str, platform: str, topic: str, config: dict, bank: dict
 
 
 def rank_lookup_of(rows: list[dict]) -> dict:
-    """按提及率降序的并列名次（1,2,2,4），目标品牌与全部纳入对象一起排序。"""
+    """按提及率降序的并列名次（1,2,2,4），目标品牌与全部纳入对象一起排序。
+
+    空切片（全部对象都没有提及率）没有可比较的名次，返回 `—` 而不是 0：
+    旧版把哨兵 `last_value` 初始化成 `None`，首行 mention_rate 也是 `None` 时
+    比较恒为相等、`last_rank` 停在 0，于是全表都写 0，且与 verify 复算的 1 冲突。
+    """
+    if all(r["mention_rate"] is None for r in rows):
+        return {r["object_id"]: "—" for r in rows}
     ordered = sorted(rows, key=lambda r: (-(r["mention_rate"] or 0), r["name"]))
     lookup, last_value, last_rank = {}, None, 0
     for index, row in enumerate(ordered, 1):

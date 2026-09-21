@@ -433,7 +433,7 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
             rows = [(a, s, v) for (b, a, s), v in per_brand_attr.items()
                     if b == brand and attr_theme.get((b, a)) == theme]
             if not rows:
-                matrix[theme][brand] = {"pos": 0, "neg": 0, "top_attribute": "",
+                matrix[theme][brand] = {"pos": 0, "neg": 0, "top_claim": "",
                                         "top_count": 0, "top_dir": "", "rate": "—"}
                 continue
             top = max(rows, key=lambda r: (r[2], r[0]))
@@ -441,12 +441,40 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
             neg = sum(v for _a, s, v in rows if s == "negative")
             matrix[theme][brand] = {
                 "pos": pos, "neg": neg,
-                "top_attribute": top[0], "top_count": top[2],
+                "top_claim": top[0], "top_count": top[2],
                 "top_dir": "pos" if top[1] == "positive" else "neg",
                 "rate": rate(pos, neg),
             }
 
     target_stats = brand_stats.get(target, {})
+
+    def claim_groups(direction: str) -> list[dict]:
+        """目标品牌在该切片的观点组：label 取 Attribute，count 取去重信号数，
+        并挂一条最有代表性的证据句（取该 Attribute 下第一条带 evidence_text 的 claim）。"""
+        evidence_by_attr: dict[str, dict] = {}
+        for c in claims:
+            if c.get("brand") != target or c.get("sentiment") != direction:
+                continue
+            attr = c.get("attribute") or ""
+            if attr in evidence_by_attr:
+                continue
+            text = str(c.get("evidence_text") or "").strip()
+            if not text:
+                continue
+            evidence_by_attr[attr] = {
+                "sentence": text,
+                "region": c.get("region"),
+                "platform": c.get("platform"),
+                "question_id": c.get("question_id"),
+            }
+        rows = [a for a in target_stats.get("by_attribute", []) if a.get("sentiment") == direction]
+        out = []
+        for a in rows:
+            attr = a.get("attribute") or ""
+            out.append({"label": attr, "count": a.get("occurrence", 0),
+                        "evidence": evidence_by_attr.get(attr, {})})
+        return out
+
     return {
         "metric_basis": "claim_signals",
         "summary": {
@@ -461,13 +489,18 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
             "pos_rate_cross_platform": target_stats.get("pos_rate_cross_platform", "—"),
             "platforms_with_signal": target_stats.get("platforms_with_signal", 0),
         },
-        "claims": {
-            "pos": [{"label": a["attribute"], "count": a["occurrence"],
-                     "evidence": {}} for a in target_stats.get("by_attribute", [])
-                    if a["sentiment"] == "positive"],
-            "neg": [{"label": a["attribute"], "count": a["occurrence"],
-                     "evidence": {}} for a in target_stats.get("by_attribute", [])
-                    if a["sentiment"] == "negative"],
+        "claims": {"pos": claim_groups("positive"), "neg": claim_groups("negative")},
+        # 品牌情感占比表：与句级路径同结构（columns/rows），verify 要求存在；
+        # 每条品牌的正负信号数取自同一份 per_brand_attr 聚合，保证与 summary 自洽。
+        "matrix": {
+            "columns": ["正向率", "正向信号", "负向信号"],
+            "rows": [
+                {"brand": b, "target": b == target,
+                 "values": [brand_stats[b]["pos_rate"],
+                            str(brand_stats[b]["positive_signals"]),
+                            str(brand_stats[b]["negative_signals"])]}
+                for b in brands if b in brand_stats
+            ],
         },
         "by_brand": brand_stats,
         "theme_matrix": {"themes": themes, "brands": list(brands), "matrix": matrix},

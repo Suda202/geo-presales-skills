@@ -3,7 +3,7 @@ name: geo-presales-sentiment-judge
 description: This skill should be used when computing brand sentiment from overseas GEO presales crawler answers — extracting atomic Claims with evidence, normalising them into Attribute dimensions and neutral Themes, and computing positive-share and cross-platform metrics for a target brand or a whole brand lexicon (target + configured/open competitors), against the v8 question bank sentiment sample scope. It does not modify backend JSON sentiment fields, judge competitor win rates, or compute visibility metrics.
 metadata:
   author: 海外 GEO 项目
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # GEO 售前品牌情感判读(Claim → Attribute → Theme)

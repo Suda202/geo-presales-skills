@@ -111,7 +111,7 @@ class ClaimLayerAggregationTests(unittest.TestCase):
     def test_theme_matrix_cell_is_attribute_description(self):
         block = MODULE.build_claims_sentiment(self.claims(), ["A"], lambda u: True, "A")
         cell = block["theme_matrix"]["matrix"]["安装与部署"]["A"]
-        self.assertEqual("安装便捷", cell["top_attribute"])
+        self.assertEqual("安装便捷", cell["top_claim"])
         self.assertEqual("pos", cell["top_dir"])
 
     def test_reconciliation_rejects_drifted_metrics(self):

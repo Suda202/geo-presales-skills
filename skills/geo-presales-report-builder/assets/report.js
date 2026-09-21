@@ -311,9 +311,20 @@
     var el = document.getElementById("sentimentRates");
     if (el) {
       var intro = "<h3>" + esc((META.brand || "") + " 的正负向表达") + "</h3>";
+      // Claim 层契约要求同时展示跨平台等权值与「有信号平台数」，否则客户会以为
+      // 等权值覆盖了全部平台；句级降级路径没有这两个字段，不展示。
+      var crossRate = summary.pos_rate_cross_platform;
+      var signalPlatforms = summary.platforms_with_signal;
+      var basisNote = "";
+      if (crossRate && crossRate !== "—" && signalPlatforms) {
+        basisNote = '<p class="support-line">跨平台等权正向占比 <b>' + esc(crossRate) +
+          "</b>（按有信号的 " + esc(String(signalPlatforms)) +
+          " 个平台等权平均，无信号平台不补 0）</p>";
+      }
       el.innerHTML = intro +
         bucket("正向", summary.pos_rate, "pos", claims.pos || []) +
-        bucket("负向", summary.neg_rate, "neg", claims.neg || []);
+        bucket("负向", summary.neg_rate, "neg", claims.neg || []) +
+        basisNote;
       var first = (claims.pos || [])[0] || (claims.neg || [])[0] || null;
       showEvidence(first, first && (claims.pos || []).indexOf(first) >= 0 ? "pos" : "neg");
     }
