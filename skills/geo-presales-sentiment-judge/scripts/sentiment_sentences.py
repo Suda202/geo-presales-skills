@@ -30,6 +30,7 @@ import os
 import re
 import sys
 import urllib.parse
+from pathlib import Path
 
 
 
@@ -451,21 +452,56 @@ def _load_claims(path: str) -> list[dict]:
     return claims
 
 
+def _load_mapping(path, key_field: str, value_field: str) -> dict:
+    """读聚类映射（claim→attribute 或 attribute→theme）。
+
+    支持两种写法：`{"键": "值"}` 或 `[{"<key_field>": ..., "<value_field>": ...}]`。
+    同一键映射到不同值时直接报错——聚类是函数，不允许一对多。
+    """
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if isinstance(payload, dict):
+        items = list(payload.items())
+    elif isinstance(payload, list):
+        items = []
+        for i, rec in enumerate(payload):
+            if not isinstance(rec, dict) or key_field not in rec or value_field not in rec:
+                raise SystemExit(f"{path} 第 {i} 条应为 {{{key_field!r}: ..., {value_field!r}: ...}}")
+            items.append((rec[key_field], rec[value_field]))
+    else:
+        raise SystemExit(f"{path} 应为 dict 或 list")
+    out: dict[str, str] = {}
+    for k, v in items:
+        k, v = str(k or "").strip(), str(v or "").strip()
+        if not k:
+            continue
+        if k in out and out[k] != v:
+            raise SystemExit(f"{path}: {k!r} 同时映射到 {out[k]!r} 与 {v!r}，聚类结果必须一对一")
+        out[k] = v
+    return out
+
+
 def cmd_claims_assemble(args: argparse.Namespace) -> None:
-    """把模型抽出的 Claim 层回装成带完整上下文的记录。
+    """把抽取出的 Claim 与两趟聚类结果回装成带完整上下文的记录。
 
     输入：units.json（extract 产出，提供 evidence_text 与平台/地区/题号/意图上下文）
-        + claims-raw.json（语义环节产出，每条只需给出 unit_index / brand / claim /
-          attribute / theme / sentiment）。
-    输出：claims.json —— 每条补齐 evidence_text 与上下文，供统计与明细展示使用。
+        + claims-raw.json（抽取环节产出，每条只给 unit_index / brand / claim / sentiment）
+        + --claim-attributes（聚类 1：claim → attribute）
+        + --attribute-themes（聚类 2：attribute → theme）
+    输出：claims.json —— 每条补齐 evidence_text、attribute、theme 与上下文。
+
+    三层各司其职：claim 是标准化语义判断（「价格高」），attribute 是相近 claim 的聚类
+    （「Pricing > Expensive」），theme 是 attribute 的再聚类。抽取环节不产出 attribute/theme。
     """
     units = json.load(open(args.units))["units"]
     raw = _load_claims(args.claims)
+    claim_attr = _load_mapping(args.claim_attributes, "claim", "attribute")
+    attr_theme = _load_mapping(args.attribute_themes, "attribute", "theme")
+
     out = []
     problems = []
     for i, item in enumerate(raw):
         # 注意：unit_index 可以是 0，不能用 `or ""` 判空（会把 0 当缺失）。
-        missing = [f for f in ("brand", "claim", "attribute", "theme", "sentiment")
+        missing = [f for f in ("brand", "claim", "sentiment")
                    if not str(item.get(f) or "").strip()]
         if item.get("unit_index") is None:
             missing.insert(0, "unit_index")
@@ -485,6 +521,11 @@ def cmd_claims_assemble(args: argparse.Namespace) -> None:
         if direction not in ("positive", "negative", "正向", "负向"):
             problems.append(f"第 {i} 条 sentiment 只允许 positive/negative:{direction!r}")
             continue
+        claim = str(item["claim"]).strip()
+        attribute = claim_attr.get(claim)
+        theme = attr_theme.get(attribute) if attribute else None
+        if not attribute or not theme:
+            continue  # 缺口在下面按「未映射清单」汇总报告，比逐条报更可读
         out.append({
             "unit_index": unit_index,
             "idx": unit.get("idx"),
@@ -494,23 +535,68 @@ def cmd_claims_assemble(args: argparse.Namespace) -> None:
             "intent": unit.get("intent"),
             "brand": item["brand"],
             "brand_type": unit.get("brand_type"),
-            "claim": str(item["claim"]).strip(),
-            "attribute": str(item["attribute"]).strip(),
-            "theme": str(item["theme"]).strip(),
+            "claim": claim,
+            "attribute": attribute,
+            "theme": theme,
             "sentiment": "positive" if direction in ("positive", "正向") else "negative",
             "evidence_text": unit.get("unit", ""),
         })
+
+    unmapped_claims = sorted({str(it.get("claim") or "").strip() for it in raw
+                              if str(it.get("claim") or "").strip()
+                              and str(it.get("claim") or "").strip() not in claim_attr})
+    if unmapped_claims:
+        problems.append(f"{len(unmapped_claims)} 个 claim 没有 attribute 映射：{unmapped_claims[:10]}")
+    unmapped_attrs = sorted({v for v in claim_attr.values() if v and v not in attr_theme})
+    if unmapped_attrs:
+        problems.append(f"{len(unmapped_attrs)} 个 attribute 没有 theme 映射：{unmapped_attrs[:10]}")
+
     if problems:
         for p in problems[:20]:
             print("校验失败:", p, file=sys.stderr)
         if len(problems) > 20:
             print(f"... 另有 {len(problems) - 20} 条", file=sys.stderr)
         raise SystemExit(f"claims 校验未通过（{len(problems)} 条问题）")
-    json.dump({"meta": {"unit_source": args.units, "claim_count": len(out)},
+    json.dump({"meta": {"unit_source": args.units, "claim_count": len(out),
+                        "claim_attributes_source": args.claim_attributes,
+                        "attribute_themes_source": args.attribute_themes},
                "claims": out}, open(args.output, "w"), ensure_ascii=False, indent=1)
     by_dir = collections.Counter(c["sentiment"] for c in out)
-    print(f"回装 {len(out)} 条 claim（正向 {by_dir.get('positive', 0)} / 负向 {by_dir.get('negative', 0)}）")
+    print(f"回装 {len(out)} 条 claim（正向 {by_dir.get('positive', 0)} / 负向 {by_dir.get('negative', 0)}），"
+          f"覆盖 {len({c['claim'] for c in out})} 个 claim / {len({c['attribute'] for c in out})} 个 attribute"
+          f" / {len({c['theme'] for c in out})} 个 theme")
     print(f"写入 {args.output}")
+
+
+def cmd_claims_cluster_list(args: argparse.Namespace) -> None:
+    """产出待聚类的去重清单，供两趟聚类用。
+
+    第一趟：`--input claims-raw.json --key claim` → 去重后的 claim 清单（写 claim→attribute）
+    第二趟：`--input claim-attributes.json --key attribute` → 去重后的 attribute 清单（写 attribute→theme）
+
+    先把重复项收敛成一份 distinct 清单，聚类才对每个值判一次、并天然自洽。
+    """
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    field = args.key
+    records = payload.get("claims") if isinstance(payload, dict) else payload
+    if isinstance(payload, dict) and records is None:
+        # 输入是映射表（如 claim→attribute 的聚类 1 产物）：待聚类的值就是它的 values
+        records = [{"value": v} for v in payload.values()]
+        field = "value"
+    if not isinstance(records, list):
+        raise SystemExit(f"{args.input} 应为数组、{{\"claims\": [...]}} 或映射表 {{键: 值}}")
+    counter: collections.Counter = collections.Counter()
+    for rec in records:
+        if not isinstance(rec, dict):
+            continue
+        value = str(rec.get(field) or "").strip()
+        if value:
+            counter[value] += 1
+    rows = [{"value": k, "count": v}
+            for k, v in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))]
+    json.dump({"key": args.key, "distinct": len(rows), "items": rows},
+              open(args.output, "w"), ensure_ascii=False, indent=1)
+    print(f"{args.key} 去重后 {len(rows)} 项（共 {sum(counter.values())} 条），写入 {args.output}")
 
 
 def _norm_claim_text(text) -> str:
@@ -632,13 +718,23 @@ def main() -> None:
     p_compute.add_argument("--out-csv", required=True)
     p_compute.add_argument("--out-metrics", default=None)
 
-    # Claim 层（四层结构：evidence_text → Claim → Attribute → Theme）
+    # Claim 层（四层结构：evidence_text → Claim → Attribute → Theme，后两层各由一趟聚类产出）
     p_assemble = sub.add_parser("claims-assemble",
-                                help="把模型抽出的 Claim 回装成带证据与上下文的记录")
+                                help="把抽取的 Claim 与两趟聚类结果回装成带证据与上下文的记录")
     p_assemble.add_argument("--units", required=True, help="extract 产出的单元 JSON")
     p_assemble.add_argument("--claims", required=True,
-                            help="语义环节产出的 claims-raw JSON（unit_index/brand/claim/attribute/theme/sentiment）")
+                            help="抽取环节产出的 claims-raw JSON（unit_index/brand/claim/sentiment）")
+    p_assemble.add_argument("--claim-attributes", required=True,
+                            help="聚类 1 产出：claim → attribute 映射（dict 或 [{claim, attribute}]）")
+    p_assemble.add_argument("--attribute-themes", required=True,
+                            help="聚类 2 产出：attribute → theme 映射（dict 或 [{attribute, theme}]）")
     p_assemble.add_argument("--output", required=True)
+
+    p_cl = sub.add_parser("claims-cluster-list",
+                          help="产出待聚类的去重清单（聚类 1 出 claim 清单，聚类 2 出 attribute 清单）")
+    p_cl.add_argument("--input", required=True, help="claims-raw.json 或 claim-attributes.json")
+    p_cl.add_argument("--key", required=True, help="取值字段：第一趟 claim，第二趟 attribute")
+    p_cl.add_argument("--output", required=True)
 
     p_cm = sub.add_parser("claims-metrics", help="按 Claim 信号口径统计正负与跨平台等权占比")
     p_cm.add_argument("--claims", required=True, help="claims-assemble 产出的 claims JSON")
@@ -653,6 +749,8 @@ def main() -> None:
         cmd_compute(args)
     elif args.command == "claims-assemble":
         cmd_claims_assemble(args)
+    elif args.command == "claims-cluster-list":
+        cmd_claims_cluster_list(args)
     else:
         cmd_claims_metrics(args)
 

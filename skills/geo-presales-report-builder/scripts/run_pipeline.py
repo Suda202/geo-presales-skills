@@ -105,25 +105,57 @@ def stage_sentiment(args, out: Path) -> None:
     else:
         print(f"✓ [3a 情感抽取] {units}")
 
-    # 3b/3c：抽 Claim 层（语义）+ 回装校验（确定性）
+    # 3b 抽取只出 claim；3d/3f 是两趟聚类（语义暂停点）；3c/3e 生成待聚类的去重清单（确定性）；
+    # 3g 回装（确定性）。三层各由一趟工序产出——聚类的输入是去重后的清单，因此同一
+    # claim 只判一次、同一 attribute 只有一个 theme，不会各片各拍。
     claims_raw = out / "claims-raw.json"
+    unique_claims = out / "cluster-claims.json"
+    claim_attr = out / "claim-attributes.json"
+    unique_attrs = out / "cluster-attributes.json"
+    attr_theme = out / "attribute-themes.json"
     claims_file = out / "claims.json"
+
     if not claims_raw.exists():
         raise Pause(
-            f"请抽 Claim 层:读 {units},按 references/claim-layer-contract.md 逐单元拆出**原子 Claim**,"
-            f"每条标注 attribute / theme / sentiment(一句话含多个观点就拆多条;"
-            f"品牌未提及或无明确倾向的不生成 Claim),写 {claims_raw}(数组,每条只给 "
-            f"unit_index/brand/claim/attribute/theme/sentiment)。"
-            f"拿不准的记入 {out}/review-queue.md 交 Suda 裁决,禁止关键词自动打标。")
+            f"请抽取 Claim：读 {units}，按 references/claim-layer-contract.md 逐单元拆出**原子 Claim**，"
+            f"每条只给 unit_index / brand / claim / sentiment。"
+            f"claim 是**标准化后的语义判断**（例：价格高、未公开定价页），不是原文摘抄；"
+            f"一句话含多个观点就拆多条；品牌未提及或无明确倾向的不生成 Claim。"
+            f"本环节**不产出 attribute / theme**——它们由随后两趟聚类产出。"
+            f"写 {claims_raw}。拿不准的记入 {out}/review-queue.md 交 Suda 裁决，禁止关键词自动打标。")
     else:
         print(f"✓ [3b Claim 抽取] {claims_raw}")
 
+    run([sys.executable, JUDGE, "claims-cluster-list", "--input", claims_raw,
+         "--key", "claim", "--output", unique_claims], args.dry_run, "3c 聚类1 输入清单")
+    if not claim_attr.exists():
+        raise Pause(
+            f"请做聚类 1（claim → attribute）：读 {unique_claims} 的去重 claim 清单，"
+            f"把**相近的 claim 归到同一 attribute**（例：价格高 / 收费贵 / 定价偏贵 → Pricing > Expensive；"
+            f"未公开定价页 / 要联系销售报价 → Pricing > Opaque）。"
+            f"attribute 用「维度 > 极性」形式且**跨品牌通用**；每个 claim 只能归一个 attribute。"
+            f'写 {claim_attr}（{{"claim": "attribute"}} 或 [{{"claim": ..., "attribute": ...}}]）。')
+    else:
+        print(f"✓ [3d 聚类1 claim→attribute] {claim_attr}")
+
+    run([sys.executable, JUDGE, "claims-cluster-list", "--input", claim_attr,
+         "--key", "attribute", "--output", unique_attrs], args.dry_run, "3e 聚类2 输入清单")
+    if not attr_theme.exists():
+        raise Pause(
+            f"请做聚类 2（attribute → theme）：读 {unique_attrs} 的去重 attribute 清单，"
+            f"把 attribute 再聚成**高层中性主题**（例：Pricing > Expensive 与 Pricing > Opaque → Pricing）。"
+            f"theme 必须中性（是「价格」不是「价格贵」）；每个 attribute 只能归一个 theme。"
+            f'写 {attr_theme}（{{"attribute": "theme"}}）。')
+    else:
+        print(f"✓ [3f 聚类2 attribute→theme] {attr_theme}")
+
     run([sys.executable, JUDGE, "claims-assemble", "--units", units,
-         "--claims", claims_raw, "--output", claims_file], args.dry_run, "3c Claim 回装")
+         "--claims", claims_raw, "--claim-attributes", claim_attr,
+         "--attribute-themes", attr_theme, "--output", claims_file], args.dry_run, "3g Claim 回装")
 
     metrics_file = out / "claims-metrics.json"
     run([sys.executable, JUDGE, "claims-metrics", "--claims", claims_file,
-         "--brands", args.brands, "--out-metrics", metrics_file], args.dry_run, "3d Claim 统计")
+         "--brands", args.brands, "--out-metrics", metrics_file], args.dry_run, "3h Claim 统计")
 
     run([sys.executable, HERE / "attach_sentiment.py",
          "--report", out / "report-data.json", "--units", units,
@@ -131,7 +163,7 @@ def stage_sentiment(args, out: Path) -> None:
          "--target", args.target, "--claims", claims_file,
          "--expected-metrics", metrics_file,
          *(["--theme-keywords", args.theme_keywords] if args.theme_keywords else []),
-         "--out", out / "report-data.json"], args.dry_run, "3e 情感接入")
+         "--out", out / "report-data.json"], args.dry_run, "3i 情感接入")
 
 
 def stage_translations(args, out: Path) -> None:

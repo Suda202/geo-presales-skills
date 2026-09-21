@@ -65,17 +65,17 @@ class TestThemeMatrix(unittest.TestCase):
         matrix = MODULE.build_theme_matrix(all_claims, ["A"], lambda u: True,
                                           MODULE.load_theme_keywords(None))
         install = matrix["matrix"]["安装与部署"]["A"]
-        self.assertEqual("免安装零管线", install["top_claim"])
+        self.assertEqual("免安装零管线", install["top_attribute"])
         self.assertEqual("pos", install["top_dir"])
         self.assertEqual("100.0%", install["rate"])
         size = matrix["matrix"]["体积与空间"]["A"]
-        self.assertEqual("机身过深", size["top_claim"])
+        self.assertEqual("机身过深", size["top_attribute"])
         self.assertEqual("neg", size["top_dir"])
 
     def test_custom_lexicon_routes_to_custom_theme(self):
         all_claims = {"A": {"pos": [self.group("夜视效果好", 3)], "neg": []}}
         matrix = MODULE.build_theme_matrix(all_claims, ["A"], lambda u: True, {"夜视能力": ["夜视"]})
-        self.assertEqual("夜视效果好", matrix["matrix"]["夜视能力"]["A"]["top_claim"])
+        self.assertEqual("夜视效果好", matrix["matrix"]["夜视能力"]["A"]["top_attribute"])
         self.assertEqual("其他", MODULE.theme_of("夜视效果好", MODULE.load_theme_keywords(None)))
 
 
@@ -111,7 +111,7 @@ class ClaimLayerAggregationTests(unittest.TestCase):
     def test_theme_matrix_cell_is_attribute_description(self):
         block = MODULE.build_claims_sentiment(self.claims(), ["A"], lambda u: True, "A")
         cell = block["theme_matrix"]["matrix"]["安装与部署"]["A"]
-        self.assertEqual("安装便捷", cell["top_claim"])
+        self.assertEqual("安装便捷", cell["top_attribute"])
         self.assertEqual("pos", cell["top_dir"])
 
     def test_reconciliation_rejects_drifted_metrics(self):

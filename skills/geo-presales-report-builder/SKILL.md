@@ -3,7 +3,7 @@ name: geo-presales-report-builder
 description: This skill should be used when generating a customer-facing overseas GEO presales diagnosis report (single-file HTML, V4.0 prototype styling) directly from Scrapeless crawler collection data plus a Case record, covering visibility, citations, sentiment, content planning and per-question detail with country / platform / topic filtering. Do not use it to compute the upload CSV (that is geo-presales-report-editor), to audit brand mention recognition, or to write report conclusions by hand.
 metadata:
   author: Overseas GEO Project
-  version: "1.5.0"
+  version: "2.0.0"
 ---
 
 # 海外 GEO 售前诊断报告生成
@@ -83,17 +83,26 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
    走 `geo-presales-sentiment-judge` 的四层结构 `answer → evidence_text → Claim → Attribute → Theme`（契约见该 skill 的 [Claim 层契约](../geo-presales-sentiment-judge/references/claim-layer-contract.md)，**不必再读本 skill 的句级交接契约**）。
 
    ```bash
-   # 1) 抽取单元（evidence_text 候选）
-   python3 ../geo-presales-sentiment-judge/scripts/sentiment_sentences.py extract \
-     --bank <题库.csv> --crawl-dir <采集目录> \
+   J=../geo-presales-sentiment-judge/scripts/sentiment_sentences.py
+   # 1) 抽取单元（evidence_text 候选，确定性）
+   python3 $J extract --bank <题库.csv> --crawl-dir <采集目录> \
      --lexicon assets/brand_lexicon.<品类>.json --output <输出>/sentiment-units.json
-   # 2) 语义环节暂停：抽 Claim 层 → claims-raw.json（一条回答拆多个原子 Claim）
-   # 3) 回装校验 + 统计（确定性）
-   python3 ../geo-presales-sentiment-judge/scripts/sentiment_sentences.py claims-assemble \
-     --units <输出>/sentiment-units.json --claims <输出>/claims-raw.json --output <输出>/claims.json
-   python3 ../geo-presales-sentiment-judge/scripts/sentiment_sentences.py claims-metrics \
-     --claims <输出>/claims.json --brands "目标,配置1,配置2,配置3,开放1" --out-metrics <输出>/claims-metrics.json
+   # 2) 语义暂停：抽取只出 claim → claims-raw.json（unit_index/brand/claim/sentiment）
+   # 3) 聚类 1：claim → attribute（在去重清单上做，写 claim-attributes.json）
+   python3 $J claims-cluster-list --input <输出>/claims-raw.json --key claim \
+     --output <输出>/cluster-claims.json
+   # 4) 聚类 2：attribute → theme（写 attribute-themes.json）
+   python3 $J claims-cluster-list --input <输出>/claim-attributes.json --key attribute \
+     --output <输出>/cluster-attributes.json
+   # 5) 回装校验 + 统计（确定性）
+   python3 $J claims-assemble --units <输出>/sentiment-units.json --claims <输出>/claims-raw.json \
+     --claim-attributes <输出>/claim-attributes.json --attribute-themes <输出>/attribute-themes.json \
+     --output <输出>/claims.json
+   python3 $J claims-metrics --claims <输出>/claims.json \
+     --brands "目标,配置1,配置2,配置3,开放1" --out-metrics <输出>/claims-metrics.json
    ```
+
+   三层各由一趟工序产出:**抽取只出 claim;attribute 是相近 claim 的聚类,theme 是 attribute 的再聚类**。聚类必须分开做且在去重清单上做,否则同一 attribute 会被各回答各起一个名字。
 
    接入（脚本按 Claim 信号口径聚合，并与 `claims-metrics` 逐品牌对账，不一致直接报错）：
 

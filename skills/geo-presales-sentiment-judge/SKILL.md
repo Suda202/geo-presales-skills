@@ -3,7 +3,7 @@ name: geo-presales-sentiment-judge
 description: This skill should be used when computing brand sentiment from overseas GEO presales crawler answers — extracting atomic Claims with evidence, normalising them into Attribute dimensions and neutral Themes, and computing positive-share and cross-platform metrics for a target brand or a whole brand lexicon (target + configured/open competitors), against the v8 question bank sentiment sample scope. It does not modify backend JSON sentiment fields, judge competitor win rates, or compute visibility metrics.
 metadata:
   author: 海外 GEO 项目
-  version: "2.2.0"
+  version: "3.0.0"
 ---
 
 # GEO 售前品牌情感判读(Claim → Attribute → Theme)
@@ -52,30 +52,48 @@ metadata:
    ```
 
    脚本先逐条校验采集题面与题库 `user_question` 一致，不一致即停止——题库修订后用旧采集数据算指标是无效样本。题面缺失时先尝试从 `metadata.rawUrl` 的 `q=` 参数还原（AIO/overview 全部、ChatGPT 部分记录没有 `prompt` 字段）；仍拿不到就按编号映射抽取，计入 `meta.unverified_prompt_answers` 并在 stderr 告警，不静默当作已校验。正文按平台取字段：overview 取 `task_result.content`，其余取 `task_result.result_text`（与批次统计引擎 `ANSWER_FIELD` 对齐）。然后去引用、按行与表格单元格切分、按别名过滤，同一句提到多个品牌时逐品牌各出一条单元，`meta.distinct_unit_count` 记录去重句数。
-3. **语义抽取 Claim 层**：逐单元完整读,按 [Claim 层契约](references/claim-layer-contract.md) 拆出**原子 Claim** 并标注 Attribute / Theme / 方向。一句话里含多个观点就拆多条(如「强大但配置复杂、价格不透明」拆成 3 条);同回答内语义相同的观点归一,跨回答保留。禁止关键词自动打标。产出 `claims-raw.json`,每条只给 `unit_index / brand / claim / attribute / theme / sentiment`:
+3. **抽取 Claim（只出 Claim）**：逐单元完整读,按 [Claim 层契约](references/claim-layer-contract.md) 拆出**原子 Claim**。一句话里含多个观点就拆多条(如「强大但配置复杂、价格不透明」拆成 3 条)。**claim 是标准化后的语义判断**(如「价格高」「未公开定价页」),同义说法写成同一短语,不是原文摘抄。禁止关键词自动打标。产出 `claims-raw.json`,每条只给 `unit_index / brand / claim / sentiment`:
 
    ```json
-   [{"unit_index": 12, "brand": "Bewinch", "claim": "未公开价格",
-     "attribute": "价格透明度低", "theme": "价格", "sentiment": "negative"}]
+   [{"unit_index": 12, "brand": "Bewinch", "claim": "未公开定价页", "sentiment": "negative"}]
    ```
 
-   然后回装上下文并校验(确定性):
+   **本环节不产出 attribute / theme**——它们由下面两趟聚类产出。单元很多时可分批读。
+
+4. **两趟聚类**(语义,各在去重清单上全局做一次):
+
+   ```bash
+   # 聚类 1 的输入:去重后的 claim 清单
+   python3 scripts/sentiment_sentences.py claims-cluster-list \
+     --input claims-raw.json --key claim --output cluster-claims.json
+   # → 读该清单,把相近 claim 归到同一 attribute,写 claim-attributes.json
+   #   例:价格高 / 收费贵 / 定价偏贵 → "Pricing > Expensive";未公开定价页 / 要联系销售报价 → "Pricing > Opaque"
+   #   attribute 用「维度 > 极性」形式、跨品牌通用、每个 claim 只归一个
+
+   # 聚类 2 的输入:去重后的 attribute 清单
+   python3 scripts/sentiment_sentences.py claims-cluster-list \
+     --input claim-attributes.json --key attribute --output cluster-attributes.json
+   # → 读该清单,把 attribute 再聚成高层中性主题,写 attribute-themes.json
+   #   例:Pricing > Expensive 与 Pricing > Opaque → "Pricing";theme 必须中性
+   ```
+
+   **为什么要分开做**:聚类的判断对象是「这个说法属于哪一类」,与它出现在哪条回答无关。逐条顺带赋值会让同一条 claim 被重复判几十次、同一个 attribute 被各回答各起一个名字(实测出现过「服务与售后」与「服务与覆盖」并存、同一 attribute 挂两个 theme)。
+
+5. **回装校验 + 计算交付**(口径:正向 Claim 信号数 ÷ 正负向信号合计数;正式指标名为**正向情感占比**):
 
    ```bash
    python3 scripts/sentiment_sentences.py claims-assemble \
-     --units units.json --claims claims-raw.json --output claims.json
-   ```
+     --units units.json --claims claims-raw.json \
+     --claim-attributes claim-attributes.json --attribute-themes attribute-themes.json \
+     --output claims.json
 
-   校验会拦下:索引越界、品牌与单元不符、方向不是正/负、缺字段。**拿不准且会影响方向的判断列入清单交用户裁决**,不得各自猜测。单元很多时可分批读。
-
-4. **计算与交付**(口径:正向 Claim 信号数 ÷ 正负向信号合计数;正式指标名为**正向情感占比**):
-
-   ```bash
    python3 scripts/sentiment_sentences.py claims-metrics \
      --claims claims.json --brands "目标,竞1,竞2,竞3,开放1" --out-metrics metrics.json
    ```
 
-   脚本按契约实现**回答内去重**(同回答同品牌同 semantic claim 只计 1 次,按 claim 文本兜底;同 Attribute 下不同 Claim 各计一次;跨回答分别计数)与**跨平台等权**(有信号平台等权平均,无信号平台不补 0),输出按品牌、按平台、按 Attribute、按 Theme 四组统计。多品牌必须逐个品牌看结果,跨品牌的合计正向占比没有业务含义。
+   回装会拦下:索引越界、品牌与单元不符、方向不是正/负、缺字段,**以及任何没有 attribute 映射的 claim、没有 theme 映射的 attribute**。**拿不准且会影响方向的判断列入清单交用户裁决**,不得各自猜测。
+
+   脚本按契约实现**回答内去重**(同回答同品牌同 semantic claim 只计 1 次,按 claim 文本兜底;同 Attribute 下不同 Claim 各计一次;跨回答分别计数)与**跨平台等权**(有信号平台等权平均,无信号平台不补 0),输出按品牌、按平台、按 Attribute、按 Theme 四组统计。统计基础是 **claim 出现次数**,Attribute/Theme 只是分组维度。多品牌必须逐个品牌看结果,跨品牌的合计正向占比没有业务含义。
 
    > 旧的 `compute` 子命令(整句判正/负 + `labels.json`)保留为**降级形态**,答不了「AI 在评价哪个方面」。新报告走上面的 Claim 链路;已交付报告不必回改,重跑时升级。同一份报告里汇总口径必须来自同一层,不要混用。
 

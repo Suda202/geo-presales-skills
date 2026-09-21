@@ -367,56 +367,103 @@ class ClaimLayerTests(unittest.TestCase):
         return subprocess.run([sys.executable, SCRIPT, *map(str, argv)],
                               capture_output=True, text=True)
 
+    def write_mappings(self, claim_attr, attr_theme):
+        """写两张聚类映射表：claim→attribute（聚类 1）、attribute→theme（聚类 2）。"""
+        ca = os.path.join(self.tmp, "claim-attributes.json")
+        at = os.path.join(self.tmp, "attribute-themes.json")
+        json.dump(claim_attr, open(ca, "w"), ensure_ascii=False)
+        json.dump(attr_theme, open(at, "w"), ensure_ascii=False)
+        return ca, at
+
+    def assemble(self, raw, claim_attr, attr_theme, out=None, units=None):
+        ca, at = self.write_mappings(claim_attr, attr_theme)
+        out = out or os.path.join(self.tmp, "claims.json")
+        return self.run_cmd("claims-assemble", "--units", units or self.units, "--claims", raw,
+                            "--claim-attributes", ca, "--attribute-themes", at,
+                            "--output", out), out
+
     def test_assemble_fills_evidence_and_context(self):
         raw = os.path.join(self.tmp, "raw.json")
-        json.dump([{"unit_index": 0, "brand": "A", "claim": "价格便宜",
-                    "attribute": "价格有竞争力", "theme": "价格", "sentiment": "positive"}],
+        json.dump([{"unit_index": 0, "brand": "A", "claim": "价格便宜", "sentiment": "positive"}],
                   open(raw, "w"), ensure_ascii=False)
-        out = os.path.join(self.tmp, "claims.json")
-        proc = self.run_cmd("claims-assemble", "--units", self.units, "--claims", raw,
-                            "--output", out)
+        proc, out = self.assemble(raw, {"价格便宜": "价格 > 有竞争力"}, {"价格 > 有竞争力": "价格"})
         self.assertEqual(0, proc.returncode, proc.stderr)
         c = json.load(open(out))["claims"][0]
         self.assertEqual("A is cheap.", c["evidence_text"])
         self.assertEqual("0001", c["question_id"])
         self.assertEqual("MY", c["region"])
+        # attribute / theme 由两趟聚类回填，不出现在抽取产物里
+        self.assertEqual("价格 > 有竞争力", c["attribute"])
+        self.assertEqual("价格", c["theme"])
 
     def test_assemble_rejects_wrong_brand_and_bad_unit_index(self):
         for bad, needle in (
-            ({"unit_index": 0, "brand": "B", "claim": "x", "attribute": "y",
-              "theme": "价格", "sentiment": "positive"}, "品牌不符"),
-            ({"unit_index": 99, "brand": "A", "claim": "x", "attribute": "y",
-              "theme": "价格", "sentiment": "positive"}, "越界"),
-            ({"unit_index": 0, "brand": "A", "claim": "x", "attribute": "y",
-              "theme": "价格", "sentiment": "neutral"}, "只允许"),
+            ({"unit_index": 0, "brand": "B", "claim": "x", "sentiment": "positive"}, "品牌不符"),
+            ({"unit_index": 99, "brand": "A", "claim": "x", "sentiment": "positive"}, "越界"),
+            ({"unit_index": 0, "brand": "A", "claim": "x", "sentiment": "neutral"}, "只允许"),
         ):
             raw = os.path.join(self.tmp, "bad.json")
             json.dump([bad], open(raw, "w"), ensure_ascii=False)
-            proc = self.run_cmd("claims-assemble", "--units", self.units, "--claims", raw,
-                                "--output", os.path.join(self.tmp, "o.json"))
+            proc, _ = self.assemble(raw, {"x": "X > y"}, {"X > y": "X"})
             self.assertNotEqual(0, proc.returncode)
             self.assertIn(needle, proc.stderr)
+
+    def test_assemble_rejects_unmapped_claim_and_attribute(self):
+        raw = os.path.join(self.tmp, "raw.json")
+        json.dump([{"unit_index": 0, "brand": "A", "claim": "新说法", "sentiment": "positive"}],
+                  open(raw, "w"), ensure_ascii=False)
+        proc, _ = self.assemble(raw, {}, {})                      # claim 没有 attribute
+        self.assertNotEqual(0, proc.returncode)
+        self.assertIn("没有 attribute 映射", proc.stderr)
+        proc, _ = self.assemble(raw, {"新说法": "X > y"}, {})      # attribute 没有 theme
+        self.assertNotEqual(0, proc.returncode)
+        self.assertIn("没有 theme 映射", proc.stderr)
+
+    def test_cluster_list_dedupes_and_orders_by_count(self):
+        raw = os.path.join(self.tmp, "raw.json")
+        json.dump([
+            {"unit_index": 0, "brand": "A", "claim": "免安装", "sentiment": "positive"},
+            {"unit_index": 1, "brand": "A", "claim": "免安装", "sentiment": "positive"},
+            {"unit_index": 1, "brand": "A", "claim": "零管线", "sentiment": "positive"},
+        ], open(raw, "w"), ensure_ascii=False)
+        out = os.path.join(self.tmp, "cl.json")
+        proc = self.run_cmd("claims-cluster-list", "--input", raw, "--key", "claim", "--output", out)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        payload = json.load(open(out))
+        self.assertEqual(2, payload["distinct"])
+        self.assertEqual({"value": "免安装", "count": 2}, payload["items"][0])
+
+    def test_cluster_list_accepts_mapping_input(self):
+        """聚类 2 的输入是映射表（claim→attribute），清单取它的 values。"""
+        mapping = os.path.join(self.tmp, "ca.json")
+        json.dump({"免安装": "安装 > 便捷", "零管线": "安装 > 便捷", "收费高": "价格 > 高"},
+                  open(mapping, "w"), ensure_ascii=False)
+        out = os.path.join(self.tmp, "cl.json")
+        proc = self.run_cmd("claims-cluster-list", "--input", mapping, "--key", "attribute",
+                            "--output", out)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        payload = json.load(open(out))
+        self.assertEqual(2, payload["distinct"])          # 安装 > 便捷 / 价格 > 高
+        self.assertEqual({"value": "安装 > 便捷", "count": 2}, payload["items"][0])
 
     def test_metrics_dedupe_within_answer_keep_across_answers(self):
         raw = os.path.join(self.tmp, "raw.json")
         json.dump([
-            # 同回答同 semantic claim（文本重复，仅空白/大小写差异）→ 只计 1 次
-            {"unit_index": 0, "brand": "A", "claim": "免安装", "attribute": "安装便捷",
-             "theme": "安装", "sentiment": "positive"},
-            {"unit_index": 0, "brand": "A", "claim": "免安装 ", "attribute": "安装便捷",
-             "theme": "安装", "sentiment": "positive"},
-            # 同回答同属性下的不同 claim → 各计一次
-            {"unit_index": 0, "brand": "A", "claim": "零管线", "attribute": "安装便捷",
-             "theme": "安装", "sentiment": "positive"},
+            # 同回答同 semantic claim（文本重复，仅空白差异）→ 只计 1 次
+            {"unit_index": 0, "brand": "A", "claim": "免安装", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "免安装 ", "sentiment": "positive"},
+            # 同回答同 attribute 下的不同 claim → 各计一次
+            {"unit_index": 0, "brand": "A", "claim": "零管线", "sentiment": "positive"},
             # 跨回答同 claim → 分别计数
-            {"unit_index": 1, "brand": "A", "claim": "免安装", "attribute": "安装便捷",
-             "theme": "安装", "sentiment": "positive"},
+            {"unit_index": 1, "brand": "A", "claim": "免安装", "sentiment": "positive"},
             # 同回答反向 claim → 各自计
-            {"unit_index": 0, "brand": "A", "claim": "安装复杂", "attribute": "安装便捷",
-             "theme": "安装", "sentiment": "negative"},
+            {"unit_index": 0, "brand": "A", "claim": "安装复杂", "sentiment": "negative"},
         ], open(raw, "w"), ensure_ascii=False)
-        claims = os.path.join(self.tmp, "claims.json")
-        self.run_cmd("claims-assemble", "--units", self.units, "--claims", raw, "--output", claims)
+        proc, claims = self.assemble(
+            raw,
+            {"免安装": "安装 > 便捷", "零管线": "安装 > 便捷", "安装复杂": "安装 > 复杂"},
+            {"安装 > 便捷": "安装", "安装 > 复杂": "安装"})
+        self.assertEqual(0, proc.returncode, proc.stderr)
         metrics_path = os.path.join(self.tmp, "m.json")
         proc = self.run_cmd("claims-metrics", "--claims", claims, "--brands", "A",
                             "--out-metrics", metrics_path)
@@ -439,15 +486,17 @@ class ClaimLayerTests(unittest.TestCase):
         raw = os.path.join(self.tmp, "raw.json")
         json.dump([
             # chatgpt: 2 正 / 1 负 = 66.7%
-            {"unit_index": 0, "brand": "A", "claim": "c1", "attribute": "a1", "theme": "t", "sentiment": "positive"},
-            {"unit_index": 0, "brand": "A", "claim": "c2", "attribute": "a2", "theme": "t", "sentiment": "positive"},
-            {"unit_index": 0, "brand": "A", "claim": "c3", "attribute": "a3", "theme": "t", "sentiment": "negative"},
+            {"unit_index": 0, "brand": "A", "claim": "c1", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "c2", "sentiment": "positive"},
+            {"unit_index": 0, "brand": "A", "claim": "c3", "sentiment": "negative"},
             # gemini: 1 负 = 0%
-            {"unit_index": 1, "brand": "A", "claim": "c4", "attribute": "a4", "theme": "t", "sentiment": "negative"},
+            {"unit_index": 1, "brand": "A", "claim": "c4", "sentiment": "negative"},
             # perplexity: 无信号，不补 0 → 等权分母只算 2 个平台 = 33.35%
         ], open(raw, "w"), ensure_ascii=False)
-        claims = os.path.join(self.tmp, "claims.json")
-        self.run_cmd("claims-assemble", "--units", units, "--claims", raw, "--output", claims)
+        proc, claims = self.assemble(
+            raw, {"c1": "a1", "c2": "a2", "c3": "a3", "c4": "a4"},
+            {"a1": "t", "a2": "t", "a3": "t", "a4": "t"}, units=units)
+        self.assertEqual(0, proc.returncode, proc.stderr)
         metrics_path = os.path.join(self.tmp, "m.json")
         self.run_cmd("claims-metrics", "--claims", claims, "--brands", "A", "--out-metrics", metrics_path)
         m = json.load(open(metrics_path))["by_brand"]["A"]

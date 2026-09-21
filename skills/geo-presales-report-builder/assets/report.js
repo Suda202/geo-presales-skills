@@ -429,8 +429,8 @@
     var body = "<tbody>" + themes.map(function (theme) {
       var row = matrix[theme] || {};
       var cells = brands.map(function (brand) {
-        var cell = row[brand] || { pos: 0, neg: 0, rate: "—", top_claim: "", top_dir: "" };
-        var display = cell.top_claim || "—";
+        var cell = row[brand] || { pos: 0, neg: 0, rate: "—", top_attribute: "", top_dir: "" };
+        var display = cell.top_attribute || "—";
         var dirClass = cell.top_dir === "pos" ? "dir-pos" : cell.top_dir === "neg" ? "dir-neg" : "dir-none";
         var title = esc(brand + " · " + theme + " · 正 " + cell.pos + " / 负 " + cell.neg);
         return '<td class="theme-cell ' + dirClass + '" title="' + title + '">' + esc(display) + "</td>";

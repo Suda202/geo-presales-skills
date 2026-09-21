@@ -206,18 +206,18 @@ def build_theme_matrix(all_claims: dict, brands: list[str], predicate, theme_key
                 if theme not in themes:
                     continue
                 cell = matrix[theme].setdefault(brand, {
-                    "pos": 0, "neg": 0, "top_claim": "", "top_count": 0, "top_dir": "",
+                    "pos": 0, "neg": 0, "top_attribute": "", "top_count": 0, "top_dir": "",
                 })
                 cell[direction] += group["count"]
                 # 取计数最高的 claim 作为该 Theme 的代表描述
                 if group["count"] > cell["top_count"]:
-                    cell["top_claim"] = group["label"]
+                    cell["top_attribute"] = group["label"]
                     cell["top_count"] = group["count"]
                     cell["top_dir"] = direction
     for theme in themes:
         for brand in brands:
             cell = matrix[theme].setdefault(brand, {
-                "pos": 0, "neg": 0, "top_claim": "", "top_count": 0, "top_dir": "",
+                "pos": 0, "neg": 0, "top_attribute": "", "top_count": 0, "top_dir": "",
             })
             cell["rate"] = rate(cell["pos"], cell["neg"])
     return {"themes": themes, "brands": list(brands), "matrix": matrix}
@@ -419,21 +419,24 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
                 key=lambda x: (x["theme"], x["sentiment"])),
         }
 
-    # Theme × 品牌 矩阵：单元格取该主题下计数最高的 Attribute 作代表描述（不是数字）
+    # Theme × 品牌 矩阵：单元格取该主题下计数最高的 Attribute 作代表描述（不是数字）。
+    # attribute → theme 是全局映射（聚类 2 的产物，跨品牌同一条 attribute 只有一个 theme），
+    # 所以按 attribute 索引即可；早先按 (品牌, attribute) 索引会在模型给出不一致主题时
+    # 静默后写覆盖前写，2026-09-21 起聚类在回装阶段就保证了唯一性。
     themes: list[str] = []
-    attr_theme: dict[tuple, str] = {}
+    attr_theme: dict[str, str] = {}
     for c in claims:
         t = c.get("theme")
         if t and t not in themes:
             themes.append(t)
-        attr_theme[(c.get("brand"), c.get("attribute"))] = t
+        attr_theme[c.get("attribute")] = t
     matrix = {t: {} for t in themes}
     for theme in themes:
         for brand in brands:
             rows = [(a, s, v) for (b, a, s), v in per_brand_attr.items()
-                    if b == brand and attr_theme.get((b, a)) == theme]
+                    if b == brand and attr_theme.get(a) == theme]
             if not rows:
-                matrix[theme][brand] = {"pos": 0, "neg": 0, "top_claim": "",
+                matrix[theme][brand] = {"pos": 0, "neg": 0, "top_attribute": "",
                                         "top_count": 0, "top_dir": "", "rate": "—"}
                 continue
             top = max(rows, key=lambda r: (r[2], r[0]))
@@ -441,7 +444,7 @@ def build_claims_sentiment(claims: list[dict], brands: list[str], predicate,
             neg = sum(v for _a, s, v in rows if s == "negative")
             matrix[theme][brand] = {
                 "pos": pos, "neg": neg,
-                "top_claim": top[0], "top_count": top[2],
+                "top_attribute": top[0], "top_count": top[2],
                 "top_dir": "pos" if top[1] == "positive" else "neg",
                 "rate": rate(pos, neg),
             }
