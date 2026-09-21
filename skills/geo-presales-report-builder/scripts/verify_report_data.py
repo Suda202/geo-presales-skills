@@ -71,6 +71,31 @@ ANSWER_FIELD = {"overview": "content", "gemini": "result_text",
 CITATION_FIELD = {"overview": "source", "gemini": "citations",
                   "chatgpt": "content_references", "perplexity": "web_results"}
 
+# 与 build_report_data.py 同步：Gemini / AIO 把同一来源拆成多个编号（伪拆分），需按
+# canonical 折叠但保留正文同编号真重复；ChatGPT / Perplexity 全按实际次数计。
+CITATION_URL_COLLAPSE_PLATFORMS = {"gemini", "overview"}
+
+
+def _citation_keep_mask(occ_canonicals: list, collapse: bool) -> list:
+    """逐条正文引用是否计入引用次数（与 build_report_data._citation_keep_mask 同口径）。
+
+    刻意独立实现：两侧都改才算一致，一侧漂移会在门禁里暴露。规则见数据层同名函数。
+    """
+    if not collapse:
+        return [True] * len(occ_canonicals)
+    per_canon: dict = defaultdict(Counter)
+    for number, canonical in occ_canonicals:
+        if canonical is not None:
+            per_canon[canonical][number] += 1
+    winner: dict = {}
+    for canonical, counter in per_canon.items():
+        winner[canonical] = min(
+            counter.items(),
+            key=lambda kv: (-kv[1], int(kv[0]) if str(kv[0]).isdigit() else 1_000_000),
+        )[0]
+    return [canonical is None or number == winner[canonical]
+            for number, canonical in occ_canonicals]
+
 
 def answer_field(platform_dir: str) -> str:
     return ANSWER_FIELD.get(platform_dir, DEFAULT_ANSWER_FIELD)
@@ -216,7 +241,8 @@ class Recomputer:
                 raw_items = result.get(citation_field(platform_dir))
                 raw_items = raw_items if isinstance(raw_items, list) else []
 
-                seen_canonical: set[str] = set()  # 仅 Gemini：同一 canonical 只计一次
+                candidates = []
+                occ_canonicals = []
                 for number, position in occurrences:
                     line_start = text.rfind("\n", 0, position) + 1
                     in_table = text[line_start:].lstrip().startswith("|")
@@ -233,20 +259,20 @@ class Recomputer:
                     # 去重键必须与数据层一致：core 的 canonical_url 会去掉 www. 与尾斜杠。
                     normalized = core_normalize_url(url) if url else None
                     canonical = (normalized or {}).get("canonical_url") or (url or None)
-                    # Gemini 片段折叠：同一 canonical 只计一次（与 build_report_data 的
-                    # _citation_entries 完全同口径），否则门禁会报假差异。解析不出 URL 的
-                    # pill 无 canonical，照常各计一次。
-                    if platform_dir == "gemini" and canonical:
-                        if canonical in seen_canonical:
-                            continue
-                        seen_canonical.add(canonical)
-                    rows.append({
+                    occ_canonicals.append((number, canonical))
+                    candidates.append({
                         "url": url or None,
                         "host": host or None,
                         "canonical_url": canonical,
                         "position": position,
                         "in_table_row": in_table,
                     })
+                # Gemini / AIO 伪拆分折叠：与 build_report_data._citation_keep_mask 完全同口径
+                # （每个 canonical 只保留出现最多的编号、保留同编号真重复），否则门禁报假差异。
+                keep = _citation_keep_mask(
+                    occ_canonicals,
+                    platform_dir in CITATION_URL_COLLAPSE_PLATFORMS)
+                rows = [c for c, keep_it in zip(candidates, keep) if keep_it]
             self._citations_cache[key] = rows
         return self._citations_cache[key]
 

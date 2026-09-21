@@ -171,6 +171,13 @@ ANSWER_FIELD = {"overview": "content", "gemini": "result_text",
 CITATION_FIELD = {"overview": "source", "gemini": "citations",
                   "chatgpt": "content_references", "perplexity": "web_results"}
 
+# 「同一回答内同一 URL 折叠为一条」的平台：这些平台会把一个逻辑来源拆成多条引用条目，
+# 把同一页面在一个回答里重复计数——Gemini 按 `…#:~:text=` 文本片段拆，AIO(overview)
+# 按「空壳条目(title/snippet 空) + 填充条目」或同页多摘要拆。按 canonical 折叠成一条
+# （「同一 url 视为同一引用」）。ChatGPT / Perplexity 不在此列：它们的重复是正文里对同一
+# 来源的多次真实引用，按实际次数计，不折叠。
+CITATION_URL_COLLAPSE_PLATFORMS = {"gemini", "overview"}
+
 # 正文引用标记。四平台格式一致：定义行 `[3]: https://… "标题"`，行内标记 `([来源名][3])`。
 _BODY_REF_DEF = re.compile(r"^\s*\[(\d+)\]:\s*(\S+?)(?:\s+\"([^\"]*)\")?\s*$", re.M)
 _BODY_REF_MARKER = re.compile(r"\(\[([^\]\n]{1,80})\]\[(\d+)\]\)")
@@ -655,13 +662,47 @@ def _body_citation_occurrences(text: str) -> tuple[dict, list]:
     return definitions, occurrences
 
 
+def _citation_keep_mask(occ_canonicals: list, collapse: bool) -> list:
+    """逐条正文引用是否计入引用次数（区分平台伪拆分与正文真重复）。
+
+    `occ_canonicals`：按正文顺序的 `(reference_number, canonical_url)` 列表，
+    `canonical_url` 为 None 表示这条 pill 解析不出 URL。
+
+    `collapse=True`（Gemini / AIO）：这些平台会把**一个来源**拆成多个编号
+    （Gemini 按 `…#:~:text=` 文本片段、AIO 按「裸桩条目 + 完整条目」），造成
+    「不同编号指向同一 URL」的伪重复；但正文**同一编号被多次引用**是真重复，必须保留。
+    规则：每个 canonical 只保留「出现次数最多的那个编号」的全部引用（并列取编号最小者），
+    其余编号视为伪拆分丢弃；解析不出 URL 的引用无法判断，一律保留。
+    这样 Gemini（各编号各一次）折叠到每 URL 一条，AIO 的真重复（同编号多次）原样保留。
+
+    `collapse=False`（ChatGPT / Perplexity）：正文对同一来源的多次引用都是真实次数，
+    全部保留。
+    """
+    if not collapse:
+        return [True] * len(occ_canonicals)
+    per_canon: dict[str, Counter] = defaultdict(Counter)
+    for number, canonical in occ_canonicals:
+        if canonical is not None:
+            per_canon[canonical][number] += 1
+    winner: dict[str, str] = {}
+    for canonical, counter in per_canon.items():
+        winner[canonical] = min(
+            counter.items(),
+            key=lambda kv: (-kv[1], int(kv[0]) if str(kv[0]).isdigit() else 1_000_000),
+        )[0]
+    return [canonical is None or number == winner[canonical]
+            for number, canonical in occ_canonicals]
+
+
 def _citation_entries(platform: str, task_result: dict, answer_text: str = "") -> list[dict]:
     """引用条目 = 正文 pill 标记的出现次数。
 
-    计数单位是「出现次数」：同一编号在一篇里出现 N 次就计 N 次，不做回答内去重。
-    正文没有 pill 的回答计 0 条。某条 pill 缺定义行时，URL 按位置回退到供应商字段的
-    第 N 条——那是**解析 URL**，不是计数的来源；URL 仍解析不出时记 unresolved，
-    只贡献次数、不贡献来源。
+    计数单位是「出现次数」：同一编号在一篇里出现 N 次就计 N 次。正文没有 pill 的回答计
+    0 条。某条 pill 缺定义行时，URL 按位置回退到供应商字段的第 N 条——那是**解析 URL**，
+    不是计数的来源；URL 仍解析不出时记 unresolved，只贡献次数、不贡献来源。
+
+    Gemini / AIO 会把同一来源拆成多个编号（伪重复），按 `_citation_keep_mask` 折叠，
+    但保留正文同一编号的真重复。ChatGPT / Perplexity 全部按实际次数计。
     """
     field = CITATION_FIELD.get(platform)
     definitions, occurrences = _body_citation_occurrences(answer_text)
@@ -674,8 +715,8 @@ def _citation_entries(platform: str, task_result: dict, answer_text: str = "") -
 
     raw_items = task_result.get(field)
     fallback_items = raw_items if isinstance(raw_items, list) else []
-    out = []
-    seen_canonical: set[str] = set()  # 仅 Gemini：同一 canonical 只计一次（见下）
+    candidates = []
+    occ_canonicals = []
     for label, number, position in occurrences:
         line_start = answer_text.rfind("\n", 0, position) + 1
         in_table_row = answer_text[line_start:].lstrip().startswith("|")
@@ -695,20 +736,15 @@ def _citation_entries(platform: str, task_result: dict, answer_text: str = "") -
         host = normalize_host(url) if url else None
         if host and is_platform_internal(host):
             continue
-        # Gemini 特殊：它把同一 URL 的不同 text 片段（`…#:~:text=`）拆成多条引用，
-        # 会把同一页面在一个回答里重复计数（实测单题 13 条 pill 实为 4 个真实 URL）。
-        # 按 canonical 折叠成一条——「同一 url 视为同一引用」。其他平台不折叠（正常重复
-        # 仍按实际次数计）；解析不出 URL 的 pill 无法折叠，照常各计一次。
-        if platform == "gemini" and url:
+        canonical = None
+        if url:
             normalized = normalize_url(url)
             canonical = (normalized or {}).get("canonical_url") or url
-            if canonical in seen_canonical:
-                continue
-            seen_canonical.add(canonical)
-        out.append({
+        occ_canonicals.append((number, canonical))
+        candidates.append({
             "raw_citation_id": None,
             "source": "body_marker",
-            "source_order": len(out) + 1,
+            "source_order": None,
             "raw_url": url or None,
             "source_name": label,
             "domain_hint": host,
@@ -723,6 +759,14 @@ def _citation_entries(platform: str, task_result: dict, answer_text: str = "") -
             "mapping_method": mapping,
             "in_table_row": in_table_row,
         })
+
+    keep = _citation_keep_mask(occ_canonicals, platform in CITATION_URL_COLLAPSE_PLATFORMS)
+    out = []
+    for candidate, keep_it in zip(candidates, keep):
+        if not keep_it:
+            continue
+        candidate["source_order"] = len(out) + 1
+        out.append(candidate)
     return out
 
 
@@ -1786,25 +1830,27 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                 ]
                 # 单条回答的引用份额：该回答正文 pill 出现次数中，指向本品官网的比例。
                 # 这是「单个回答」层的口径；切片级（多回答/多平台）与平台级由
-                # build_slice 分别给出，三层都保留，不做合并。
+                # build_slice 分别给出，三层都保留，不做合并。Gemini / AIO 的伪拆分按
+                # _citation_keep_mask 折叠（保留同编号真重复），与数据层、verify 同口径。
                 definitions, occurrences = _body_citation_occurrences(answer)
-                own_occurrences = 0
-                effective = 0  # Gemini 折叠后的有效引用次数（其他平台 == len(occurrences)）
-                citations = []
-                seen_urls = set()  # 同一 URL 只显示一次（Gemini 会把同一页面拆成多条）
-                seen_canonical = set()  # 仅 Gemini：同一 canonical 只计一次
+                resolved = []
                 for source_name, number, _position in occurrences:
                     definition = definitions.get(number) or {}
                     raw_url = definition.get("url") or ""
                     normalized = normalize_url(raw_url) if raw_url else None
-                    host = normalized["host"] if normalized else ""
                     canonical = normalized["canonical_url"] if normalized else None
-                    # Gemini 片段折叠：同一 canonical 只算一次（与 _citation_entries、
-                    # verify 口径一致）；未解析出 URL 的 pill 照常各计一次。
-                    if platform_dir == "gemini" and canonical is not None:
-                        if canonical in seen_canonical:
-                            continue
-                        seen_canonical.add(canonical)
+                    resolved.append((source_name, number, definition, normalized, canonical))
+                keep = _citation_keep_mask(
+                    [(number, canonical) for _s, number, _d, _n, canonical in resolved],
+                    platform_dir in CITATION_URL_COLLAPSE_PLATFORMS)
+                own_occurrences = 0
+                effective = 0  # 折叠后的有效引用次数（ChatGPT/Perplexity == len(occurrences)）
+                citations = []
+                seen_urls = set()  # 同一 URL 只显示一次（Gemini/AIO 会把同一页面拆成多条）
+                for (source_name, number, definition, normalized, canonical), keep_it in zip(resolved, keep):
+                    if not keep_it:
+                        continue
+                    host = normalized["host"] if normalized else ""
                     effective += 1
                     if host and any(domain_matches(host, domain) for domain in target_domains):
                         own_occurrences += 1
