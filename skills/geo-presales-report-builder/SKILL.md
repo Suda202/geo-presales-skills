@@ -3,7 +3,7 @@ name: geo-presales-report-builder
 description: This skill should be used when generating a customer-facing overseas GEO presales diagnosis report (single-file HTML, V4.0 prototype styling) directly from Scrapeless crawler collection data plus a Case record, covering visibility, citations, sentiment, content planning and per-question detail with country / platform / topic filtering. Do not use it to compute the upload CSV (that is geo-presales-report-editor), to audit brand mention recognition, or to write report conclusions by hand.
 metadata:
   author: Overseas GEO Project
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
 # 海外 GEO 售前诊断报告生成

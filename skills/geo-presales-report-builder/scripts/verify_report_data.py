@@ -216,6 +216,7 @@ class Recomputer:
                 raw_items = result.get(citation_field(platform_dir))
                 raw_items = raw_items if isinstance(raw_items, list) else []
 
+                seen_canonical: set[str] = set()  # 仅 Gemini：同一 canonical 只计一次
                 for number, position in occurrences:
                     line_start = text.rfind("\n", 0, position) + 1
                     in_table = text[line_start:].lstrip().startswith("|")
@@ -231,10 +232,18 @@ class Recomputer:
                         continue
                     # 去重键必须与数据层一致：core 的 canonical_url 会去掉 www. 与尾斜杠。
                     normalized = core_normalize_url(url) if url else None
+                    canonical = (normalized or {}).get("canonical_url") or (url or None)
+                    # Gemini 片段折叠：同一 canonical 只计一次（与 build_report_data 的
+                    # _citation_entries 完全同口径），否则门禁会报假差异。解析不出 URL 的
+                    # pill 无 canonical，照常各计一次。
+                    if platform_dir == "gemini" and canonical:
+                        if canonical in seen_canonical:
+                            continue
+                        seen_canonical.add(canonical)
                     rows.append({
                         "url": url or None,
                         "host": host or None,
-                        "canonical_url": (normalized or {}).get("canonical_url") or (url or None),
+                        "canonical_url": canonical,
                         "position": position,
                         "in_table_row": in_table,
                     })

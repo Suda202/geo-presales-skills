@@ -67,6 +67,7 @@ from geo_presales_core.metrics import compute_metrics  # noqa: E402
 from geo_presales_core.util import (  # noqa: E402
     normalize_host,
     normalize_text,
+    normalize_url,
     sha256_obj,
     write_json,
 )
@@ -674,6 +675,7 @@ def _citation_entries(platform: str, task_result: dict, answer_text: str = "") -
     raw_items = task_result.get(field)
     fallback_items = raw_items if isinstance(raw_items, list) else []
     out = []
+    seen_canonical: set[str] = set()  # 仅 Gemini：同一 canonical 只计一次（见下）
     for label, number, position in occurrences:
         line_start = answer_text.rfind("\n", 0, position) + 1
         in_table_row = answer_text[line_start:].lstrip().startswith("|")
@@ -693,6 +695,16 @@ def _citation_entries(platform: str, task_result: dict, answer_text: str = "") -
         host = normalize_host(url) if url else None
         if host and is_platform_internal(host):
             continue
+        # Gemini 特殊：它把同一 URL 的不同 text 片段（`…#:~:text=`）拆成多条引用，
+        # 会把同一页面在一个回答里重复计数（实测单题 13 条 pill 实为 4 个真实 URL）。
+        # 按 canonical 折叠成一条——「同一 url 视为同一引用」。其他平台不折叠（正常重复
+        # 仍按实际次数计）；解析不出 URL 的 pill 无法折叠，照常各计一次。
+        if platform == "gemini" and url:
+            normalized = normalize_url(url)
+            canonical = (normalized or {}).get("canonical_url") or url
+            if canonical in seen_canonical:
+                continue
+            seen_canonical.add(canonical)
         out.append({
             "raw_citation_id": None,
             "source": "body_marker",
@@ -1034,6 +1046,7 @@ def build_sources(metrics: dict, answers: list[dict]) -> dict:
     page_meta: dict[str, dict] = {}
     domain_types: dict[str, Counter] = defaultdict(Counter)
     raw_page_counts: Counter = Counter()
+    official_page_counts: Counter = Counter()
     target_mention_by_answer: dict[str, bool] = {}
     for answer in discovery:
         target_mention_by_answer[answer["answer_id"]] = target_of(answer)["mentioned"]
@@ -1048,11 +1061,14 @@ def build_sources(metrics: dict, answers: list[dict]) -> dict:
             page_meta.setdefault(canonical, {"type": source_type})
             page_answers[canonical].add(answer["answer_id"])
             raw_page_counts[canonical] += 1
+            if citation.get("matched_official_object_id") == "target":
+                official_page_counts[canonical] += 1
 
     raw_total = metrics["citations"]["raw_count"]
 
-    # 引用一律按「实际引用次数」统计：同一 URL 在一篇里被引两次就算两次。
-    # 去重只用于右侧来源清单的展示，不作为任何指标的分母。
+    # 引用一律按「实际引用次数」统计：同一 URL 在一篇里被引两次就算两次。份额、挑选、
+    # 排序全部按未去重次数；去重（到回答 / 到 URL）只用于 citation_units.unique_sources
+    # 这类「有多少个不同来源」的信息计数，绝不进任何份额的分子或分母，也不参与排序。
     bucket_counts: Counter = Counter()
     for answer in discovery:
         for citation in answer["citations"]:
@@ -1068,27 +1084,36 @@ def build_sources(metrics: dict, answers: list[dict]) -> dict:
                            fmt_pct(count / raw_total) if raw_total else "—",
                            str(count), fill])
 
+    # 域名引用份额与 KPI 官网引用份额、类别、页面同口径：分子是该域名被引用的
+    # 「未去重次数」，分母是全切片未去重引用总数。core 的 top_domains.answer_count
+    # 是「去重到回答」的数（引用过该域名的回答数），只能用于挑选/排序，不能当分子——
+    # 否则域名被系统性低估（Bewinch 实例：唯一官网域名 bewinch.com 被算成 2.0%，
+    # 而官网引用份额 4.5%，同一件事对不上）。这里改用 domain_types 累加的未去重次数，
+    # top 8 也按未去重次数排（并列按域名字典序，保证可复算）。
+    raw_domain_counts = {d: sum(c.values()) for d, c in domain_types.items()}
     domain_rows = []
-    for entry in metrics["citations"]["top_domains"]:
-        counter = domain_types.get(entry["domain"])
+    for domain, raw_count in sorted(raw_domain_counts.items(),
+                                    key=lambda kv: (-kv[1], kv[0]))[:8]:
+        counter = domain_types.get(domain)
         bucket = SOURCE_BUCKET.get(counter.most_common(1)[0][0], ("其他", ""))[0] if counter else "其他"
-        # 引用份额是百分比，与类别、页面两级一致
-        share = entry["answer_count"] / raw_total if raw_total else None
-        domain_rows.append([entry["domain"], fmt_pct(share) if share is not None else "—", bucket])
+        share = raw_count / raw_total if raw_total else None
+        domain_rows.append([domain, fmt_pct(share) if share is not None else "—", bucket])
 
+    # 页面与官网页面同样按未去重引用次数挑选 top 8 并排序、算份额（与域名/类别/KPI 一致）。
+    # 不用 core 的 top_pages/official_pages——那是「去重到回答」的名次，会让份额大的页排在
+    # 份额小的页下面。并列按 URL 字典序，保证可复算。
     page_rows = []
-    for entry in metrics["citations"]["top_pages"]:
-        url = entry["url"]
+    for url, raw_count in sorted(raw_page_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]:
         source_type = (page_meta.get(url) or {}).get("type", "other")
         mentioned = any(target_mention_by_answer.get(aid) for aid in page_answers.get(url, ()))
-        share = raw_page_counts.get(url, 0) / raw_total if raw_total else None
+        share = raw_count / raw_total if raw_total else None
         page_rows.append([url, SOURCE_BUCKET.get(source_type, ("其他", ""))[0],
-                          "提及" if mentioned else "未提及", fmt_pct(share)])
+                          "提及" if mentioned else "未提及",
+                          fmt_pct(share) if share is not None else "—"])
 
     official_rows = [
-        [entry["url"],
-         fmt_pct(raw_page_counts.get(entry["url"], 0) / raw_total) if raw_total else "—"]
-        for entry in metrics["citations"]["official_pages"]
+        [url, fmt_pct(raw_count / raw_total) if raw_total else "—"]
+        for url, raw_count in sorted(official_page_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
     ]
 
     # 引用按「实际引用次数」计，不做回答内去重；unique_sources 只用于来源清单展示。
@@ -1764,17 +1789,26 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                 # build_slice 分别给出，三层都保留，不做合并。
                 definitions, occurrences = _body_citation_occurrences(answer)
                 own_occurrences = 0
+                effective = 0  # Gemini 折叠后的有效引用次数（其他平台 == len(occurrences)）
                 citations = []
                 seen_urls = set()  # 同一 URL 只显示一次（Gemini 会把同一页面拆成多条）
+                seen_canonical = set()  # 仅 Gemini：同一 canonical 只计一次
                 for source_name, number, _position in occurrences:
                     definition = definitions.get(number) or {}
                     raw_url = definition.get("url") or ""
                     normalized = normalize_url(raw_url) if raw_url else None
                     host = normalized["host"] if normalized else ""
+                    canonical = normalized["canonical_url"] if normalized else None
+                    # Gemini 片段折叠：同一 canonical 只算一次（与 _citation_entries、
+                    # verify 口径一致）；未解析出 URL 的 pill 照常各计一次。
+                    if platform_dir == "gemini" and canonical is not None:
+                        if canonical in seen_canonical:
+                            continue
+                        seen_canonical.add(canonical)
+                    effective += 1
                     if host and any(domain_matches(host, domain) for domain in target_domains):
                         own_occurrences += 1
                     if normalized:
-                        canonical = normalized["canonical_url"]
                         if canonical in seen_urls:
                             continue
                         seen_urls.add(canonical)
@@ -1832,9 +1866,9 @@ def build_details(collect_dir: Path, config: dict, regions: list[str], bank: dic
                     "citations": citations,
                     "platform_citations": platform_citations,
                     "search_results": search_results,
-                    "citation_occurrences": len(occurrences),
-                    "citation_share": (f"{own_occurrences * 100 / len(occurrences):.1f}%"
-                                       if occurrences else "—"),
+                    "citation_occurrences": effective,
+                    "citation_share": (f"{own_occurrences * 100 / effective:.1f}%"
+                                       if effective else "—"),
                 }
     return details
 
