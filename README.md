@@ -149,6 +149,7 @@ python3 -m unittest discover -s skills/geo-presales-report-audit/tests -p 'test_
 python3 -m unittest discover -s skills/geo-presales-report-editor/scripts/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/geo-presales-sentiment-judge/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/overseas-geo-competitor-research/scripts/tests -p 'test_*.py'
+python3 -m unittest discover -s skills/geo-after-sales-prompt-builder/scripts -p 'test_*.py'
 ```
 
 测试不调用外部 AI 平台。
