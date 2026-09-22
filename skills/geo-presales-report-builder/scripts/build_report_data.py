@@ -335,12 +335,20 @@ def load_case(path: Path) -> dict:
             competitors.append({"name": name, "domain": comp_domain})
     if not brand or not domain:
         raise SystemExit("Case JSON 缺少品牌名称或官方域名")
+    # 主题映射（可选）：题库主题 → 报告展示名。多语言市场里题库主题是当地语言
+    # （如泰文），Case 的主题是中文，需要这层映射才能对上；单语市场留空即可。
+    labels_raw = raw.get("主题映射") or raw.get("topic_labels") or {}
+    if not isinstance(labels_raw, dict):
+        raise SystemExit("Case 的「主题映射」应为 {题库主题: 展示名} 对象")
+    topic_labels = {str(k).strip(): str(v).strip()
+                    for k, v in labels_raw.items() if str(k).strip() and str(v).strip()}
     return {
         "brand": brand,
         "official_domain": domain,
         "category": category or "",
         "competitors": competitors,
         "topics_raw": pick("主题") or "",
+        "topic_labels": topic_labels,
     }
 
 
@@ -402,8 +410,26 @@ def load_lexicon(path) -> tuple[list[dict], set[str], str]:
             if name:
                 uncertain.add(normalize_text(str(name)))
 
-    if isinstance(raw, dict) and isinstance(raw.get("brands"), list):
-        source = raw["brands"]
+    def as_list(value):
+        if value is None:
+            return []
+        return value if isinstance(value, list) else [value]
+
+    if isinstance(raw, dict) and isinstance(raw.get("brands"), (list, dict)):
+        # 正式结构 {"brands": [...]}；也容忍 {"brands": {标准名: 别名 list}} 的嵌套 dict。
+        # 顶层其余键（target / note / tiers 等元数据）一律不当作品牌——旧行为会把它们
+        # 静默变成品牌，声量分母随之被污染（2026-09-22 实测：22 个品牌的词表只出了 8 个对象，
+        # 还混进 target/note/tiers 三个假品牌）。
+        brands_field = raw["brands"]
+        if isinstance(brands_field, dict):
+            source = [{"name": key, "aliases": [key, *[str(a).strip() for a in as_list(value)]]}
+                      for key, value in brands_field.items()]
+        else:
+            source = brands_field
+        ignored = sorted(key for key in raw
+                         if key not in {"brands", "uncertain", "stopwords"} and not key.startswith("_"))
+        if ignored:
+            print(f"词表 {path}: 顶层 {ignored} 未识别为品牌，已忽略（只读 brands 分支）", file=sys.stderr)
     elif isinstance(raw, list):
         source = raw
     elif isinstance(raw, dict):
@@ -421,11 +447,6 @@ def load_lexicon(path) -> tuple[list[dict], set[str], str]:
                 source.append({"name": key})
     else:
         return [], set(), "unsupported-shape"
-
-    def as_list(value):
-        if value is None:
-            return []
-        return value if isinstance(value, list) else [value]
 
     entries = []
     for item in source:
@@ -449,6 +470,17 @@ def load_lexicon(path) -> tuple[list[dict], set[str], str]:
 
 
 # ------------------------------------------------------------ 构造内部结构
+
+def _name_tokens_subset(a: str, b: str) -> bool:
+    """归一化名字 a 的词元集合是否被 b 完整包含（用于词表条目并入 Case 对象）。
+
+    「iQIYI」⊂「iQIYI International」→ True；「Viu」vs「ViuTV」→ False（词元不等）。
+    两侧都去空后比较，任一侧为空则 False。
+    """
+    ta = {t for t in re.split(r"[^\w]+", a) if t}
+    tb = {t for t in re.split(r"[^\w]+", b) if t}
+    return bool(ta) and bool(tb) and ta != tb and ta.issubset(tb)
+
 
 def build_config(case: dict, topics: list[str], lexicon_entries: list[dict],
                  domain_cache: dict | None = None) -> dict:
@@ -500,6 +532,15 @@ def build_config(case: dict, topics: list[str], lexicon_entries: list[dict],
                 break
             if entry_domains & set(obj["official_domains"]):
                 match = obj
+                break
+            # 名称词元包含：Case 写「iQIYI International」而词表写「iQIYI」时，
+            # 仅靠全名相等与域名交集都匹配不上，条目会另起一个「开放品牌」对象，
+            # 把同一个品牌的提及量拆到两处、静默污染声量分母（2026-09-22 实测）。
+            # 用词元集合判断，避免 "Viu"/"ViuTV" 这类子串误并。
+            if _name_tokens_subset(entry_name, normalize_text(obj["canonical_name"])):
+                match = obj
+                print(f"词表条目 {entry['name']!r} 按名称词元并入 {obj['canonical_name']!r}",
+                      file=sys.stderr)
                 break
         if match:
             merge_lexicon(match, entry["aliases"], entry["domains"], alias_owner)
@@ -1054,6 +1095,20 @@ def build_slice(region: str, platform: str, topic: str, config: dict, bank: dict
             "official_share": fmt_pct(metrics["citations"]["official_share"]["raw"]),
         },
         "competition": {"mention": mention_rows, "share": share_values, "rank": rank_rows},
+        # 完整纳入品牌分布（不受前端 5 行显示截断影响）：声量份额与平均提及
+        # 位置的分母本来就是这一整集，出报告口径说明或核对时需要看全量。
+        "competition_all": [
+            {
+                "name": row["name"],
+                "domain": row["domain"],
+                "role": row["role"],
+                "mention_rate": row["mention_rate"],
+                "share_of_voice": row["share_of_voice"],
+                "average_rank": row["average_rank"],
+                "rank": rank_lookup.get(row["object_id"]),
+            }
+            for row in sorted(rows, key=lambda r: (-(r["mention_rate"] or 0), r["name"]))
+        ],
         "matrix": matrix,
         "sources": build_sources(metrics, answers),
         "sentiment": build_sentiment(answers),
@@ -1327,6 +1382,10 @@ def parse_args(argv=None):
     parser.add_argument("--brand-suffixes", default="",
                         help="逗号分隔的品类/产品线后缀，渲染时从品牌展示名剥掉（如 LED,Display）；"
                              "留空则渲染层用内置净水器词表兜底")
+    parser.add_argument("--topic-labels", default="",
+                        help="题库主题 → 报告展示名的映射，逗号分隔的 原主题=展示名，"
+                             "如 'แพลตฟอร์ม...=华语视频平台'。多语言市场题库主题是当地语言时必填；"
+                             "也可写在 Case 的「主题映射」字段里，CLI 优先")
     return parser.parse_args(argv)
 
 
@@ -1961,6 +2020,21 @@ def main(argv=None) -> int:
     case = load_case(args.case)
     rows = load_question_rows(args.questions)
     lexicon_entries, lexicon_uncertain, lexicon_status = load_lexicon(args.lexicon)
+
+    # 主题映射：题库主题（可能是当地语言）→ 报告展示名。CLI 覆盖 Case。
+    topic_labels = dict(case.get("topic_labels") or {})
+    if args.topic_labels:
+        for pair in args.topic_labels.split(","):
+            if "=" in pair:
+                src, dst = pair.split("=", 1)
+                if src.strip() and dst.strip():
+                    topic_labels[src.strip()] = dst.strip()
+    if topic_labels:
+        for r in rows:
+            t = str(r.get("topic") or "").strip()
+            if t in topic_labels:
+                r["topic"] = topic_labels[t]
+        print(f"主题映射已应用：{len(topic_labels)} 条 → {sorted(set(topic_labels.values()))}")
 
     topics = [t.strip() for t in str(case["topics_raw"]).replace("，", ",").split(",") if t.strip()]
     if not topics:

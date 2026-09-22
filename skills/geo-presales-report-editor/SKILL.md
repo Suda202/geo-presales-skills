@@ -3,7 +3,7 @@ name: geo-presales-report-editor
 description: This skill should be used when editing or generating an upload-ready GEO presales report CSV with customer-facing conclusions from confirmed metrics and evidence, without recomputing facts or modifying the report webpage.
 metadata:
   author: Overseas GEO Project
-  version: "2.5.1"
+  version: "2.5.2"
 ---
 
 # GEO 售前报告编辑

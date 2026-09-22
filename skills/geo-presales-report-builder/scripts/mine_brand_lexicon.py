@@ -64,7 +64,24 @@ DEFAULT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "..", "build", "brand_candidates.csv")
 
 PLATFORMS = ["overview", "gemini", "chatgpt", "perplexity"]
-REGIONS = ["MY", "SG"]
+
+
+def discover_regions(collect_dir: str) -> list[str]:
+    """从采集目录发现市场代码，按首次出现顺序；不写死市场。
+
+    与 build_report_data.discover_regions、collect_domain_candidates 保持一致：
+    市场由 scraper.<platform>/<REGION>/ 目录结构推断，否则非 MY/SG 的采集
+    （如泰国 TH）会一条文件都读不到。
+    """
+    regions: list[str] = []
+    for platform in PLATFORMS:
+        platform_dir = os.path.join(collect_dir, f"scraper.{platform}")
+        if not os.path.isdir(platform_dir):
+            continue
+        for child in sorted(os.listdir(platform_dir)):
+            if os.path.isdir(os.path.join(platform_dir, child)) and child not in regions:
+                regions.append(child)
+    return regions
 
 # ``overview`` keeps its prose in ``content``; the chat-shaped platforms use
 # ``result_text``.
@@ -142,7 +159,7 @@ def usable(cand: str) -> bool:
 def iter_docs(collect_dir: str):
     """Yield (platform, region, path, body_text) for every collected answer."""
     for platform in PLATFORMS:
-        for region in REGIONS:
+        for region in discover_regions(collect_dir):
             pattern = os.path.join(collect_dir, f"scraper.{platform}",
                                    region, "*.json")
             for path in sorted(glob.glob(pattern)):

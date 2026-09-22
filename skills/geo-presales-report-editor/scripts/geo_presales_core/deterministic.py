@@ -26,10 +26,20 @@ SOURCE_TYPES = {
     "other": "其他",
 }
 
+# 已从 SOURCE_TYPES 退休的类别 → 现行类别，按《引用来源分类》的迁移口径。
+# 百科类归「机构网站」（政府/非营利/教育/公共机构），企业网站归「其他」。
+RETIRED_SOURCE_TYPES = {
+    "encyclopedia_reference": "institutional",
+    "corporate_site": "other",
+}
+
 
 KNOWN_HOST_TYPES = {
-    # 百科类按现行定义归入机构网站
+    # 机构网站（Institutions）：政府、非营利组织、教育机构和公共机构的网站。
+    # .gov / .edu 由 _known_type 的后缀规则兜住；这里放经确认的高频机构域名
+    # （who.int、wikipedia.org、wikimedia.org 等）。
     "baike.baidu.com": "institutional",
+    "who.int": "institutional",
     "reddit.com": "ugc",
     "youtube.com": "ugc",
     "facebook.com": "ugc",
@@ -38,9 +48,10 @@ KNOWN_HOST_TYPES = {
     "x.com": "ugc",
     "twitter.com": "ugc",
     "quora.com": "ugc",
-    "wikipedia.org": "encyclopedia_reference",
-    "wikidata.org": "encyclopedia_reference",
-    "britannica.com": "encyclopedia_reference",
+    "wikipedia.org": "institutional",
+    "wikimedia.org": "institutional",
+    "wikidata.org": "institutional",
+    "britannica.com": "institutional",
     "reuters.com": "media_review",
     "apnews.com": "media_review",
     "forbes.com": "media_review",
@@ -50,8 +61,8 @@ KNOWN_HOST_TYPES = {
     "capterra.com": "media_review",
     "trustpilot.com": "media_review",
     "bbb.org": "media_review",
-    "github.com": "corporate_site",
-    "linkedin.com": "corporate_site",
+    "github.com": "other",
+    "linkedin.com": "other",
 }
 
 
@@ -61,14 +72,26 @@ def _known_type(host: str, cache: dict | None = None) -> str | None:
     分类不是封闭集合：`KNOWN_HOST_TYPES` 只放稳定的高频域名，其余走运行时缓存
     （`config["domain_category_cache"]`）。缓存由报告侧按实际链接判读后写回，
     每次运行都会把新出现的域名补进去，因此覆盖度随运行增长。
+
+    历史值兜底：`corporate_site`、`encyclopedia_reference` 等已从 `SOURCE_TYPES`
+    退休的分类按迁移口径归并（见 `RETIRED_SOURCE_TYPES`），其余无法识别的值落到
+    「其他」。内置表与运行时缓存两条路径都要过一遍——缓存里同样可能残留旧值，
+    否则 `SOURCE_TYPES[known]` 会直接 KeyError 打断整条构建。
     """
+    def _valid(source_type: str | None) -> str | None:
+        if source_type is None:
+            return None
+        if source_type in SOURCE_TYPES:
+            return source_type
+        return RETIRED_SOURCE_TYPES.get(source_type, "other")
+
     for known, source_type in KNOWN_HOST_TYPES.items():
         if host == known or host.endswith("." + known):
-            return source_type
+            return _valid(source_type)
     if cache:
         for known, source_type in cache.items():
             if host == known or host.endswith("." + known):
-                return source_type
+                return _valid(source_type)
     if host.endswith(".gov") or ".gov." in host or host.endswith(".edu") or ".edu." in host:
         return "institutional"
     return None

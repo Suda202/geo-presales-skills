@@ -22,6 +22,39 @@ from geo_presales_core.util import ContractError, domain_matches, find_alias_spa
 CLI = SCRIPT_DIR / "geo_presales.py"
 
 
+class SourceTypeTableTests(unittest.TestCase):
+    """来源类别表必须自洽：引用了已退休类别会直接 KeyError 打断整条构建。"""
+
+    def test_known_host_types_use_live_source_types(self):
+        from geo_presales_core.deterministic import (
+            KNOWN_HOST_TYPES, RETIRED_SOURCE_TYPES, SOURCE_TYPES)
+        allowed = set(SOURCE_TYPES) | set(RETIRED_SOURCE_TYPES)
+        offenders = {host: kind for host, kind in KNOWN_HOST_TYPES.items()
+                     if kind not in allowed}
+        self.assertEqual({}, offenders)
+
+    def test_retired_types_map_to_live_types(self):
+        from geo_presales_core.deterministic import RETIRED_SOURCE_TYPES, SOURCE_TYPES
+        for retired, live in RETIRED_SOURCE_TYPES.items():
+            self.assertIn(live, SOURCE_TYPES, f"{retired} 映射到未定义的 {live}")
+
+    def test_encyclopedia_and_institutions_classify_as_institutional(self):
+        """机构网站 = 政府/非营利/教育/公共机构；百科类（维基）归这一类。"""
+        from geo_presales_core.deterministic import _known_type
+        for host in ("wikipedia.org", "zh.wikipedia.org", "wikimedia.org",
+                     "who.int", "baike.baidu.com", "mit.edu", "nasa.gov"):
+            self.assertEqual("institutional", _known_type(host), host)
+
+    def test_retired_cache_values_do_not_crash_classification(self):
+        """运行时缓存可能残留旧值，_known_type 必须按迁移口径归一而不是 KeyError。"""
+        from geo_presales_core.deterministic import _known_type
+        self.assertEqual("institutional", _known_type("some-museum.org",
+                                                      {"some-museum.org": "encyclopedia_reference"}))
+        self.assertEqual("other", _known_type("some-vendor.com",
+                                              {"some-vendor.com": "corporate_site"}))
+        self.assertEqual("other", _known_type("weird.example", {"weird.example": "brand_new_type"}))
+
+
 class ContractTests(unittest.TestCase):
     def small_config(self):
         return normalize_config({

@@ -3,7 +3,7 @@ name: geo-presales-report-builder
 description: This skill should be used when generating a customer-facing overseas GEO presales diagnosis report (single-file HTML, V4.0 prototype styling) directly from Scrapeless crawler collection data plus a Case record, covering visibility, citations, sentiment, content planning and per-question detail with country / platform / topic filtering. Do not use it to compute the upload CSV (that is geo-presales-report-editor), to audit brand mention recognition, or to write report conclusions by hand.
 metadata:
   author: Overseas GEO Project
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # 海外 GEO 售前诊断报告生成
@@ -60,6 +60,16 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
    ```
 
    词表落 `assets/brand_lexicon.<品类>.json`，正式结构为 `brands[].name/aliases/type`；也兼容 `geo-presales-report-audit` 的「标准名 → 别名 list」dict 词表（别名会保留，`_` 开头的键按元数据跳过）。跨 skill 复用同一份词表时优先 `brands[]` 结构。新品类首次运行时，挖掘出的候选需要人工过一遍再冻结——机器无法可靠区分品牌名与品类词/技术缩写。
+
+   **开放品牌也要有官网域名**，否则它们的官网引用会落进「其他」、竞品网站被低估。域名不必手填，用引用来源推断：
+
+   ```bash
+   python3 scripts/infer_brand_domains.py --collect <采集目录> \
+     --lexicon assets/brand_lexicon.<品类>.json \
+     --out build/brand-domains-inferred.json --candidates build/brand-domains-candidates.json
+   ```
+
+   高置信规则是「引用注册域的标签 == 品牌名/别名归一形式」（`viu.com`↔Viu）；推不出的（缩写类，如 `mgtv.com`↔Mango TV）进候选清单，**联网搜索或人工确认后**写回词表的 `official_domains`，不要用模糊相似度硬猜。目标与配置竞品的域名以 Case 为准，词表里的同名条目只做别名合并。
 
 3. **补判未登记的引用域名**（不是封闭集合）：
 
@@ -202,7 +212,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 ## 已知边界
 
-- **引用来源的展示类别固定 7 类**：自有网站 / 竞品网站 / 社交平台 / 媒体网站 / 新闻稿平台 / 机构网站 / 其他。以《引用来源分类》定义为准，不得增删。两条最容易搞错的边界：**只有本批已监测竞品的官网进「竞品网站」，回答里额外识别出的开放竞品官网不自动进这一类**；**未命中默认类别的企业网站（含其他厂商官网）归「其他」**。旧版的 `corporate_site`（企业网站）已取消，遇到历史值按「其他」处理。
+- **引用来源的展示类别固定 7 类**：自有网站 / 竞品网站 / 社交平台 / 媒体网站 / 新闻稿平台 / 机构网站 / 其他。以《引用来源分类》定义为准，不得增删。两条最容易搞错的边界：**目标品牌与全部竞品（配置竞品 + 开放竞品）的官网都进「自有网站」/「竞品网站」，不限于本批配置的那 3 个**——开放竞品的官网域名靠 `infer_brand_domains.py` 从引用来源推断、推不出的联网搜索补全（2026-09-22 改，此前规定开放竞品官网不进这一类）；**未命中默认类别的企业网站（含其他厂商官网、母公司站）归「其他」**——注意母公司站不算产品官网（如 tencent.com 不是 WeTV 的官网，WeTV 是 wetv.vip）。旧版的 `corporate_site`（企业网站）已取消，遇到历史值按「其他」处理。
 - 引用来源类别依赖 `assets/domain-categories.json` 的判读覆盖度；未判读的域名回落「其他」。新品类首次运行时「其他」占比偏高属正常，补判后下降。
 - 开放品牌集是词表驱动的，词表没收录的品牌不会进入声量分母。补充词表要重新跑数据层。
 - 前端展示 5 行是为了可读性，不代表其余未展示品牌不影响结论；需要完整分布时看 `report-data.json` 的 `competition` 与 `matrix`。
