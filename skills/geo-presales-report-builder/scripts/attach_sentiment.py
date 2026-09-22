@@ -739,28 +739,47 @@ def main() -> int:
         basis = headline["sentiment"].get("metric_basis")
         print(f"头部聚合口径：{basis}（Claim 层，不与句级 compute 对账）")
 
-    # 明细表「正向情感占比」列：按切片口径聚目标品牌在该题下的正负句。
+    # 明细表「正向情感占比」列：按切片口径聚目标品牌在该题下的正负信号。
     # 单 region+单平台切片 → 只算该 (region, platform, qid)；
-    # 混合切片（全部国家/全部平台）→ 对该 qid 的所有 units 做池化聚合。
+    # 混合切片（全部国家/全部平台）→ 对该 qid 的所有单元做池化聚合。
+    # 句级路径按判读句计；Claim 路径按 claim 信号计（同回答内同 claim 只计 1 次）。
+    # 早先这一段只读句级 labels，Claim 路径下 labels 为空 → 整列全是 None，
+    # 附录的「正向情感占比」整列空白（2026-09-22 修）。
     from collections import defaultdict
     by_rpq: dict[tuple[str, str, str], tuple[int, int]] = defaultdict(lambda: (0, 0))
     by_qid: dict[str, tuple[int, int]] = defaultdict(lambda: (0, 0))
     by_region_qid: dict[tuple[str, str], tuple[int, int]] = defaultdict(lambda: (0, 0))
     by_platform_qid: dict[tuple[str, str], tuple[int, int]] = defaultdict(lambda: (0, 0))
-    for i in pos_sets[args.target]:
-        u = units[i]
-        r_, p_, q_ = u.get("region", ""), u.get("platform", ""), str(u.get("question_id", ""))
-        for d, k in ((by_rpq, (r_, p_, q_)), (by_qid, q_),
-                     (by_region_qid, (r_, q_)), (by_platform_qid, (p_, q_))):
-            pos_n, neg_n = d[k]
-            d[k] = (pos_n + 1, neg_n)
-    for i in neg_sets[args.target]:
-        u = units[i]
-        r_, p_, q_ = u.get("region", ""), u.get("platform", ""), str(u.get("question_id", ""))
-        for d, k in ((by_rpq, (r_, p_, q_)), (by_qid, q_),
-                     (by_region_qid, (r_, q_)), (by_platform_qid, (p_, q_))):
-            pos_n, neg_n = d[k]
-            d[k] = (pos_n, neg_n + 1)
+
+    def bump_signal(r_: str, p_: str, q_: str, direction: str) -> None:
+        for table, table_key in ((by_rpq, (r_, p_, q_)), (by_qid, q_),
+                                 (by_region_qid, (r_, q_)), (by_platform_qid, (p_, q_))):
+            pos_n, neg_n = table[table_key]
+            table[table_key] = (pos_n + (direction == "positive"),
+                                neg_n + (direction == "negative"))
+
+    if claims:
+        seen_target: set[tuple] = set()
+        for c in claims:
+            if c.get("brand") != args.target:
+                continue
+            direction = c.get("sentiment")
+            if direction not in ("positive", "negative"):
+                continue
+            dedupe_key = (c.get("region", ""), c.get("platform", ""), c.get("idx"),
+                          _norm_claim_text(c.get("claim")))
+            if dedupe_key in seen_target:
+                continue
+            seen_target.add(dedupe_key)
+            bump_signal(c.get("region", ""), c.get("platform", ""),
+                        str(c.get("question_id") or "").zfill(4), direction)
+    else:
+        for direction, indices in (("positive", pos_sets[args.target]),
+                                   ("negative", neg_sets[args.target])):
+            for i in indices:
+                u = units[i]
+                bump_signal(u.get("region", ""), u.get("platform", ""),
+                            str(u.get("question_id", "")).zfill(4), direction)
 
     filled_records = 0
     for slice_key, slice_value in report["slices"].items():
@@ -786,26 +805,61 @@ def main() -> int:
                 rec["sentiment"] = None
 
     # 抽屉「品牌情感」面板：按单条回答（region|平台显示名|qid）挂每个品牌的
-    # 正/负标签与依据句。judged-sentences 缺失时跳过，面板显示「无判读数据」。
-    if sentences_path.exists():
-        judged = json.loads(sentences_path.read_text(encoding="utf-8"))
+    # 正/负观点与依据句。句级路径读 judged-sentences；Claim 路径直接从 claims 取
+    # （此前只走句级分支，Claim 路径下抽屉整块没有情感面板，2026-09-22 修）。
+    def fill_drawer(payload_by_answer: dict[str, dict]) -> None:
         for detail_key, detail_value in report.get("details", {}).items():
             region, platform_display, qid = (detail_key.split("|") + ["", "", ""])[:3]
             internal = PLATFORM_INTERNAL.get(platform_display) if platform_display else None
             if not (region and internal and qid):
                 continue
-            detail_value["sentiment"] = build_answer_sentiment(
-                units, merged, brands, all_claims, judged, qid, region, internal)
+            detail_value["sentiment"] = payload_by_answer.get(
+                f"{region}|{internal}|{qid}", {"brands": []})
+
+    if claims:
+        grouped: dict[str, dict[str, dict]] = defaultdict(
+            lambda: defaultdict(lambda: {"pos_claims": [], "neg_claims": []}))
+        seen_drawer: set[tuple] = set()
+        for c in claims:
+            brand = c.get("brand")
+            direction = c.get("sentiment")
+            if brand not in brands or direction not in ("positive", "negative"):
+                continue
+            key = (brand, c.get("region", ""), c.get("platform", ""), c.get("idx"),
+                   _norm_claim_text(c.get("claim")))
+            if key in seen_drawer:
+                continue
+            seen_drawer.add(key)
+            answer_key = f"{c.get('region','')}|{c.get('platform','')}|{c.get('question_id','')}"
+            bucket = "pos_claims" if direction == "positive" else "neg_claims"
+            grouped[answer_key][brand][bucket].append({
+                # 抽屉展示具体的 claim（逐回答的观点），attribute 另存备查
+                "label": c.get("claim") or "",
+                "claim": c.get("claim") or "",
+                "attribute": c.get("attribute") or "",
+                "sentence": clean_text(c.get("evidence_text") or ""),
+            })
+        fill_drawer({
+            key: {"brands": [dict(entry, brand=brand) for brand, entry in per_brand.items()]}
+            for key, per_brand in grouped.items()})
+    elif sentences_path.exists():
+        judged = json.loads(sentences_path.read_text(encoding="utf-8"))
+        fill_drawer({
+            f"{region}|{PLATFORM_INTERNAL.get(platform_display)}|{qid}":
+                build_answer_sentiment(units, merged, brands, all_claims, judged,
+                                       qid, region, PLATFORM_INTERNAL[platform_display])
+            for detail_key in report.get("details", {})
+            for region, platform_display, qid in [(detail_key.split("|") + ["", "", ""])[:3]]
+            if region and platform_display and qid
+            and PLATFORM_INTERNAL.get(platform_display)})
 
     meta["sentiment_claims_status"] = "complete"
     meta["sentiment_brands"] = brands
+    basis_label = "Claim 信号" if claims else "判读句"
     meta["sentiment_note"] = (
         "情感仅判读了报告中展示的 %d 个品牌；其余开放品牌未判读。"
-        "正向率 = 正向句 ÷（正向句 + 负向句），排除中性；"
-        "观点数口径 = 去重后的正向观点组数 ÷（正向+负向观点组数），"
-        "同一观点多句只算一次；"
-        "观点标签与计数来自句子级判读的归纳，计数为该切片内的出现次数。" % len(brands)
-    )
+        "正向率 = 正向%s ÷（正向 + 负向%s），排除中性。"
+        % (len(brands), basis_label, basis_label))
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     head = report["slices"].get("||", report["slices"][next(iter(report["slices"]))])

@@ -102,9 +102,9 @@ def build_body(meta: dict) -> str:
     )
 
     shared_filter = (
-        '<div class="shared-filter" aria-label="数据筛选">'
+        '<div class="shared-filter" id="sharedFilter" aria-label="数据筛选">'
         '<div class="shared-filter-head"><strong>数据筛选</strong>'
-        "<span>地区、平台和主题同时作用于 02 / 03 / 04 / 05 模块</span></div>"
+        '<span id="filterScope">地区、平台和主题同时作用于 02 / 03 / 04 / 05 模块</span></div>'
         '<div style="display:grid;gap:12px">'
         '<div class="filter-tabs" id="regionTabs" aria-label="地区筛选"></div>'
         '<div class="filter-tabs" id="platformTabs" aria-label="平台筛选"></div>'

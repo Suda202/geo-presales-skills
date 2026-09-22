@@ -1208,6 +1208,19 @@ def build_sources(metrics: dict, answers: list[dict]) -> dict:
         share = raw_count / raw_total if raw_total else None
         domain_rows.append([domain, fmt_pct(share) if share is not None else "—", bucket])
 
+    # 第三方阵地用：非「自有网站 / 竞品网站」的来源域名，单独给一份、不参与 top8 截断。
+    # top8 常被竞品与官网占满，内容规划里的第三方面板会因此空着（2026-09-22 实测）。
+    third_party_rows = []
+    for domain, raw_count in sorted(raw_domain_counts.items(), key=lambda kv: (-kv[1], kv[0])):
+        counter = domain_types.get(domain)
+        bucket = SOURCE_BUCKET.get(counter.most_common(1)[0][0], ("其他", ""))[0] if counter else "其他"
+        if bucket in ("自有网站", "竞品网站"):
+            continue
+        share = raw_count / raw_total if raw_total else None
+        third_party_rows.append([domain, fmt_pct(share) if share is not None else "—", bucket])
+        if len(third_party_rows) >= 5:
+            break
+
     # 页面与官网页面同样按未去重引用次数挑选 top 8 并排序、算份额（与域名/类别/KPI 一致）。
     # 不用 core 的 top_pages/official_pages——那是「去重到回答」的名次，会让份额大的页排在
     # 份额小的页下面。并列按 URL 字典序，保证可复算。
@@ -1241,6 +1254,7 @@ def build_sources(metrics: dict, answers: list[dict]) -> dict:
         "official_share": fmt_pct(metrics["citations"]["official_share"]["raw"]),
         "types": types_rows,
         "domains": domain_rows,
+        "third_party_domains": third_party_rows,
         "pages": page_rows,
         "official_pages": official_rows,
         "citation_units": {

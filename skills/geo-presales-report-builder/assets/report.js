@@ -99,7 +99,15 @@
 
   function buildTabs(containerId, values, activeValue, dataAttr, allLabel, toggleable) {
     var el = document.getElementById(containerId);
-    if (!el) return;
+    if (!el) return false;
+    // 只有一个取值时这行筛选没有意义（「全部」与那一项是同一个切片），整行不显示。
+    // 注意 .filter-tabs 带 display:flex，会盖掉 [hidden]，必须显式设 display。
+    if (values.length <= 1) {
+      el.innerHTML = "";
+      el.style.display = "none";
+      return false;
+    }
+    el.style.display = "";
     var html = "";
     if (allLabel) {
       html += '<button class="tab-btn' + (activeValue === "" ? " active" : "") +
@@ -110,12 +118,22 @@
         '" type="button" data-' + dataAttr + '="' + esc(value) + '" data-toggle="' + (toggleable ? "1" : "0") + '">' + esc(value) + "</button>";
     });
     el.innerHTML = html;
+    return true;
   }
 
   function renderTabs() {
-    buildTabs("regionTabs", META.regions || [], state.region, "region", "全部地区", false);
-    buildTabs("platformTabs", META.platforms || [], state.platform, "platform", "全部平台", false);
-    buildTabs("topicTabs", META.topics || [], state.topic, "topic", "全部主题", true);
+    var shown = [];
+    if (buildTabs("regionTabs", META.regions || [], state.region, "region", "全部地区", false)) shown.push("地区");
+    if (buildTabs("platformTabs", META.platforms || [], state.platform, "platform", "全部平台", false)) shown.push("平台");
+    if (buildTabs("topicTabs", META.topics || [], state.topic, "topic", "全部主题", true)) shown.push("主题");
+    // 说明文案只列实际可筛的维度；一个都不剩时整块收起
+    var scope = document.getElementById("filterScope");
+    if (scope) {
+      scope.textContent = shown.length
+        ? shown.join("、") + "同时作用于 02 / 03 / 04 / 05 模块" : "";
+    }
+    var box = document.getElementById("sharedFilter");
+    if (box) box.style.display = shown.length ? "" : "none";
   }
 
   /* ---------- 核心洞察 KPI ---------- */
@@ -372,11 +390,24 @@
     el.innerHTML = '<div class="sentiment-overview-bars">' + items + "</div>";
   }
 
+  // attribute 在数据层是「维度 > 极性」形式（如「字幕语言覆盖 > 广」），
+  // 面板展示时去掉分隔符，读起来是人话。
+  function naturalAttr(text) {
+    return String(text === null || text === undefined ? "" : text).replace(/\s*>\s*/g, "");
+  }
+
   function bucket(title, rateText, dir, items) {
-    var chips = items.map(function (item, index) {
-      return '<button type="button" class="sentiment-chip ' + dir + (index === 0 ? " active" : "") +
-        '" data-claim="' + esc(dir + ":" + index) + '">' + esc(item.label || item.text) + "</button>";
-    }).join("") || '<span class="support-line">暂无判读结果</span>';
+    // 去重 + 只展示前 5 个（按数据层已排好的计数降序）。
+    // data-claim 保留原数组下标，点击取证据仍走原数组，不受筛选影响。
+    var seen = {}, chips = [];
+    (items || []).forEach(function (item, index) {
+      var label = naturalAttr(item.label || item.text || "");
+      if (!label || seen[label] || chips.length >= 5) return;
+      seen[label] = true;
+      chips.push('<button type="button" class="sentiment-chip ' + dir + (chips.length === 0 ? " active" : "") +
+        '" data-claim="' + esc(dir + ":" + index) + '">' + esc(label) + "</button>");
+    });
+    chips = chips.join("") || '<span class="support-line">暂无判读结果</span>';
     return '<div class="sentiment-bucket">' +
       '<div class="sentiment-rate ' + dir + '">' + esc(rateText || "—") + " " + esc(title) + "</div>" +
       '<div class="sentiment-chip-list">' + chips + "</div></div>";
@@ -682,14 +713,14 @@
           if (seen["pos|" + label]) return;
           seen["pos|" + label] = true;
           claims.push('<div class="drawer-claim"><span class="drawer-claim-dir pos">正向</span>' +
-            '<span class="drawer-claim-label">' + esc(label) + '</span></div>');
+            '<span class="drawer-claim-label">' + esc(naturalAttr(label)) + '</span></div>');
         });
         (sb.neg_claims || []).forEach(function (c) {
           var label = c.label || "";
           if (seen["neg|" + label]) return;
           seen["neg|" + label] = true;
           claims.push('<div class="drawer-claim"><span class="drawer-claim-dir neg">负向</span>' +
-            '<span class="drawer-claim-label">' + esc(label) + '</span></div>');
+            '<span class="drawer-claim-label">' + esc(naturalAttr(label)) + '</span></div>');
         });
         if (!claims.length) return "";
         return '<div class="drawer-sentiment-brand' + (isTarget ? " is-target" : "") + '">' +
@@ -743,8 +774,9 @@
   function renderOpportunities() {
     var records = recordsForSlice();
     var slice = currentSlice();
-    var pages = ((slice.sources || {}).pages) || [];
-    var official = ((slice.sources || {}).official_pages) || [];
+    var sources = slice.sources || {};
+    var pages = sources.pages || [];
+    var official = sources.official_pages || [];
     // 官网清单取「目标品牌本该出现却没进回答」的题：发现类问题（用户没点名品牌，
     // 品牌本该争夺一席），或题面点名目标品牌的问题（明确在问它，AI 说不出话就是缺口）。
     // 题面只点名竞品的评价题不算——品牌本来就不该在那道题里出现。
@@ -764,15 +796,35 @@
 
     var thirdEl = document.getElementById("thirdPartyPlan");
     if (thirdEl) {
-      // 只挑「页面存在但 AI 没在里面提到我们」的——已提及的页面不需要再介入。
-      var targets = pages.filter(function (row) { return row[2] === "未提及"; })
-        .slice(0, 3).map(function (row, index) {
-          return '<div class="plan-card"><div class="plan-card-head"><strong>' + (index + 1) + ". " +
-            esc(row[0]) + '</strong><span class="plan-tag blue">' + esc(row[1] || "第三方") + "</span></div>" +
-            '<p class="plan-card-body"><strong>介入方式：</strong>该页面在 ' + esc(row[3]) +
-            " 的引用中承担主要来源，页面中" + esc(row[2]) + "监测对象。</p></div>";
-        }).join("");
-      thirdEl.innerHTML = targets || '<p class="support-line">当前切片下没有未提及的第三方页面</p>';
+      // 第三方阵地按**域名**给，不限于「AI 引用了但没提到我们」的单个页面：
+      // 客户要布局的是信源阵地，域名的颗粒度更可执行，也不会像逐页判据那样在多数
+      // 切片下为空。数据层另给一份 third_party_domains（已排除自有/竞品网站，不参与
+      // top8 截断），这里优先用它。
+      var thirdDomains = (sources.third_party_domains || []).slice(0, 3);
+      var cards = thirdDomains.map(function (row, index) {
+        var domain = row[0], share = row[1], category = row[2] || "第三方";
+        var angle = {
+          "社交平台": "在相关讨论里以品牌身份参与，把可核验的事实（内容库、字幕语言、价格）说清楚。",
+          "媒体网站": "推动评测与榜单类内容覆盖，让第三方叙述里有本品的准确信息与独家卖点。",
+          "机构网站": "争取被行业报告、百科类条目收录，补上权威出处。",
+          "新闻稿平台": "用通稿补官方口径，供媒体二次引用。"
+        }[category] || "争取在该来源出现可核验的品牌事实，替代纯第三方叙述。";
+        return '<div class="plan-card"><div class="plan-card-head"><strong>' + (index + 1) + ". " +
+          esc(domain) + '</strong><span class="plan-tag blue">' + esc(category) + "</span></div>" +
+          '<p class="plan-card-body"><strong>介入方式：</strong>该来源占本切片引用 ' + esc(share) +
+          "，是 AI 的主要信息来源之一。" + esc(angle) + "</p></div>";
+      }).join("");
+      // 逐页判据仍保留：若确实存在「被引用但没提到我们」的页面，附在下面更具体。
+      var pageTargets = pages.filter(function (row) { return row[2] === "未提及"; }).slice(0, 2);
+      var pageCards = pageTargets.map(function (row) {
+        return '<div class="plan-card"><div class="plan-card-head"><strong>' + esc(row[0]) +
+          '</strong><span class="plan-tag gold">页面未提及</span></div>' +
+          '<p class="plan-card-body"><strong>介入方式：</strong>该页面引用份额 ' + esc(row[3]) +
+          "，内容中" + esc(row[2]) + "监测对象，可直接联系或投稿补充。</p></div>";
+      }).join("");
+      thirdEl.innerHTML = (cards || pageCards)
+        ? (cards + pageCards)
+        : '<p class="support-line">当前切片下没有可介入的第三方来源</p>';
     }
 
   }
@@ -874,7 +926,7 @@
             }).join("、") + "。");
           }
         }
-        points.push("<strong>怎么看：</strong>不同平台的信源偏好不同（如 Google 系更常引用 YouTube），同一品牌在各平台表现有差异是普遍现象。多平台一致偏低才代表真实的认知缺口；单一平台的高低波动，会随后续内容分发自然收敛。");
+        points.push("<strong>怎么看：</strong>不同平台的信源偏好不同，同一品牌在各平台表现有差异是普遍现象。多平台一致偏低才代表真实的认知缺口；单一平台的高低波动，会随后续内容分发自然收敛。");
       }
       setInsight("competitionInsight", headline, points);
     }
@@ -882,14 +934,29 @@
     var sources = slice.sources || {};
     var topDomain = (sources.domains || [])[0];
     var officialPages = (sources.official_pages || []).length;
+    // 官网引用份额与最大竞品来源的对比：只说「可继续扩展」太空，客户要的是
+    // 「差在哪些内容上」。用类别里竞品网站的份额与目标官网份额对照，并点名
+    // 最大来源域名，把差距落到具体来源。
+    var compType = ((sources.types || []).filter(function (r) { return r[0] === "竞品网站"; })[0]) || null;
+    var ownShare = parseFloat(String(sources.official_share || "").replace("%", ""));
+    var compShare = compType ? parseFloat(String(compType[1]).replace("%", "")) : null;
+    var gapNote = "";
+    if (isFinite(ownShare) && isFinite(compShare) && compShare > 0) {
+      gapNote = "<strong>差距：</strong>竞品网站合计 " + esc(compType[1]) +
+        "，是本品官网的 " + (compShare / Math.max(ownShare, 0.1)).toFixed(1) + " 倍";
+      if (topDomain) {
+        gapNote += "；最大来源是 " + esc(topDomain[0]) + "（" + esc(topDomain[1]) + "）";
+      }
+      gapNote += "。官网被引用的多是应用下载页与首页，缺少可被 AI 直接引用的<strong>内容型页面</strong>（剧集与题材介绍、功能与价格说明、常见问题），第三方因此占据了事实定义权。";
+    }
     setInsight("sourcesInsight",
       "官网引用份额 " + esc(sources.official_share || "—") + "。",
       [
         topDomain ? "<strong>最大来源：</strong>" + esc(topDomain[0]) + "（" + esc(topDomain[2]) +
-          "，计入 " + esc(topDomain[1]) + " 条）。" : "",
+          "，占 " + esc(topDomain[1]) + "）。" : "",
         officialPages <= 2
           ? "<strong>风险：</strong>官网可被引用的页面过少，事实定义权主要落在第三方。"
-          : "<strong>现状：</strong>官网已有多个页面被引用，可继续按主题扩展。"
+          : gapNote
       ].filter(Boolean));
 
     // 落地服务闭环：固定话术，不承诺时间
