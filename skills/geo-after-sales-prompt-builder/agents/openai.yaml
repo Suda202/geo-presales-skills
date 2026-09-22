@@ -1,0 +1,4 @@
+interface:
+  display_name: "GEO After-Sales Prompt Builder"
+  short_description: "Build evidence-backed after-sales GEO prompt sets"
+  default_prompt: "Use $geo-after-sales-prompt-builder to build or maintain an evidence-backed after-sales GEO Prompt set."

@@ -1,6 +1,14 @@
 # GEO 售前 Skills
 
-海外 GEO 售前诊断的 8 个 Skill：前期工作建 Case 和题库，之后按三类任务对号入座，细节查完整清单。
+海外 GEO 的 9 个 Skill。**售前诊断** 8 个：前期工作建 Case 和题库，之后按三类任务对号入座。**售后** 1 个：签约后不重新生词，而是在售前诊断的基础上验证、补全、排序、固化正式监测词组。
+
+## 售后：签约后的正式建库
+
+售前负责发现候选机会；售后把售前的前半段做成正式台账——补齐客户内部数据（销售、客服、成交流失记录）、把诊断主题转成交付主题、锁定 Prompt 版本后建正式基线。
+
+| Skill | 什么时候用 | 产出 | 不做什么 |
+| --- | --- | --- | --- |
+| `geo-after-sales-prompt-builder` | 已签约，要在售前诊断基础上建成正式监测词组 | 属性 × 意图的交叉主表、v8 监测词组、排期文件、输入差异清单 | 不做售前覆盖，不采集，不算指标，不判情感，不自行发现或冻结竞品（竞品核验走 `overseas-geo-competitor-research`） |
 
 ## 前期工作：建 Case 和题库
 
@@ -62,7 +70,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 > 指标口径全库只有一份实现：Report Builder、Report Audit、Crawl Integrity 都直接引用它算数，自己不另写。位置和改动方式见文末「开发与维护」。
 
-## 完整清单（8 个 Skill）
+## 完整清单（9 个 Skill）
 
 | Skill | 链条 | 什么时候用 | 产出 | 不做什么 |
 | --- | --- | --- | --- | --- |
@@ -74,6 +82,7 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 | `overseas-geo-competitor-research` | 共用 | 正式竞品不足 3 个，或用户填的候选需要核验 | 3 个通过同一购买集合硬门槛的正式竞品 + 选择证据 | 不建 Case、不出题、不采集 |
 | `geo-presales-eval-case-builder` | 共用 | 有品牌资料，要构建监测输入或积累到飞书 Base | 规范化 Case、2 个监测主题、已核验竞品，写入飞书 Base | 不出题、不采集、不写报告 |
 | `geo-presales-prompt-builder` | 共用 | 已有 Case，要生成英文 AI 搜索监测题库 | `overseas-geo-question-bank/v8` 题库、属性规划、质量报告 | 不建主题、不选竞品、不算指标 |
+| `geo-after-sales-prompt-builder` | 售后 | 已签约，要用售前诊断建正式监测词组 | 属性 × 意图交叉主表、v8 监测词组、排期文件、输入差异清单 | 不做售前覆盖、不采集、不算指标、不判情感、不自选竞品 |
 
 **Report Audit 跨两条链。** 它既服务于链 B 的修正流程，它的采集原始层脚本也被链 A 的 Report Builder 直接引用——去引用正文是品牌识别的入口，两边必须用同一份实现。
 
