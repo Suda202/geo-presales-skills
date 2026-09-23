@@ -14,7 +14,7 @@ metadata:
 
 - 负责：阶段顺序、断点续跑、每个暂停点的分派。
 - 不负责：任何指标口径（builder/editor 的统一实现）、采集缺陷的判定规则（crawl-integrity）、Claim 判读规则（sentiment-judge）、品牌纠错与 Bad Case（report-audit）、上传 CSV 与结论（report-editor）、Case 与题库生成（eval-case-builder / prompt-builder）。
-- 与直接使用各 skill 不冲突：只做单独一段（如只算指标、只判情感）时不要走本 skill，直接用对应 skill。
+- 本 skill 只服务「从爬虫数据出完整 HTML 报告」这一个任务。其他任务不要走本 skill：只要指标数字不出报告，直接用 `geo-presales-report-builder` 的 `build_report_data.py`（同样先过 crawl-integrity）；只判情感用 `geo-presales-sentiment-judge`；改已有报告走 `geo-presales-report-audit` → `geo-presales-report-editor`。
 
 ## 前置输入
 

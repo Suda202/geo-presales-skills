@@ -1,6 +1,6 @@
 # 海外 GEO Skills
 
-海外 GEO 的 10 个 Skill。**售前诊断** 9 个：前期工作建 Case 和题库，之后主线一条命令从爬虫数据跑到 HTML 报告，另有「只要指标」和「改已有报告」两条支线。**售后** 1 个：签约后不重新生词，而是在售前诊断的基础上验证、补全、排序、固化正式监测词组。
+海外 GEO 的 10 个 Skill。**售前诊断** 9 个：前期工作建 Case 和题库，之后按任务对号入座：出完整 HTML 报告、只要指标数字、改已有报告。**售后** 1 个：签约后不重新生词，而是在售前诊断的基础上验证、补全、排序、固化正式监测词组。
 
 ## 售后：签约后的正式建库
 
@@ -12,7 +12,7 @@
 
 ## 前期工作：建 Case 和题库
 
-主线和两条支线都依赖两份输入——Case（品牌归一化档案）和 v8 题库。没有就先走这条链：
+三个任务都依赖两份输入——Case（品牌归一化档案）和 v8 题库。没有就先走这条链：
 
 ```text
 品牌资料
@@ -22,11 +22,11 @@
 
 竞品核验可以单独跑（`overseas-geo-competitor-research`），也常在 Eval Case Builder 里一并完成：正式竞品不足 3 个或候选待核验时，Case Builder 会内部委派它联网核验并冻结 3 个同一购买集合的正式竞品。
 
-## 对号入座
+## 对号入座：三个任务
 
-前期工作完成后，按手上的活选一条路径：**大多数情况走主线**——从采集数据一路跑到给客户看的 HTML 报告；只要指标数字、或改已有报告，才走另外两条。
+前期工作完成后按手上的活选任务。最常见的是任务一——从爬虫数据一路出给客户看的完整 HTML 报告；任务二是它的前半段单独跑，只出指标数字；任务三处理已交付报告的修改。
 
-### 主线 · 从爬虫数据到 HTML 报告
+### 任务一 · 从爬虫数据出完整 HTML 报告
 
 前置：已完成前期工作，手上有 Case 和题库。
 输入：第三方采集目录（`<collect>/scraper.<platform>/<REGION>/<NNNN>.json`）+ 题库 + Case。
@@ -51,9 +51,9 @@ python3 scripts/run_pipeline.py --collect <采集目录> --questions <题库.csv
 
 要让 Agent 全程自动接管（到暂停点自动请对应 Skill 出场），用编排 Skill `geo-presales-pipeline`：它只定阶段顺序和暂停点分派，口径与实现仍全部在上面三个 Skill 里。
 
-### 支线一 · 只要指标数字，不出报告
+### 任务二 · 只要指标数字，不出报告
 
-主线的前半段单独跑：只算可见度与引用类指标（提及率、提及率排名、声量份额、平均提及位置、可见度、引用次数），产出报告数据文件，不渲染 HTML。
+任务一的前半段单独跑：只算可见度与引用类指标（提及率、提及率排名、声量份额、平均提及位置、可见度、引用次数），产出报告数据文件，不渲染 HTML。
 
 ```bash
 cd skills/geo-presales-report-builder
@@ -61,9 +61,9 @@ python3 scripts/build_report_data.py --collect <采集目录> --questions <题�
   --case <Case.json> --out <输出>/report-data.json
 ```
 
-两条注意事项与主线相同：先跑 `geo-presales-crawl-integrity` 确认采集能用；必须补上 `--lexicon assets/brand_lexicon.<品类>.json --domain-cache assets/domain-categories.json`——**口径要求声量份额与提及率排名的分母是全部纳入品牌（目标 + 3 个配置竞品 + 开放词表命中），省略时开放品牌不进指标，算出来的数不成立，不能当正式指标交付**。这两个文件用 `mine_brand_lexicon.py` 和 `collect_domain_candidates.py` 生成（见 [SKILL.md](skills/geo-presales-report-builder/SKILL.md) 步骤 2–3）。需要「正向情感占比」时另跑 `geo-presales-sentiment-judge`。
+两条注意事项与任务一相同：先跑 `geo-presales-crawl-integrity` 确认采集能用；必须补上 `--lexicon assets/brand_lexicon.<品类>.json --domain-cache assets/domain-categories.json`——**口径要求声量份额与提及率排名的分母是全部纳入品牌（目标 + 3 个配置竞品 + 开放词表命中），省略时开放品牌不进指标，算出来的数不成立，不能当正式指标交付**。这两个文件用 `mine_brand_lexicon.py` 和 `collect_domain_candidates.py` 生成（见 [SKILL.md](skills/geo-presales-report-builder/SKILL.md) 步骤 2–3）。需要「正向情感占比」时另跑 `geo-presales-sentiment-judge`。
 
-### 支线二 · 已有报告要改
+### 任务三 · 已有报告要修改
 
 | 要改什么 | 用哪个 Skill |
 | --- | --- |
@@ -76,20 +76,20 @@ python3 scripts/build_report_data.py --collect <采集目录> --questions <题�
 
 ## 完整清单（10 个 Skill）
 
-| Skill | 路径 | 什么时候用 | 产出 | 不做什么 |
+| Skill | 任务 | 什么时候用 | 产出 | 不做什么 |
 | --- | --- | --- | --- | --- |
-| `geo-presales-pipeline` | 主线（编排） | 有采集目录 + Case + 题库，要一路跑到 HTML 报告，让 Agent 在每个暂停点自动请对应 Skill 出场 | 阶段顺序 + 暂停点分派；产物即主线各 Skill 的产物 | 零新逻辑：不定义口径、不校验、不判读、不审计、不出上传 CSV |
-| `geo-presales-crawl-integrity` | 主线 | 算任何指标之前，先确认这份采集能不能用：每条回答是正文明说了品牌，还是只是被检索到 | 分层判定 + 问题清单，指明涉及的平台和文件 | 不算提及率、声量、排名、引用份额，不判情绪，不纠品牌 |
-| `geo-presales-report-builder` | 主线 | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 可见度与引用类指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不做情感判读（归 sentiment-judge，只汇总其结果），不另写指标口径（复用全库统一实现），不出上传 CSV，不纠品牌识别，不做采集校验 |
-| `geo-presales-sentiment-judge` | 主线 | 需要句级正负句和正向情感占比 | 逐句 CSV + 正向情感占比，按品牌、意图、平台分层 | 只算「正向情感占比」一个指标；不改后端已有的情绪字段，不判竞品胜负，不算可见度 |
-| `geo-presales-report-audit` | 支线二（跨路径） | 品牌提及识别或正文首现排序需要审核和修正 | 修正后的品牌提及识别与首现排序、安全补丁、可复现的问题说明与 Bad Case 草稿 | 不改客户结论，不审情绪，不做竞品研究或出题 |
-| `geo-presales-report-editor` | 支线二 | 底层结果已确认，要改客户结论并出上传件 | 更新后的客户结论、可上传 CSV | 不重算底层，不渲染 HTML，不操作报告页面 |
+| `geo-presales-pipeline` | 任务一（编排） | 有采集目录 + Case + 题库，要一路跑到 HTML 报告，让 Agent 在每个暂停点自动请对应 Skill 出场 | 阶段顺序 + 暂停点分派；产物即链上各 Skill 的产物 | 零新逻辑：不定义口径、不校验、不判读、不审计、不出上传 CSV |
+| `geo-presales-crawl-integrity` | 任务一/二 | 算任何指标之前，先确认这份采集能不能用：每条回答是正文明说了品牌，还是只是被检索到 | 分层判定 + 问题清单，指明涉及的平台和文件 | 不算提及率、声量、排名、引用份额，不判情绪，不纠品牌 |
+| `geo-presales-report-builder` | 任务一/二 | 有采集目录 + 题库 + Case，要一份能给客户看的报告 | 可见度与引用类指标 + 单文件 HTML 报告，支持国家 / 平台 / 主题三层筛选 | 不做情感判读（归 sentiment-judge，只汇总其结果），不另写指标口径（复用全库统一实现），不出上传 CSV，不纠品牌识别，不做采集校验 |
+| `geo-presales-sentiment-judge` | 任务一/二 | 需要句级正负句和正向情感占比 | 逐句 CSV + 正向情感占比，按品牌、意图、平台分层 | 只算「正向情感占比」一个指标；不改后端已有的情绪字段，不判竞品胜负，不算可见度 |
+| `geo-presales-report-audit` | 任务三（跨任务） | 品牌提及识别或正文首现排序需要审核和修正 | 修正后的品牌提及识别与首现排序、安全补丁、可复现的问题说明与 Bad Case 草稿 | 不改客户结论，不审情绪，不做竞品研究或出题 |
+| `geo-presales-report-editor` | 任务三 | 底层结果已确认，要改客户结论并出上传件 | 更新后的客户结论、可上传 CSV | 不重算底层，不渲染 HTML，不操作报告页面 |
 | `overseas-geo-competitor-research` | 共用 | 正式竞品不足 3 个，或用户填的候选需要核验 | 3 个通过同一购买集合硬门槛的正式竞品 + 选择证据 | 不建 Case、不出题、不采集 |
 | `geo-presales-eval-case-builder` | 共用 | 有品牌资料，要构建监测输入或积累到飞书 Base | 规范化 Case、2 个监测主题、已核验竞品，写入飞书 Base | 不出题、不采集、不写报告 |
 | `geo-presales-prompt-builder` | 共用 | 已有 Case，要生成英文 AI 搜索监测题库 | `overseas-geo-question-bank/v8` 题库、属性规划、质量报告 | 不建主题、不选竞品、不算指标 |
 | `geo-after-sales-prompt-builder` | 售后 | 已签约，要用售前诊断建正式监测词组 | 属性 × 意图交叉主表、v8 监测词组、排期文件、输入差异清单 | 不做售前覆盖、不采集、不算指标、不判情感、不自选竞品 |
 
-**Report Audit 跨两条路径。** 它既服务于支线二的修正流程，它的采集原始层脚本也被主线的 Report Builder 直接引用——去引用正文是品牌识别的入口，两边必须用同一份实现。
+**Report Audit 跨任务。** 它既服务于任务三的修正流程，它的采集原始层脚本也被任务一/二的 Report Builder 直接引用——去引用正文是品牌识别的入口，两边必须用同一份实现。
 
 ## 指标归属一览
 
